@@ -35,25 +35,31 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        $user = $request->user();
-        $farm = app()->bound('current.farm') ? app('current.farm') : null;
-        $role = app()->bound('current.farm.role') ? app('current.farm.role') : null;
-
         return [
             ...parent::share($request),
-            'auth' => $user ? [
-                'user'        => $user->only(['id', 'name', 'email', 'phone', 'is_active', 'created_at']),
-                'farm'        => $farm?->only(['id', 'name', 'county', 'owner_name', 'phone', 'settings', 'subscription_plan']),
-                'role'        => $role,
-                'permissions' => $this->getUserPermissions($role),
+
+            // IMPORTANT: auth must be a closure (lazy) so it evaluates AFTER
+            // SetFarmContext route middleware has bound 'current.farm'.
+            // If evaluated eagerly here, farm will always be null.
+            'auth' => fn () => $request->user() ? [
+                'user'        => $request->user()->only(['id', 'name', 'email', 'phone', 'is_active', 'created_at']),
+                'farm'        => app()->bound('current.farm')
+                                    ? app('current.farm')?->only(['id', 'name', 'county', 'owner_name', 'phone', 'settings', 'subscription_plan'])
+                                    : null,
+                'role'        => app()->bound('current.farm.role') ? app('current.farm.role') : null,
+                'permissions' => $this->getUserPermissions(
+                    app()->bound('current.farm.role') ? app('current.farm.role') : null
+                ),
             ] : null,
+
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error'   => fn () => $request->session()->get('error'),
                 'warning' => fn () => $request->session()->get('warning'),
             ],
-            'sync' => $farm ? [
-                'pending_count'  => 0, // Will be populated from sync queue table
+
+            'sync' => fn () => app()->bound('current.farm') ? [
+                'pending_count'  => 0,
                 'last_synced_at' => null,
                 'has_conflicts'  => false,
             ] : null,

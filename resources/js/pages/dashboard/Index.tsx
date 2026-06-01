@@ -48,7 +48,7 @@ export default function Dashboard() {
               {greeting}
             </p>
             <h1 className="text-[34px] font-bold tracking-[-0.5px] text-black leading-tight">
-              {auth.farm.name}
+              {auth.farm?.name ?? 'SpinoMok Farm'}
             </h1>
             <p className="text-[15px] mt-0.5" style={{ color: 'rgba(60,60,67,0.5)' }}>
               {today_date}
