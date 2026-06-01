@@ -83,4 +83,4 @@ php artisan event:cache
 # ── Start server ──────────────────────────────────────────────────────────────
 PORT=${PORT:-8080}
 echo "→ Starting PHP server on port $PORT..."
-exec php -S 0.0.0.0:$PORT -t public public/index.php
+exec php -S 0.0.0.0:$PORT -t public public/router.php
