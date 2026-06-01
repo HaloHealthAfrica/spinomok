@@ -86,7 +86,9 @@ return [
 
         'pgsql' => [
             'driver'         => 'pgsql',
-            'url'            => env('DATABASE_URL'),        // Neon / Render full URL
+            // NOTE: Do NOT set 'url' here — Neon's URL contains channel_binding=require
+            // which PHP PDO does not understand. start.sh parses DATABASE_URL into
+            // individual DB_* env vars before Laravel boots.
             'host'           => env('DB_HOST', '127.0.0.1'),
             'port'           => env('DB_PORT', '5432'),
             'database'       => env('DB_DATABASE', 'laravel'),
@@ -96,10 +98,9 @@ return [
             'prefix'         => '',
             'prefix_indexes' => true,
             'search_path'    => 'public',
-            // Neon requires SSL — channel_binding handled by the driver automatically
             'sslmode'        => env('DB_SSLMODE', 'require'),
             'options'        => [
-                PDO::PGSQL_ATTR_DISABLE_PREPARES => true, // Neon pooler compatibility
+                PDO::PGSQL_ATTR_DISABLE_PREPARES => true, // Required for Neon pooler
             ],
         ],
 
