@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { createInertiaApp } from '@inertiajs/react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/query/queryClient';
-import './app'; // axios / csrf setup
+import './bootstrap'; // axios / csrf setup
 
 createInertiaApp({
   title: (title) => (title ? `${title} — SpinoMok FarmOps` : 'SpinoMok FarmOps'),
