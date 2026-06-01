@@ -3,32 +3,30 @@ import { createRoot } from 'react-dom/client';
 import { createInertiaApp } from '@inertiajs/react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/query/queryClient';
-import './bootstrap'; // axios / csrf setup
+import './bootstrap';
 
-// ── Static glob — Vite resolves all page components at build time ──────────────
-// CRITICAL: must use import.meta.glob, NOT dynamic template literals.
-// Template literals (`import(\`./pages/${name}.tsx\`)`) prevent Vite from
-// statically analysing the import graph → no chunks emitted → blank page.
-const pages = import.meta.glob('./pages/**/*.tsx');
+// Eager load — all pages bundled synchronously, no async import issues.
+// This is the most reliable pattern for Inertia v3 + Vite.
+const pages = import.meta.glob('./pages/**/*.tsx', { eager: true }) as Record<
+  string,
+  { default: React.ComponentType }
+>;
 
-// ── Error boundary — catches render errors in production ──────────────────────
-class AppErrorBoundary extends Component<
+class ErrorBoundary extends Component<
   { children: ReactNode },
-  { error: Error | null }
+  { hasError: boolean; message: string }
 > {
-  state = { error: null };
-  static getDerivedStateFromError(error: Error) { return { error }; }
+  state = { hasError: false, message: '' };
+  static getDerivedStateFromError(e: Error) {
+    return { hasError: true, message: e.message };
+  }
   render() {
-    if (this.state.error) {
+    if (this.state.hasError) {
       return (
-        <div style={{ padding: 32, fontFamily: 'system-ui', color: '#1B5E20' }}>
-          <h2>🐄 SpinoMok FarmOps</h2>
-          <p style={{ color: '#666', marginTop: 8 }}>
-            Something went wrong. Please refresh the page.
-          </p>
-          <pre style={{ fontSize: 12, color: '#999', marginTop: 16 }}>
-            {(this.state.error as Error).message}
-          </pre>
+        <div style={{ padding: 40, fontFamily: 'system-ui' }}>
+          <h1 style={{ color: '#1B5E20' }}>🐄 SpinoMok FarmOps</h1>
+          <p style={{ color: '#666' }}>Something went wrong — please refresh.</p>
+          <pre style={{ color: '#999', fontSize: 12, marginTop: 16 }}>{this.state.message}</pre>
         </div>
       );
     }
@@ -37,27 +35,26 @@ class AppErrorBoundary extends Component<
 }
 
 createInertiaApp({
-  title: (title) => (title ? `${title} — SpinoMok FarmOps` : 'SpinoMok FarmOps'),
+  title: (title) => title ? `${title} — SpinoMok FarmOps` : 'SpinoMok FarmOps',
 
   resolve: (name) => {
     const page = pages[`./pages/${name}.tsx`];
-    if (!page) throw new Error(`Inertia page not found: ${name}. Check the component path.`);
-    return page() as Promise<{ default: unknown }>;
+    if (!page) {
+      console.error(`[Inertia] Page not found: ${name}`, Object.keys(pages));
+      throw new Error(`Page not found: ${name}`);
+    }
+    return page;
   },
 
   setup({ el, App, props }) {
-    const root = createRoot(el);
-    root.render(
-      <AppErrorBoundary>
+    createRoot(el).render(
+      <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <App {...props} />
         </QueryClientProvider>
-      </AppErrorBoundary>,
+      </ErrorBoundary>,
     );
   },
 
-  progress: {
-    color: '#1B5E20',
-    showSpinner: false,
-  },
+  progress: { color: '#1B5E20' },
 });
