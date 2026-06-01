@@ -1,7 +1,6 @@
 import React from 'react';
 import { router } from '@inertiajs/react';
 import { Milk, ClipboardList, Heart, PawPrint, Syringe, Baby } from 'lucide-react';
-import { clsx } from 'clsx';
 
 interface QuickAddSheetProps {
   open: boolean;
@@ -80,90 +79,6 @@ export function QuickAddSheet({ open, onClose }: QuickAddSheetProps) {
         >
           Cancel
         </button>
-      </div>
-    </>
-  );
-}
-
-interface QuickAddSheetProps {
-  open: boolean;
-  onClose: () => void;
-}
-
-const actions = [
-  { label: 'Daily Report', icon: ClipboardList, href: '/reports/daily/new',    color: 'text-primary-900 bg-primary-50' },
-  { label: 'Record Milk',  icon: Milk,           href: '/milk-records/create',  color: 'text-blue-700 bg-blue-50' },
-  { label: 'Health Event', icon: Heart,           href: '/health/create',        color: 'text-red-700 bg-red-50' },
-  { label: 'Record AI',    icon: Syringe,         href: '/breeding/ai/new',      color: 'text-purple-700 bg-purple-50' },
-  { label: 'Calving',      icon: Baby,            href: '/breeding/calving/new', color: 'text-green-700 bg-green-50' },
-  { label: 'Add Animal',   icon: PawPrint,        href: '/animals/new',          color: 'text-amber-700 bg-amber-50' },
-];
-
-export function QuickAddSheet({ open, onClose }: QuickAddSheetProps) {
-  if (!open) return null;
-
-  const navigate = (href: string) => {
-    onClose();
-    router.visit(href);
-  };
-
-  return (
-    <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 z-40"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Sheet */}
-      <div
-        role="dialog"
-        aria-label="Quick add"
-        aria-modal="true"
-        className={clsx(
-          'fixed bottom-0 inset-x-0 z-50 bg-white rounded-t-2xl pb-safe',
-          'transform transition-transform duration-300',
-          open ? 'translate-y-0' : 'translate-y-full',
-        )}
-      >
-        {/* Handle */}
-        <div className="flex justify-center pt-3 pb-1">
-          <div className="h-1 w-10 rounded-full bg-gray-300" />
-        </div>
-
-        <div className="flex items-center justify-between px-5 py-3">
-          <h2 className="text-lg font-semibold text-gray-900">Quick Add</h2>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="h-8 w-8 flex items-center justify-center rounded-full text-gray-400 hover:bg-gray-100"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-3 gap-3 px-5 pb-8">
-          {actions.map((action) => {
-            const Icon = action.icon;
-            return (
-              <button
-                key={action.href}
-                onClick={() => navigate(action.href)}
-                className={clsx(
-                  'flex flex-col items-center gap-2 rounded-xl p-4',
-                  'active:opacity-70 transition-opacity',
-                  action.color,
-                )}
-              >
-                <Icon className="h-7 w-7" />
-                <span className="text-xs font-medium text-center leading-tight">
-                  {action.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
       </div>
     </>
   );

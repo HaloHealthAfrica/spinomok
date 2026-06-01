@@ -15,7 +15,7 @@
       - key: APP_DEBUG
         value: "false"
       - key: APP_URL
-        value: https://spinomok.onrender.com
+        value: https://spinomok-farmops.onrender.com
       - key: APP_KEY
         generateValue: true
       - key: DB_CONNECTION
@@ -35,11 +35,11 @@
       - key: DB_SSLMODE
         value: require
       - key: SESSION_DRIVER
-        value: database
+        value: file
       - key: SESSION_LIFETIME
         value: "120"
       - key: CACHE_STORE
-        value: database
+        value: file
       - key: QUEUE_CONNECTION
         value: database
       - key: LOG_CHANNEL
