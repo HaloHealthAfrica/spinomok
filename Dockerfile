@@ -1,20 +1,19 @@
-FROM php:8.4-cli-alpine
+﻿FROM php:8.4-fpm-alpine
 
-# ── System dependencies ────────────────────────────────────────────────────────
+# System packages
 RUN apk add --no-cache \
-    postgresql-dev \
+    nginx \
     nodejs \
     npm \
     git \
     unzip \
     curl \
+    postgresql-dev \
     libzip-dev \
     oniguruma-dev \
-    freetype-dev \
-    libjpeg-turbo-dev \
-    libpng-dev
+    supervisor
 
-# ── PHP extensions (PostgreSQL, zip, opcache, gd) ─────────────────────────────
+# PHP extensions
 RUN docker-php-ext-install \
     pdo \
     pdo_pgsql \
@@ -25,40 +24,49 @@ RUN docker-php-ext-install \
     bcmath \
     pcntl
 
-# ── Composer ───────────────────────────────────────────────────────────────────
+# Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# ── OPcache config ─────────────────────────────────────────────────────────────
-RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini && \
-    echo "opcache.memory_consumption=256" >> /usr/local/etc/php/conf.d/opcache.ini && \
-    echo "opcache.max_accelerated_files=20000" >> /usr/local/etc/php/conf.d/opcache.ini && \
-    echo "opcache.validate_timestamps=0" >> /usr/local/etc/php/conf.d/opcache.ini
+# OPcache
+RUN echo "opcache.enable=1" > /usr/local/etc/php/conf.d/opcache.ini \
+ && echo "opcache.memory_consumption=128" >> /usr/local/etc/php/conf.d/opcache.ini \
+ && echo "opcache.max_accelerated_files=10000" >> /usr/local/etc/php/conf.d/opcache.ini \
+ && echo "opcache.validate_timestamps=0" >> /usr/local/etc/php/conf.d/opcache.ini
 
 WORKDIR /app
 
-# ── Install PHP dependencies ───────────────────────────────────────────────────
+# PHP dependencies
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-scripts --no-interaction --prefer-dist
 
-# ── Install Node dependencies and build assets ─────────────────────────────────
+# Node dependencies
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# ── Copy full application ──────────────────────────────────────────────────────
+# Application code
 COPY . .
 
-# ── Build frontend (Vite) ─────────────────────────────────────────────────────
+# Build Vite assets
 RUN npm run build
 
-# ── Run composer post-install scripts ─────────────────────────────────────────
+# Composer post-install
 RUN composer dump-autoload --optimize
 
-# ── Storage permissions ────────────────────────────────────────────────────────
-RUN chmod -R 775 storage bootstrap/cache && \
-    chown -R www-data:www-data storage bootstrap/cache || true
+# Permissions
+RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache \
+ && chmod -R 775 /app/storage /app/bootstrap/cache
 
-# ── Copy start script ─────────────────────────────────────────────────────────
-COPY start.sh /start.sh
+# nginx config
+COPY docker/nginx.conf /etc/nginx/nginx.conf
+
+# php-fpm config
+COPY docker/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
+
+# supervisord config
+COPY docker/supervisord.conf /etc/supervisord.conf
+
+# startup script
+COPY docker/start.sh /start.sh
 RUN chmod +x /start.sh
 
 EXPOSE 8080
