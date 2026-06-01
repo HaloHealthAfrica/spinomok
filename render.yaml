@@ -1,0 +1,65 @@
+services:
+  - type: web
+    name: spinomok-farmops
+    runtime: php
+    plan: free
+    buildCommand: |
+      composer install --no-dev --optimize-autoloader --no-interaction
+      npm ci
+      npm run build
+      php artisan config:cache
+      php artisan route:cache
+      php artisan view:cache
+    startCommand: php artisan serve --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: APP_NAME
+        value: "SpinoMok FarmOps"
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_URL
+        fromService:
+          name: spinomok-farmops
+          type: web
+          property: host
+      - key: APP_KEY
+        generateValue: true
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromDatabase:
+          name: spinomok-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: spinomok-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: spinomok-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: spinomok-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: spinomok-db
+          property: password
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: error
+
+databases:
+  - name: spinomok-db
+    plan: free
+    databaseName: spinomok
+    user: spinomok
