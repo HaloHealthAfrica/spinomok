@@ -4,13 +4,14 @@ namespace App\Models;
 
 use App\Scopes\FarmScope;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Treatment extends Model
 {
-    use SoftDeletes;
+    use HasUuids, SoftDeletes;
 
     protected $keyType = 'string';
     public $incrementing = false;

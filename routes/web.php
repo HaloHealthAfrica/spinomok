@@ -13,6 +13,9 @@ use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FormulationController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\SyncController;
+use App\Http\Controllers\SettingsController;
+use App\Models\Alert;
 use Illuminate\Support\Facades\Route;
 
 // ─── Guest routes ────────────────────────────────────────────────────────────
@@ -41,6 +44,10 @@ Route::middleware(['auth', 'set.farm'])->group(function () {
     Route::post('/milk-records', [MilkProductionController::class, 'store'])->name('milk.store');
     Route::get('/api/milk/daily-summary', [MilkProductionController::class, 'dailySummary']);
     Route::get('/api/milk/monthly-summary', [MilkProductionController::class, 'monthlySummary']);
+    Route::post('/api/v1/milk-records', [MilkProductionController::class, 'syncStore']);
+    Route::get('/api/v1/sync/milk-records', [MilkProductionController::class, 'syncIndex']);
+    Route::get('/api/v1/sync/animals', [AnimalController::class, 'syncIndex']);
+    Route::get('/api/v1/sync/alerts', [SyncController::class, 'alerts']);
 
     // ─── Milk Sales ───────────────────────────────────────────────────────────
     Route::get('/milk-sales', [MilkSaleController::class, 'index'])->name('milk-sales.index');
@@ -178,8 +185,21 @@ Route::middleware(['auth', 'set.farm'])->group(function () {
 
     // ─── Secondary pages ──────────────────────────────────────────────────────
     Route::get('/more', fn () => inertia('more/Index'))->name('more');
-    Route::get('/alerts', fn () => inertia('alerts/Index'))->name('alerts.index');
+    Route::get('/alerts', function () {
+        $farmId = app('current.farm.id');
+
+        return inertia('alerts/Index', [
+            'alerts' => Alert::where('farm_id', $farmId)
+                ->where('status', 'pending')
+                ->with('animal:id,tag_number,name')
+                ->orderByRaw("case severity when 'critical' then 0 when 'warning' then 1 else 2 end")
+                ->orderBy('due_on')
+                ->get(),
+        ]);
+    })->name('alerts.index');
     Route::get('/settings/sync', fn () => inertia('settings/Sync'))->name('settings.sync');
     Route::get('/settings/farm', fn () => inertia('settings/Farm'))->name('settings.farm');
+    Route::patch('/settings/farm', [SettingsController::class, 'updateFarm'])->name('settings.farm.update');
     Route::get('/profile', fn () => inertia('settings/Profile'))->name('profile');
+    Route::patch('/profile', [SettingsController::class, 'updateProfile'])->name('profile.update');
 });

@@ -133,7 +133,7 @@ class FinanceService
         $expenses = Expense::withoutGlobalScopes()
             ->where('farm_id', $farmId)
             ->whereYear('expense_date', $year)
-            ->whereMonth('expense_date', $month)
+            ->whereMonth('expense_date', $mon)
             ->orderByDesc('expense_date')
             ->get();
 
@@ -276,14 +276,17 @@ class FinanceService
             ? round((((float) $snapshot->total_revenue - (float) $prevSnap->total_revenue) / max(1, (float) $prevSnap->total_revenue)) * 100, 1)
             : null;
 
+        $totalRevenue = (float) ($snapshot->total_revenue ?? 0);
+        $netProfit = (float) ($snapshot->net_profit ?? 0);
+
         return [
             'total_revenue'     => (float) ($snapshot->total_revenue ?? 0),
             'total_expenses'    => (float) ($snapshot->total_expenses ?? 0),
-            'net_profit'        => (float) ($snapshot->net_profit ?? 0),
+            'net_profit'        => $netProfit,
             'cost_per_litre'    => $snapshot->cost_per_litre ? (float) $snapshot->cost_per_litre : null,
             'revenue_per_litre' => $snapshot->revenue_per_litre ? (float) $snapshot->revenue_per_litre : null,
-            'margin_percent'    => $snapshot->net_profit && $snapshot->total_revenue
-                ? round(((float) $snapshot->net_profit / (float) $snapshot->total_revenue) * 100, 1)
+            'margin_percent'    => $totalRevenue > 0
+                ? round(($netProfit / $totalRevenue) * 100, 1)
                 : null,
             'revenue_delta_pct' => $revenueDelta,
             'month_label'       => Carbon::createFromDate($year, $mon, 1)->format('F Y'),

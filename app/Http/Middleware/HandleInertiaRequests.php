@@ -44,7 +44,17 @@ class HandleInertiaRequests extends Middleware
             'auth' => fn () => $request->user() ? [
                 'user'        => $request->user()->only(['id', 'name', 'email', 'phone', 'is_active', 'created_at']),
                 'farm'        => app()->bound('current.farm')
-                                    ? app('current.farm')?->only(['id', 'name', 'county', 'owner_name', 'phone', 'settings', 'subscription_plan'])
+                                    ? app('current.farm')?->only([
+                                        'id',
+                                        'name',
+                                        'county',
+                                        'sub_county',
+                                        'owner_name',
+                                        'phone',
+                                        'email',
+                                        'settings',
+                                        'subscription_plan',
+                                    ])
                                     : null,
                 'role'        => app()->bound('current.farm.role') ? app('current.farm.role') : null,
                 'permissions' => $this->getUserPermissions(

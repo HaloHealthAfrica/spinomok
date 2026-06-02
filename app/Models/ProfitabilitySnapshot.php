@@ -3,16 +3,18 @@
 namespace App\Models;
 
 use App\Scopes\FarmScope;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ProfitabilitySnapshot extends Model
 {
+    use HasUuids;
     protected $keyType = 'string';
     public $incrementing = false;
 
     protected $fillable = [
-        'farm_id', 'period_year', 'period_month',
+        'id', 'farm_id', 'period_year', 'period_month',
         'total_milk_litres', 'total_milk_revenue', 'total_other_revenue', 'total_revenue',
         'total_feed_cost', 'total_vet_cost', 'total_labour_cost', 'total_other_expenses',
         'total_expenses', 'gross_margin', 'net_profit', 'cost_per_litre', 'revenue_per_litre',

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Add health event">
+  <rect width="96" height="96" rx="22" fill="#fee2e2"/>
+  <path d="M48 76S20 58 20 36a16 16 0 0 1 28-10 16 16 0 0 1 28 10c0 22-28 40-28 40z" fill="#ffffff" stroke="#b91c1c" stroke-width="6"/>
+  <path d="M48 34v24M36 46h24" stroke="#ef4444" stroke-width="8" stroke-linecap="round"/>
+</svg>

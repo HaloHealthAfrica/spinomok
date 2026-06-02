@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Eye, EyeOff } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
 
 export default function Login({ status }: { status?: string }) {
   const [showPassword, setShowPassword] = useState(false);
 
   const { data, setData, post, processing, errors } = useForm({
-    phone:    '',
+    phone: '',
     password: '',
     remember: false,
   });
@@ -22,16 +21,16 @@ export default function Login({ status }: { status?: string }) {
       className="min-h-dvh flex flex-col items-center justify-center px-6 py-12"
       style={{ background: '#F2F2F7' }}
     >
-      {/* ── App icon + name ── */}
+      {/* App icon + name */}
       <div className="flex flex-col items-center mb-10">
         <div
-          className="h-[80px] w-[80px] rounded-[18px] flex items-center justify-center mb-4 text-5xl"
+          className="h-[80px] w-[80px] rounded-[18px] flex items-center justify-center mb-4 text-[28px] font-bold tracking-normal text-white"
           style={{
             background: 'linear-gradient(145deg, #2E7D32, #1B5E20)',
             boxShadow: '0 8px 24px rgba(27,94,32,0.35)',
           }}
         >
-          🐄
+          SM
         </div>
         <h1 className="text-[28px] font-bold tracking-[-0.5px] text-black">SpinoMok</h1>
         <p className="text-[15px] mt-0.5" style={{ color: 'rgba(60,60,67,0.5)' }}>
@@ -39,7 +38,7 @@ export default function Login({ status }: { status?: string }) {
         </p>
       </div>
 
-      {/* ── Form card ── */}
+      {/* Form card */}
       <div
         className="w-full max-w-sm bg-white rounded-[18px] overflow-hidden"
         style={{ boxShadow: '0 2px 20px rgba(0,0,0,0.08)' }}
@@ -83,7 +82,7 @@ export default function Login({ status }: { status?: string }) {
                 id="password"
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
-                placeholder="••••••••"
+                placeholder="Password"
                 value={data.password}
                 onChange={e => setData('password', e.target.value)}
                 className="w-full h-[44px] rounded-[10px] border border-[rgba(60,60,67,0.18)] px-3.5 pr-11 text-[17px] focus:outline-none focus:ring-[3px] focus:ring-brand-500/25 focus:border-brand-600 transition-all"
@@ -105,7 +104,7 @@ export default function Login({ status }: { status?: string }) {
         </form>
       </div>
 
-      {/* ── Sign In button ── */}
+      {/* Sign In button */}
       <div className="w-full max-w-sm mt-4">
         <button
           onClick={submit as unknown as React.MouseEventHandler}
@@ -116,46 +115,22 @@ export default function Login({ status }: { status?: string }) {
             boxShadow: '0 4px 16px rgba(27,94,32,0.35)',
           }}
         >
-          {processing ? 'Signing in…' : 'Sign In'}
+          {processing ? 'Signing in...' : 'Sign In'}
         </button>
       </div>
 
-      {/* ── Forgot + WhatsApp ── */}
+      {/* Login options */}
       <div className="flex flex-col items-center gap-3 mt-6">
-        <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={data.remember}
-              onChange={e => setData('remember', e.target.checked)}
-              className="h-4 w-4 rounded-[4px] border-[rgba(60,60,67,0.3)] text-brand-900 focus:ring-brand-500"
-            />
-            <span className="text-[15px]" style={{ color: 'rgba(60,60,67,0.7)' }}>Remember me</span>
-          </label>
-          <a href="/forgot-password" className="text-[15px] font-medium text-brand-700">
-            Forgot password?
-          </a>
-        </div>
-
-        <div className="flex items-center gap-3 w-full max-w-sm">
-          <div className="flex-1 h-px bg-[rgba(60,60,67,0.12)]" />
-          <span className="text-[13px]" style={{ color: 'rgba(60,60,67,0.4)' }}>or</span>
-          <div className="flex-1 h-px bg-[rgba(60,60,67,0.12)]" />
-        </div>
-
-        <a
-          href="/auth/whatsapp"
-          className="w-full max-w-sm flex items-center justify-center gap-2.5 h-[44px] rounded-[12px] border border-[rgba(60,60,67,0.18)] bg-white text-[15px] font-medium text-black"
-        >
-          <span className="text-xl">💬</span>
-          Continue with WhatsApp
-        </a>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={data.remember}
+            onChange={e => setData('remember', e.target.checked)}
+            className="h-4 w-4 rounded-[4px] border-[rgba(60,60,67,0.3)] text-brand-900 focus:ring-brand-500"
+          />
+          <span className="text-[15px]" style={{ color: 'rgba(60,60,67,0.7)' }}>Remember me</span>
+        </label>
       </div>
-
-      <p className="mt-8 text-[15px]" style={{ color: 'rgba(60,60,67,0.5)' }}>
-        Don't have an account?{' '}
-        <a href="/register" className="font-medium text-brand-700">Sign up</a>
-      </p>
     </div>
   );
 }

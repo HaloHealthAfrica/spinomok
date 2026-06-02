@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Scopes\FarmScope;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class FeedInventory extends Model
 {
+    use HasUuids;
     protected $table = 'feed_inventory';
     protected $keyType = 'string';
     public $incrementing = false;

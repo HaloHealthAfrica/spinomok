@@ -7,23 +7,18 @@ import { Button } from '@/components/ui/Button';
 import { clsx } from 'clsx';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
-import { runSync, getPendingCount, subscribePushNotifications } from '@/lib/sync/SyncService';
+import { runSync } from '@/lib/sync/SyncService';
 import { db } from '@/lib/db/database';
 
 export default function SyncSettings() {
   const { isOnline, connectionType, isSyncing, pendingCount, lastSyncedAt } = useNetworkStatus();
   const { canInstall, isInstalled, isIOS, install } = usePWAInstall();
   const [queueStats, setQueueStats] = useState({ pending: 0, failed: 0, total: 0 });
-  const [pushStatus, setPushStatus] = useState<'unknown' | 'granted' | 'denied' | 'default'>('unknown');
-  const [subscribing, setSub] = useState(false);
   const [storageInfo, setStorageInfo] = useState<{ used: number; quota: number } | null>(null);
   const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     refreshStats();
-    if ('Notification' in window) {
-      setPushStatus(Notification.permission as 'granted' | 'denied' | 'default');
-    }
     if ('storage' in navigator) {
       navigator.storage.estimate().then(e => {
         if (e.usage && e.quota) setStorageInfo({ used: e.usage, quota: e.quota });
@@ -54,14 +49,6 @@ export default function SyncSettings() {
     if (!confirm('Clear all local sync data? This cannot be undone.')) return;
     await db.syncQueue.clear();
     await refreshStats();
-  };
-
-  const handleSubscribePush = async () => {
-    setSub(true);
-    const sub = await subscribePushNotifications();
-    if (sub) setPushStatus('granted');
-    else if (Notification.permission === 'denied') setPushStatus('denied');
-    setSub(false);
   };
 
   const formatBytes = (bytes: number) => {
@@ -140,30 +127,16 @@ export default function SyncSettings() {
         <Card padding="md">
           <p className="text-sm font-bold text-gray-900 mb-3">Push Notifications</p>
           <div className="flex items-start gap-3">
-            {pushStatus === 'granted'
-              ? <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-              : <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-            }
+            <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-900">
-                {pushStatus === 'granted' ? 'Notifications enabled' :
-                 pushStatus === 'denied'  ? 'Notifications blocked' :
-                 'Notifications not set up'}
+                Push alerts are not configured
               </p>
               <p className="text-xs text-gray-500 mt-0.5">
-                {pushStatus === 'granted'
-                  ? 'You will receive alerts for heat detection, vaccinations, and calvings.'
-                  : pushStatus === 'denied'
-                  ? 'Enable notifications in your browser settings to receive farm alerts.'
-                  : 'Enable to receive alerts for heat, vaccinations, low feed, and calvings.'}
+                Farm alerts will appear inside the app for now. Browser push alerts will be available after server push support is configured.
               </p>
             </div>
           </div>
-          {pushStatus !== 'granted' && pushStatus !== 'denied' && (
-            <Button fullWidth variant="secondary" className="mt-3" loading={subscribing} onClick={handleSubscribePush}>
-              Enable Farm Alerts
-            </Button>
-          )}
         </Card>
 
         {/* PWA Install */}

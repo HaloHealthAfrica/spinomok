@@ -4,7 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreAnimalRequest;
 use App\Http\Requests\UpdateAnimalRequest;
+use App\Models\AIService;
 use App\Models\Animal;
+use App\Models\CalvingRecord;
+use App\Models\HealthEvent;
+use App\Models\HeatEvent;
+use App\Models\MilkProduction;
+use App\Models\PregnancyCheck;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -86,9 +93,59 @@ class AnimalController extends Controller
         $this->authorizeAnimal($animal);
 
         $animal->load(['dam:id,tag_number,name', 'sire:id,tag_number,name']);
+        $animal->append(['days_in_milk']);
+
+        $farmId = app('current.farm.id');
+
+        $healthEvents = HealthEvent::where('farm_id', $farmId)
+            ->where('animal_id', $animal->id)
+            ->with('diseaseType:id,name')
+            ->latest('observed_on')
+            ->limit(10)
+            ->get();
+
+        $milkRecords = MilkProduction::where('farm_id', $farmId)
+            ->where('animal_id', $animal->id)
+            ->selectRaw('milked_on, sum(quantity_litres) as total_litres')
+            ->groupBy('milked_on')
+            ->orderByDesc('milked_on')
+            ->limit(14)
+            ->get();
+
+        $breedingEvents = collect()
+            ->merge(HeatEvent::where('farm_id', $farmId)->where('animal_id', $animal->id)->latest('observed_on')->limit(5)->get()->map(fn ($event) => [
+                'id' => $event->id,
+                'type' => 'Heat',
+                'date' => optional($event->observed_on)->toDateString(),
+                'detail' => ucfirst(str_replace('_', ' ', $event->confidence ?? 'recorded')),
+            ]))
+            ->merge(AIService::where('farm_id', $farmId)->where('animal_id', $animal->id)->latest('service_date')->limit(5)->get()->map(fn ($event) => [
+                'id' => $event->id,
+                'type' => 'AI Service',
+                'date' => optional($event->service_date)->toDateString(),
+                'detail' => ucfirst(str_replace('_', ' ', $event->result ?? 'pending')),
+            ]))
+            ->merge(PregnancyCheck::where('farm_id', $farmId)->where('animal_id', $animal->id)->latest('checked_on')->limit(5)->get()->map(fn ($event) => [
+                'id' => $event->id,
+                'type' => 'Pregnancy Check',
+                'date' => optional($event->checked_on)->toDateString(),
+                'detail' => ucfirst(str_replace('_', ' ', $event->result ?? 'recorded')),
+            ]))
+            ->merge(CalvingRecord::where('farm_id', $farmId)->where('dam_id', $animal->id)->latest('calved_on')->limit(5)->get()->map(fn ($event) => [
+                'id' => $event->id,
+                'type' => 'Calving',
+                'date' => optional($event->calved_on)->toDateString(),
+                'detail' => ucfirst(str_replace('_', ' ', $event->calf_outcome ?? 'recorded')),
+            ]))
+            ->sortByDesc('date')
+            ->values()
+            ->take(12);
 
         return Inertia::render('animals/Show', [
             'animal' => $animal,
+            'health_events' => $healthEvents,
+            'breeding_events' => $breedingEvents,
+            'milk_records' => $milkRecords,
         ]);
     }
 
@@ -120,6 +177,45 @@ class AnimalController extends Controller
         return redirect()
             ->route('animals.index')
             ->with('success', "Animal {$animal->display_name} removed from herd.");
+    }
+
+    public function syncIndex(Request $request): JsonResponse
+    {
+        $request->validate([
+            'since' => ['nullable', 'date'],
+        ]);
+
+        $farmId = app('current.farm.id');
+        $since = $request->input('since', '2020-01-01T00:00:00Z');
+
+        $animals = Animal::withTrashed()
+            ->where('farm_id', $farmId)
+            ->where('updated_at', '>', $since)
+            ->orderBy('updated_at')
+            ->get()
+            ->map(fn (Animal $animal) => [
+                'id' => $animal->id,
+                'farm_id' => $animal->farm_id,
+                'tag_number' => $animal->tag_number,
+                'name' => $animal->name,
+                'sex' => $animal->sex,
+                'status' => $animal->status,
+                'breed' => $animal->breed,
+                'birth_date' => $animal->birth_date?->toDateString(),
+                'is_pregnant' => (bool) $animal->is_pregnant,
+                'expected_calving_date' => $animal->expected_calving_date?->toDateString(),
+                'last_calving_date' => $animal->last_calving_date?->toDateString(),
+                'parity' => $animal->parity,
+                'weight_kg' => $animal->weight_kg !== null ? (float) $animal->weight_kg : null,
+                'photo_url' => $animal->photo_url,
+                'notes' => $animal->notes,
+                'created_at' => $animal->created_at?->toISOString(),
+                'updated_at' => $animal->updated_at?->toISOString(),
+                'deleted_at' => $animal->deleted_at?->toISOString(),
+            ])
+            ->values();
+
+        return response()->json(['data' => $animals]);
     }
 
     private function authorizeAnimal(Animal $animal): void

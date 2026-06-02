@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Scopes\FarmScope;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class AIService extends Model
 {
-    use SoftDeletes;
+    use HasUuids, SoftDeletes;
 
     protected $table = 'ai_services';
     protected $keyType = 'string';

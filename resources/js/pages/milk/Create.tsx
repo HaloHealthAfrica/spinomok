@@ -7,7 +7,6 @@ import { ArrowLeft, Save, Milk, AlertCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { PageProps, AnimalMilkRecord } from '@/types';
 import { formatDate } from '@/utils/format';
-import { useSyncStore } from '@/stores/syncStore';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { enqueueOperation } from '@/lib/sync/SyncService';
 import { db } from '@/lib/db/database';
@@ -30,7 +29,6 @@ const SESSIONS: { key: SessionKey; label: string; emoji: string }[] = [
 export default function MilkCreate() {
   const { date, animal_records } = usePage<MilkCreateProps>().props;
   const isOnline = useOnlineStatus();
-  const { incrementPending, decrementPending } = useSyncStore();
 
   // Initialize entries from existing records
   const initialEntries = animal_records.reduce<EntryMap>((acc, ar) => {
@@ -83,27 +81,30 @@ export default function MilkCreate() {
       return;
     }
 
-    if (!isOnline) {
-      // Save to IndexedDB and enqueue for background sync
+    const queueEntries = async () => {
       for (const entry of payload) {
         const recordId = crypto.randomUUID();
         await db.milkRecords.put({
-          id:              recordId,
-          farm_id:         '', // filled on sync
-          animal_id:       entry.animal_id,
-          milked_on:       date,
-          session:         entry.session as 'morning' | 'midday' | 'evening',
+          id: recordId,
+          farm_id: '',
+          animal_id: entry.animal_id,
+          milked_on: date,
+          session: entry.session,
           quantity_litres: entry.litres,
-          fat_percentage:  null,
+          fat_percentage: null,
           somatic_cell_count: null,
-          milked_by:       null,
-          notes:           null,
-          created_at:      new Date().toISOString(),
-          syncStatus:      'pending',
+          milked_by: null,
+          notes: null,
+          created_at: new Date().toISOString(),
+          syncStatus: 'pending',
           locallyModifiedAt: new Date().toISOString(),
         });
         await enqueueOperation('milk_records', recordId, 'CREATE', { ...entry, date });
       }
+    };
+
+    if (!isOnline) {
+      await queueEntries();
       setSaved(true);
       setSaving(false);
       return;
@@ -113,8 +114,9 @@ export default function MilkCreate() {
       await axios.post('/milk-records', { date, entries: payload });
       setSaved(true);
     } catch (err: unknown) {
-      setError('Failed to save. Your data has been queued for sync.');
-      incrementPending();
+      await queueEntries();
+      setError('Failed to save online. Your data is saved on this device and queued for sync.');
+      setSaved(true);
     } finally {
       setSaving(false);
     }
@@ -183,7 +185,7 @@ export default function MilkCreate() {
             <Milk className="h-10 w-10 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500 text-sm">No lactating cows found.</p>
             <button
-              onClick={() => router.visit('/animals/new')}
+              onClick={() => router.visit('/animals/create')}
               className="mt-2 text-primary-900 text-sm font-medium underline"
             >
               Add an animal

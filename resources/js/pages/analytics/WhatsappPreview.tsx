@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import { ArrowLeft, Share2, Copy, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Copy, MessageSquare } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/Button';
 import type { PageProps } from '@/types';
@@ -8,27 +8,23 @@ import { formatDate } from '@/utils/format';
 
 interface WhatsappProps extends PageProps {
   message: string;
-  wa_link: string;
-  report_data?: Record<string, unknown>;
   date: string;
   type: 'daily' | 'weekly' | 'monthly';
 }
 
 export default function WhatsappPreview() {
-  const { message, wa_link, date, type } = usePage<WhatsappProps>().props;
+  const { message, date, type } = usePage<WhatsappProps>().props;
   const [editedMessage, setEditedMessage] = useState(message);
   const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
-
   const shareLink = `https://wa.me/?text=${encodeURIComponent(editedMessage)}`;
+  const typeLabel = { daily: 'Daily Report', weekly: 'Weekly Summary', monthly: 'Monthly Summary' }[type];
 
   const copyToClipboard = async () => {
     await navigator.clipboard.writeText(editedMessage);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-
-  const typeLabel = { daily: 'Daily Report', weekly: 'Weekly Summary', monthly: 'Monthly Summary' }[type];
 
   return (
     <AppLayout title="WhatsApp Preview" showBottomNav={false}>
@@ -39,102 +35,82 @@ export default function WhatsappPreview() {
           </button>
           <div>
             <h1 className="text-white text-lg font-bold">WhatsApp Preview</h1>
-            <p className="text-primary-300 text-xs">{typeLabel} · {formatDate(date)}</p>
+            <p className="text-primary-300 text-xs">{typeLabel} / {formatDate(date)}</p>
           </div>
         </div>
       </div>
 
       <div className="px-4 py-4 space-y-4">
-        {/* Report type selector */}
         <div className="flex gap-2">
           {[
-            { type: 'daily',  label: '📋 Daily',  href: '/analytics/whatsapp/daily' },
-            { type: 'weekly', label: '📊 Weekly', href: '/analytics/whatsapp/weekly' },
-          ].map(t => (
-            <button key={t.type} onClick={() => router.visit(t.href)}
+            { type: 'daily', label: 'Daily', href: '/analytics/whatsapp/daily' },
+            { type: 'weekly', label: 'Weekly', href: '/analytics/whatsapp/weekly' },
+          ].map(item => (
+            <button key={item.type} onClick={() => router.visit(item.href)}
               className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-all ${
-                type === t.type ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-700 border-gray-200'
+                type === item.type ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-700 border-gray-200'
               }`}>
-              {t.label}
+              {item.label}
             </button>
           ))}
         </div>
 
-        {/* WhatsApp chat mockup */}
         <div className="bg-[#ECE5DD] rounded-2xl p-4 min-h-[200px]">
           <div className="flex justify-end">
             <div className="bg-[#DCF8C6] rounded-2xl rounded-br-sm px-4 py-3 max-w-[90%] shadow-sm">
               {editing ? (
                 <textarea
                   value={editedMessage}
-                  onChange={e => setEditedMessage(e.target.value)}
+                  onChange={event => setEditedMessage(event.target.value)}
                   rows={editedMessage.split('\n').length + 2}
                   className="w-full bg-transparent text-sm text-gray-900 focus:outline-none resize-none font-[system-ui] leading-relaxed"
                 />
               ) : (
-                <pre className="text-sm text-gray-900 whitespace-pre-wrap font-[system-ui] leading-relaxed">
-                  {editedMessage}
-                </pre>
+                <pre className="text-sm text-gray-900 whitespace-pre-wrap font-[system-ui] leading-relaxed">{editedMessage}</pre>
               )}
               <p className="text-right text-[10px] text-gray-400 mt-1">
-                {new Date().toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })} ✓✓
+                {new Date().toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Character count */}
         <div className="flex items-center justify-between text-xs text-gray-500">
           <span>{editedMessage.length} characters</span>
           <span>{editedMessage.split('\n').length} lines</span>
         </div>
 
-        {/* Actions */}
         <div className="space-y-3">
-          {/* Share to WhatsApp */}
           <a href={shareLink} target="_blank" rel="noopener noreferrer" className="block">
             <Button fullWidth size="lg" className="bg-[#25D366] hover:bg-[#20BD5A]" leftIcon={<MessageSquare className="h-5 w-5" />}>
               Share via WhatsApp
             </Button>
           </a>
-
-          {/* Edit and copy */}
           <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              onClick={() => setEditing(!editing)}
-              className="flex-1"
-            >
-              {editing ? '✓ Done Editing' : '✏️ Edit Message'}
+            <Button variant="secondary" onClick={() => setEditing(!editing)} className="flex-1">
+              {editing ? 'Done Editing' : 'Edit Message'}
             </Button>
-            <Button
-              variant="secondary"
-              onClick={copyToClipboard}
-              className="flex-1"
-              leftIcon={<Copy className="h-4 w-4" />}
-            >
+            <Button variant="secondary" onClick={copyToClipboard} className="flex-1" leftIcon={<Copy className="h-4 w-4" />}>
               {copied ? 'Copied!' : 'Copy Text'}
             </Button>
           </div>
         </div>
 
-        {/* Recipient groups */}
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-          <p className="text-sm font-semibold text-gray-800 mb-3">📤 Send To</p>
+          <p className="text-sm font-semibold text-gray-800 mb-3">Send To</p>
           <div className="space-y-2">
             {[
-              { label: 'Farm Owner', desc: 'Daily reports + all alerts' },
-              { label: 'Farm Manager', desc: 'Confirmed when you submit daily report' },
-              { label: 'Shareholders', desc: 'Weekly + monthly summaries only' },
-              { label: 'Veterinarian', desc: 'Health events + vaccination alerts' },
-            ].map(r => (
-              <div key={r.label} className="flex items-center justify-between">
+              { label: 'Farm Owner', desc: 'Daily reports and all alerts' },
+              { label: 'Farm Manager', desc: 'Submitted daily reports' },
+              { label: 'Shareholders', desc: 'Weekly and monthly summaries' },
+              { label: 'Veterinarian', desc: 'Health and vaccination alerts' },
+            ].map(recipient => (
+              <div key={recipient.label} className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-medium text-gray-800">{r.label}</p>
-                  <p className="text-xs text-gray-400">{r.desc}</p>
+                  <p className="text-sm font-medium text-gray-800">{recipient.label}</p>
+                  <p className="text-xs text-gray-400">{recipient.desc}</p>
                 </div>
-                <a href={shareLink} target="_blank" rel="noopener noreferrer"
-                  className="h-8 px-3 bg-[#25D366] text-white rounded-full text-xs font-medium flex items-center">
+                <a href={shareLink} target="_blank" rel="noopener noreferrer" className="h-8 px-3 bg-[#25D366] text-white rounded-full text-xs font-medium flex items-center">
                   Send
                 </a>
               </div>
@@ -142,13 +118,9 @@ export default function WhatsappPreview() {
           </div>
         </div>
 
-        {/* n8n automation note */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
-          <p className="text-sm font-bold text-blue-900 mb-1">🤖 Automated Delivery (Phase 10)</p>
-          <p className="text-xs text-blue-700">
-            In production, daily reports are automatically dispatched at 8:00 PM EAT via n8n + WhatsApp Business API.
-            This preview lets you manually send or customize reports during development.
-          </p>
+        <div className="bg-green-50 border border-green-200 rounded-xl p-3">
+          <p className="text-sm font-bold text-green-900 mb-1">Manual WhatsApp Sharing</p>
+          <p className="text-xs text-green-700">Use the send buttons above to share the prepared report through WhatsApp. The message can be edited before sending.</p>
         </div>
       </div>
     </AppLayout>

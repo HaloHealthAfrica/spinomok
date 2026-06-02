@@ -44,7 +44,7 @@ export default function AnimalsIndex() {
         <div className="flex items-center justify-between">
           <h1 className="text-[34px] font-bold tracking-[-0.5px] text-black">Animals</h1>
           <button
-            onClick={() => router.visit('/animals/new')}
+            onClick={() => router.visit('/animals/create')}
             aria-label="Add animal"
             className="h-9 w-9 rounded-full bg-brand-900 flex items-center justify-center shadow-[0_2px_8px_rgba(27,94,32,0.35)]"
           >
@@ -215,7 +215,7 @@ function EmptyState({ hasFilter }: { hasFilter: boolean }) {
       </p>
       {!hasFilter && (
         <button
-          onClick={() => router.visit('/animals/new')}
+          onClick={() => router.visit('/animals/create')}
           className="mt-5 h-[44px] px-6 bg-brand-900 text-white rounded-[12px] text-[17px] font-medium"
         >
           Add Animal

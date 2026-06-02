@@ -3,17 +3,19 @@
 namespace App\Models;
 
 use App\Scopes\FarmScope;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Builder;
 
 class DailyReport extends Model
 {
+    use HasUuids;
     protected $keyType = 'string';
     public $incrementing = false;
 
     protected $fillable = [
-        'farm_id', 'report_date', 'status',
+        'id', 'farm_id', 'report_date', 'status',
         'total_milk_litres', 'morning_litres', 'midday_litres', 'evening_litres', 'cows_milked',
         'milk_sold_litres', 'milk_revenue',
         'health_events_count', 'breeding_events_count', 'total_feed_cost',

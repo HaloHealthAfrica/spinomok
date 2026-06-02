@@ -307,10 +307,10 @@ function CostingTab({ kpis, trend }: { kpis: FeedKPIs; trend: { month: string; c
 
       {kpis.feed_cost_per_litre !== null && kpis.feed_cost_per_litre > 25 && (
         <Card padding="md" className="bg-blue-50 border-blue-200">
-          <p className="text-sm font-bold text-blue-900 mb-1">💡 Cost Optimization Tip</p>
+          <p className="text-sm font-bold text-blue-900 mb-1">Cost Optimization Tip</p>
           <p className="text-xs text-blue-700">
             Feed cost of KES {kpis.feed_cost_per_litre}/litre is {kpis.feed_cost_per_litre > 35 ? 'above' : 'close to'} the KES 35 target.
-            Consider on-farm dairy meal formulation (Phase 7) which can save 15–25% vs commercial meal.
+            Consider on-farm dairy meal formulation, which can save 15-25% vs commercial meal.
           </p>
         </Card>
       )}

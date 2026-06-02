@@ -1,7 +1,7 @@
 /**
- * SpinoMok FarmOps — Offline Sync Service
+ * SpinoMok FarmOps - Offline Sync Service
  *
- * Orchestrates all offline→online data movement:
+ * Orchestrates all offline-to-online data movement:
  *   PUSH: Drains the IndexedDB sync queue to the server API
  *   PULL: Delta-fetches server changes since last sync per entity
  *
@@ -17,11 +17,7 @@ import { db } from '@/lib/db/database';
 import { useSyncStore } from '@/stores/syncStore';
 
 const ENTITY_ENDPOINTS: Record<string, string> = {
-  animals:             '/api/v1/animals',
   milk_records:        '/api/v1/milk-records',
-  health_events:       '/api/v1/health-records',
-  breeding_records:    '/api/v1/breeding-records',
-  feed_records:        '/api/v1/feed-records',
 };
 
 const PULL_ENDPOINTS: Record<string, string> = {
@@ -56,7 +52,7 @@ export async function registerServiceWorker(): Promise<void> {
           periodicSync: { register: (tag: string, opts: { minInterval: number }) => Promise<void> }
         }).periodicSync.register('spinomok-periodic-sync', { minInterval: 60 * 60 * 1000 });
       } catch {
-        // Not supported or permission denied — fine
+        // Not supported or permission denied.
       }
     }
   } catch (err) {
@@ -65,47 +61,7 @@ export async function registerServiceWorker(): Promise<void> {
 }
 
 /**
- * Subscribe to Web Push notifications.
- * Returns the subscription or null if permission denied.
- */
-export async function subscribePushNotifications(): Promise<PushSubscription | null> {
-  if (!('Notification' in window) || !('serviceWorker' in navigator)) return null;
-
-  const permission = await Notification.requestPermission();
-  if (permission !== 'granted') return null;
-
-  try {
-    const reg  = await navigator.serviceWorker.ready;
-    const sub  = await reg.pushManager.subscribe({
-      userVisibleOnly:       true,
-      applicationServerKey: urlBase64ToUint8Array(
-        // VAPID public key — should come from server config in production
-        // Using a placeholder; replace with actual VAPID key from .env
-        'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjZJnH5K6Gv9GW9OY6-1Z3Y-7A='
-      ),
-    });
-
-    // Send subscription to server
-    await axios.post('/api/push/subscribe', {
-      endpoint:   sub.endpoint,
-      keys:       {
-        p256dh: arrayBufferToBase64(sub.getKey('p256dh')!),
-        auth:   arrayBufferToBase64(sub.getKey('auth')!),
-      },
-    }).catch(() => null); // non-critical
-
-    // Store locally
-    await db.syncMeta.put({ id: 'push_subscription', lastSyncedAt: new Date().toISOString() });
-
-    return sub;
-  } catch (err) {
-    console.warn('[Push] Subscription failed:', err);
-    return null;
-  }
-}
-
-/**
- * Main sync runner — called whenever connectivity is detected.
+ * Main sync runner - called whenever connectivity is detected.
  * Uses a lock to prevent concurrent runs.
  */
 export async function runSync(): Promise<void> {
@@ -169,6 +125,12 @@ async function pushQueue(): Promise<void> {
       }
 
       if (response?.status && response.status < 300) {
+        if (op.entity === 'milk_records') {
+          await db.milkRecords.update(op.entityId, {
+            syncStatus: 'synced',
+            locallyModifiedAt: null,
+          });
+        }
         await db.syncQueue.delete(op.id);
         useSyncStore.getState().decrementPending();
       }
@@ -176,16 +138,16 @@ async function pushQueue(): Promise<void> {
       const status = (err as { response?: { status?: number } })?.response?.status;
 
       if (status === 409) {
-        // Conflict — store for user resolution
+        // Conflict - store for user resolution
         await db.syncQueue.update(op.id, { status: 'failed', error: 'Conflict with server version' });
       } else if (status && status >= 400 && status < 500) {
-        // Client error — mark failed permanently
+        // Client error - mark failed permanently
         await db.syncQueue.update(op.id, {
           status: 'failed',
           error: `Server rejected: ${status}`,
         });
       } else {
-        // Network/server error — retry later (update attempt count)
+        // Network/server error - retry later (update attempt count)
         await db.syncQueue.update(op.id, {
           attemptCount: (op.attemptCount || 0) + 1,
           lastAttemptAt: new Date().toISOString(),
@@ -211,7 +173,7 @@ async function pullDeltaUpdates(): Promise<void> {
         await db.syncMeta.put({ id: entity, lastSyncedAt: new Date().toISOString() });
       }
     } catch {
-      // Non-critical — skip this entity, try next
+      // Non-critical - skip this entity, try next
     }
   }
 }
@@ -229,6 +191,11 @@ async function upsertToIndexedDB(entity: string, records: unknown[]): Promise<vo
     case 'alerts':
       await db.alerts.bulkPut(
         records.map((r: unknown) => ({ ...(r as object), syncStatus: 'synced' as const }))
+      );
+      break;
+    case 'milk_records':
+      await db.milkRecords.bulkPut(
+        records.map((r: unknown) => ({ ...(r as object), syncStatus: 'synced' as const, locallyModifiedAt: null }))
       );
       break;
     default:
@@ -273,17 +240,4 @@ export async function enqueueOperation(
  */
 export async function getPendingCount(): Promise<number> {
   return db.syncQueue.where('status').equals('pending').count();
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const raw     = atob(base64);
-  return new Uint8Array([...raw].map(c => c.charCodeAt(0)));
-}
-
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  return btoa(String.fromCharCode(...new Uint8Array(buffer)));
 }

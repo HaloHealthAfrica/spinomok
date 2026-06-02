@@ -16,21 +16,20 @@ export default function MoreIndex() {
     {
       title: 'Modules',
       items: [
-        { label: 'Analytics',         icon: BarChart2,    href: '/analytics',     badge: null },
-        { label: 'Finance / P&L',     icon: DollarSign,   href: '/finance',       badge: null },
-        { label: 'Feed Formulation',  icon: FlaskConical, href: '/formulation',   badge: null },
-        { label: 'Feed Inventory',    icon: Wheat,        href: '/feed',          badge: null },
-        { label: 'Calf Growth',       icon: Activity,     href: '/calves',        badge: null },
-        { label: 'WhatsApp Reports',  icon: MessageSquare,href: '/analytics/whatsapp/daily', badge: null },
+        { label: 'Analytics', icon: BarChart2, href: '/analytics', badge: null },
+        { label: 'Finance / P&L', icon: DollarSign, href: '/finance', badge: null },
+        { label: 'Feed Formulation', icon: FlaskConical, href: '/formulation', badge: null },
+        { label: 'Feed Inventory', icon: Wheat, href: '/feed', badge: null },
+        { label: 'Calf Growth', icon: Activity, href: '/calves', badge: null },
+        { label: 'WhatsApp Reports', icon: MessageSquare, href: '/analytics/whatsapp/daily', badge: null },
       ],
     },
     {
       title: 'Settings',
       items: [
-        { label: 'My Profile',        icon: User,         href: '/profile',       badge: null },
-        { label: 'Farm Settings',     icon: Settings,     href: '/settings/farm', badge: null },
-        { label: 'Sync & Offline',    icon: RefreshCw,    href: '/settings/sync',
-          badge: pendingCount > 0 ? String(pendingCount) : null },
+        { label: 'My Profile', icon: User, href: '/profile', badge: null },
+        { label: 'Farm Settings', icon: Settings, href: '/settings/farm', badge: null },
+        { label: 'Sync & Offline', icon: RefreshCw, href: '/settings/sync', badge: pendingCount > 0 ? String(pendingCount) : null },
       ],
     },
   ];
@@ -38,7 +37,6 @@ export default function MoreIndex() {
   return (
     <AppLayout title="More">
       <div className="px-4 py-4 space-y-4">
-        {/* Profile card */}
         <div className="bg-primary-900 rounded-xl p-4 flex items-center gap-3">
           <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-lg">
             {user?.name?.slice(0, 1) ?? 'U'}
@@ -50,7 +48,6 @@ export default function MoreIndex() {
           <div className={`h-2.5 w-2.5 rounded-full ${isOnline ? 'bg-green-400' : 'bg-red-400'}`} title={isOnline ? 'Online' : 'Offline'} />
         </div>
 
-        {/* Menu sections */}
         {sections.map(section => (
           <div key={section.title}>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 px-1">{section.title}</p>
@@ -78,7 +75,6 @@ export default function MoreIndex() {
           </div>
         ))}
 
-        {/* Logout */}
         <div>
           <button
             onClick={() => router.post('/logout')}
@@ -90,7 +86,7 @@ export default function MoreIndex() {
         </div>
 
         <p className="text-center text-xs text-gray-400">
-          SpinoMok FarmOps v1.0 · Phases 1–10 Complete
+          SpinoMok FarmOps v1.0 / Operational build
         </p>
       </div>
     </AppLayout>

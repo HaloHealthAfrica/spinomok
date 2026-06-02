@@ -11,9 +11,10 @@
 
     {{-- PWA Manifest --}}
     <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
 
     {{-- Apple touch icons --}}
-    <link rel="apple-touch-icon" href="/icons/icon-180x180.png">
+    <link rel="apple-touch-icon" href="/icons/icon.svg">
 
     {{-- Preconnect for Google Fonts --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">

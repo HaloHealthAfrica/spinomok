@@ -1,6 +1,7 @@
 import React from 'react';
-import { router } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { Milk, ClipboardList, Heart, PawPrint, Syringe, Baby } from 'lucide-react';
+import { clsx } from 'clsx';
 
 interface QuickAddSheetProps {
   open: boolean;
@@ -13,16 +14,11 @@ const actions = [
   { label: 'Health Event',       icon: Heart,          href: '/health/create',        color: '#FF3B30' },
   { label: 'Record AI Service',  icon: Syringe,        href: '/breeding/ai/new',      color: '#AF52DE' },
   { label: 'Record Calving',     icon: Baby,           href: '/breeding/calving/new', color: '#34C759' },
-  { label: 'Add Animal',         icon: PawPrint,       href: '/animals/new',          color: '#FF9500' },
+  { label: 'Add Animal',         icon: PawPrint,       href: '/animals/create',       color: '#FF9500' },
 ];
 
 export function QuickAddSheet({ open, onClose }: QuickAddSheetProps) {
   if (!open) return null;
-
-  const navigate = (href: string) => {
-    onClose();
-    router.visit(href);
-  };
 
   return (
     <>
@@ -51,9 +47,10 @@ export function QuickAddSheet({ open, onClose }: QuickAddSheetProps) {
           {actions.map((action, i) => {
             const Icon = action.icon;
             return (
-              <button
+              <Link
                 key={action.href}
-                onClick={() => navigate(action.href)}
+                href={action.href}
+                onClick={onClose}
                 className={clsx(
                   'w-full flex items-center gap-4 px-4 py-3.5 text-left min-h-[56px]',
                   'active:bg-[rgba(0,0,0,0.04)] transition-colors duration-75',
@@ -67,7 +64,7 @@ export function QuickAddSheet({ open, onClose }: QuickAddSheetProps) {
                   <Icon className="h-[18px] w-[18px]" style={{ color: action.color }} strokeWidth={1.8} />
                 </div>
                 <span className="text-[17px] text-black">{action.label}</span>
-              </button>
+              </Link>
             );
           })}
         </div>

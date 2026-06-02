@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use App\Scopes\FarmScope;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Builder;
 
 class DrugInventory extends Model
 {
+    use HasUuids;
     protected $table = 'drug_inventory';
     protected $keyType = 'string';
     public $incrementing = false;

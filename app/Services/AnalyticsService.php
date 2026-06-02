@@ -119,14 +119,21 @@ class AnalyticsService
         $servicesPerConception = $confirmed > 0 ? round($total / $confirmed, 1) : null;
 
         // Average days open for cows confirmed pregnant (calving to conception)
-        $avgDaysOpen = AIService::withoutGlobalScopes()
-            ->where('farm_id', $farmId)
+        $daysOpenRows = AIService::withoutGlobalScopes()
+            ->where('ai_services.farm_id', $farmId)
             ->where('result', 'confirmed_pregnant')
             ->whereNotNull('conception_confirmed_on')
             ->join('animals', 'ai_services.animal_id', '=', 'animals.id')
             ->whereNotNull('animals.last_calving_date')
-            ->selectRaw('AVG(julianday(ai_services.conception_confirmed_on) - julianday(animals.last_calving_date)) as avg_days')
-            ->value('avg_days');
+            ->select('ai_services.conception_confirmed_on', 'animals.last_calving_date')
+            ->get();
+
+        $avgDaysOpen = $daysOpenRows->isNotEmpty()
+            ? $daysOpenRows
+                ->map(fn ($row) => Carbon::parse($row->last_calving_date)
+                    ->diffInDays(Carbon::parse($row->conception_confirmed_on), false))
+                ->avg()
+            : null;
 
         // Monthly conception rate trend (last 6 months)
         $monthlyTrend = [];

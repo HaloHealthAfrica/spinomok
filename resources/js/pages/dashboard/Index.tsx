@@ -1,5 +1,5 @@
 import React from 'react';
-import { usePage, router } from '@inertiajs/react';
+import { Link, usePage, router } from '@inertiajs/react';
 import {
   ChevronRight, Bell, Milk, TrendingUp, TrendingDown,
   PawPrint, AlertTriangle, ClipboardList, Heart, Calendar, Wheat, DollarSign,
@@ -168,17 +168,17 @@ export default function Dashboard() {
             {QUICK_ACTIONS.map(action => {
               const Icon = action.icon;
               return (
-                <button
+                <Link
                   key={action.href}
-                  onClick={() => router.visit(action.href)}
                   className="flex flex-col items-center gap-2 rounded-[12px] py-4 active:opacity-70 transition-opacity"
                   style={{ background: action.bg }}
+                  href={action.href}
                 >
                   <Icon className="h-6 w-6" style={{ color: action.color }} strokeWidth={1.8} />
                   <span className="text-[12px] font-medium text-center leading-tight" style={{ color: action.color }}>
                     {action.label}
                   </span>
-                </button>
+                </Link>
               );
             })}
           </div>

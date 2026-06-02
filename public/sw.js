@@ -1,13 +1,13 @@
 /**
- * SpinoMok FarmOps — Service Worker
+ * SpinoMok FarmOps - Service Worker
  * Offline-first PWA for Kenyan dairy farms
  *
  * Strategy summary:
- *   - App shell (HTML/CSS/JS bundles) → Cache First (pre-cached at install)
- *   - API reads → Network First with 4s timeout → IndexedDB fallback
- *   - Images → Cache First, 30-day expiry, max 100 entries
- *   - Fonts → Cache First, 1-year expiry
- *   - Offline mutations → Background Sync queue
+ *   - App shell (HTML/CSS/JS bundles) - Cache First (pre-cached at install)
+ *   - API reads - Network First with 4s timeout, then IndexedDB fallback
+ *   - Images - Cache First, 30-day expiry, max 100 entries
+ *   - Fonts - Cache First, 1-year expiry
+ *   - Offline mutations - Background Sync queue
  */
 
 const CACHE_VERSION = 'v1';
@@ -18,7 +18,7 @@ const FONT_CACHE    = `spinomok-fonts-${CACHE_VERSION}`;
 
 const SYNC_TAG      = 'spinomok-sync';
 
-// ─── Shell resources to pre-cache ─────────────────────────────────────────────
+// Shell resources to pre-cache
 // Populated by Vite build; for now we cache the root and known static paths
 const SHELL_URLS = [
   '/',
@@ -26,7 +26,7 @@ const SHELL_URLS = [
   '/manifest.json',
 ];
 
-// ─── Install ──────────────────────────────────────────────────────────────────
+// Install
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(SHELL_CACHE)
@@ -36,7 +36,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// ─── Activate ─────────────────────────────────────────────────────────────────
+// Activate
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -49,7 +49,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// ─── Fetch Interception ───────────────────────────────────────────────────────
+// Fetch interception
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -76,13 +76,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // API responses — Network First with 4s timeout
+  // API responses - Network First with 4s timeout
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(networkFirstWithTimeout(request, API_CACHE, 4000));
     return;
   }
 
-  // Inertia navigation — Network First, fall back to app shell
+  // Inertia navigation - Network First, fall back to app shell
   if (request.headers.get('X-Inertia')) {
     event.respondWith(
       fetch(request)
@@ -91,7 +91,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // HTML navigation — Network First, offline fallback
+  // HTML navigation - Network First, offline fallback
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -105,7 +105,7 @@ self.addEventListener('fetch', (event) => {
   }
 });
 
-// ─── Background Sync ──────────────────────────────────────────────────────────
+// Background sync
 self.addEventListener('sync', (event) => {
   if (event.tag === SYNC_TAG) {
     event.waitUntil(processSyncQueue());
@@ -119,7 +119,7 @@ async function processSyncQueue() {
   clients.forEach(client => client.postMessage({ type: 'SYNC_AVAILABLE' }));
 }
 
-// ─── Push Notifications ───────────────────────────────────────────────────────
+// Push notification display. Device subscription is disabled until backend push support exists.
 self.addEventListener('push', (event) => {
   if (!event.data) return;
 
@@ -135,8 +135,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(title || 'SpinoMok FarmOps', {
       body:             body || '',
-      icon:             icon || '/icons/icon-192x192.png',
-      badge:            badge || '/icons/icon-192x192.png',
+      icon:             icon || '/icons/icon.svg',
+      badge:            badge || '/icons/icon.svg',
       tag:              tag || 'spinomok-general',
       requireInteraction: requireInteraction || false,
       vibrate:          [200, 100, 200],
@@ -165,7 +165,7 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-// ─── Message Handler (from app) ───────────────────────────────────────────────
+// Message handler (from app)
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') {
     self.skipWaiting();
@@ -175,7 +175,7 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// ─── Cache Strategy Helpers ───────────────────────────────────────────────────
+// Cache strategy helpers
 
 async function cacheFirst(request, cacheName, maxAgeSeconds, maxEntries = 500) {
   const cache    = await caches.open(cacheName);

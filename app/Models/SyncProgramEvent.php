@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use App\Scopes\FarmScope;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SyncProgramEvent extends Model
 {
+    use HasUuids;
     protected $table = 'sync_program_events';
     protected $keyType = 'string';
     public $incrementing = false;
