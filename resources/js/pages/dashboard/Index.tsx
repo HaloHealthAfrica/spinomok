@@ -152,7 +152,7 @@ export default function Dashboard() {
             className="w-full flex items-center gap-3 bg-white rounded-[12px] px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.08)] active:bg-gray-50 transition-colors"
           >
             <div className="h-9 w-9 rounded-full bg-[rgba(255,149,0,0.12)] flex items-center justify-center shrink-0">
-              <ClipboardList className="h-4.5 w-4.5 text-[#D97706]" />
+              <ClipboardList className="h-5 w-5 text-[#D97706]" />
             </div>
             <div className="flex-1 text-left">
               <p className="text-[15px] font-semibold text-black">
