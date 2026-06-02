@@ -7,6 +7,16 @@ import type { PageProps } from '@/types';
 export default function FarmSettings() {
   const { auth } = usePage<PageProps>().props;
   const farm = auth.farm;
+
+  // Guard: farm context not yet loaded
+  if (!farm) {
+    return (
+      <AppLayout title="Farm Settings" showBottomNav={false}>
+        <div className="p-8 text-center text-gray-500">Loading farm settings…</div>
+      </AppLayout>
+    );
+  }
+
   const settings = farm.settings ?? {};
   const { data, setData, patch, processing, errors, recentlySuccessful } = useForm({
     name: farm.name ?? '',

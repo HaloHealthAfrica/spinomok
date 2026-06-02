@@ -201,7 +201,7 @@ function StockCard({ item }: { item: FeedInventoryItem }) {
 
           <div className="flex items-center gap-4 mt-2">
             <div>
-              <p className="text-lg font-bold text-gray-900">{item.quantity_kg.toFixed(0)} <span className="text-sm font-normal text-gray-500">kg</span></p>
+              <p className="text-lg font-bold text-gray-900">{(item.quantity_kg ?? 0).toFixed(0)} <span className="text-sm font-normal text-gray-500">kg</span></p>
               {item.reorder_level_kg && (
                 <p className="text-xs text-gray-400">Reorder at {item.reorder_level_kg} kg</p>
               )}
@@ -256,7 +256,7 @@ function CostingTab({ kpis, trend }: { kpis: FeedKPIs; trend: { month: string; c
         </Card>
         <Card padding="md">
           <p className="text-xs text-gray-500 mb-1">Milk Produced MTD</p>
-          <p className="text-lg font-bold text-gray-900">{kpis.month_milk_litres.toFixed(0)} L</p>
+          <p className="text-lg font-bold text-gray-900">{(kpis.month_milk_litres ?? 0).toFixed(0)} L</p>
         </Card>
         <Card padding="md">
           <p className="text-xs text-gray-500 mb-1">Consumption Cost MTD</p>

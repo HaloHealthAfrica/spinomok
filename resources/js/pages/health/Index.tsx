@@ -119,7 +119,7 @@ export default function HealthIndex() {
 function ActiveTab({ openCases, onWithdrawal }: { openCases: HealthEvent[]; onWithdrawal: HealthIndexProps['onWithdrawal'] }) {
   return (
     <>
-      {onWithdrawal.length > 0 && (
+      {(onWithdrawal ?? []).length > 0 && (
         <section>
           <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">⚠️ Milk Withdrawal Active</h2>
           <div className="space-y-2">

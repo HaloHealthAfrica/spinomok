@@ -41,6 +41,22 @@ export default function ReportsIndex() {
         </div>
       </div>
 
+      {/* Quick links row */}
+      <div className="px-4 py-2 flex gap-2 bg-white border-b border-gray-100">
+        <button
+          onClick={() => router.visit('/milk-sales')}
+          className="flex items-center gap-1.5 text-xs font-medium text-primary-900 bg-primary-50 px-3 py-1.5 rounded-full"
+        >
+          🥛 Milk Sales
+        </button>
+        <button
+          onClick={() => router.visit('/analytics')}
+          className="flex items-center gap-1.5 text-xs font-medium text-blue-700 bg-blue-50 px-3 py-1.5 rounded-full"
+        >
+          📊 Analytics
+        </button>
+      </div>
+
       <div className="flex bg-white border-b border-gray-100">
         {TABS.map((tab) => (
           <button

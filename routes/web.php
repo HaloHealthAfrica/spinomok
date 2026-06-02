@@ -91,20 +91,24 @@ Route::middleware(['auth', 'set.farm'])->group(function () {
     Route::get('/breeding/new', fn () => redirect()->route('breeding.ai.create'));
 
     // ─── Health Management ────────────────────────────────────────────────────
+    // IMPORTANT: Specific sub-routes MUST come BEFORE the {healthEvent} wildcard.
+    // Otherwise /health/vaccinations/new is caught as healthEvent="vaccinations/new".
     Route::get('/health', [HealthController::class, 'index'])->name('health.index');
     Route::get('/health/create', [HealthController::class, 'create'])->name('health.create');
     Route::post('/health', [HealthController::class, 'store'])->name('health.store');
-    Route::get('/health/{healthEvent}', [HealthController::class, 'show'])->name('health.show');
-    Route::patch('/health/{healthEvent}/close', [HealthController::class, 'close'])->name('health.close');
 
-    // Vaccinations
+    // Vaccinations — BEFORE wildcard
     Route::get('/health/vaccinations/new', [HealthController::class, 'vaccinationCreate'])->name('health.vaccination.create');
     Route::post('/health/vaccinations', [HealthController::class, 'vaccinationStore'])->name('health.vaccination.store');
     Route::get('/health/vaccinations/schedule', [HealthController::class, 'vaccinationSchedule'])->name('health.vaccination.schedule');
 
-    // Deworming
+    // Deworming — BEFORE wildcard
     Route::get('/health/deworming/new', [HealthController::class, 'dewormingCreate'])->name('health.deworming.create');
     Route::post('/health/deworming', [HealthController::class, 'dewormingStore'])->name('health.deworming.store');
+
+    // Wildcard LAST — must come after all specific /health/* routes
+    Route::get('/health/{healthEvent}', [HealthController::class, 'show'])->name('health.show');
+    Route::patch('/health/{healthEvent}/close', [HealthController::class, 'close'])->name('health.close');
 
     // ─── Calf Growth & Weight Tracking ───────────────────────────────────────
     Route::get('/calves', [CalfController::class, 'index'])->name('calves.index');

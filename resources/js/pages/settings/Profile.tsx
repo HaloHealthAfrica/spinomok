@@ -7,9 +7,9 @@ import type { PageProps } from '@/types';
 export default function ProfileSettings() {
   const { auth } = usePage<PageProps>().props;
   const { data, setData, patch, processing, errors, recentlySuccessful } = useForm({
-    name: auth.user.name ?? '',
-    email: auth.user.email ?? '',
-    phone: auth.user.phone ?? '',
+    name:  auth.user?.name  ?? '',
+    email: auth.user?.email ?? '',
+    phone: auth.user?.phone ?? '',
   });
 
   const submit = (event: React.FormEvent) => {
@@ -34,8 +34,8 @@ export default function ProfileSettings() {
             <User className="h-6 w-6 text-primary-900" />
           </div>
           <div>
-            <p className="font-semibold text-gray-900">{auth.user.name}</p>
-            <p className="text-sm text-gray-500">{auth.role.replace('_', ' ')}</p>
+            <p className="font-semibold text-gray-900">{auth.user?.name}</p>
+            <p className="text-sm text-gray-500">{auth.role?.replace('_', ' ') ?? 'Staff'}</p>
           </div>
         </div>
 

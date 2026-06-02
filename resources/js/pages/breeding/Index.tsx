@@ -136,7 +136,7 @@ function OverviewTab({ pendingHeats, duePDChecks, upcomingCalvings, kpis }: {
   return (
     <>
       {/* Action needed cards */}
-      {pendingHeats.length > 0 && (
+      {(pendingHeats ?? []).length > 0 && (
         <Section title="🔥 Heat Detected — AI Due" action="Record AI" onAction={() => router.visit('/breeding/ai/new')}>
           {pendingHeats.map(h => (
             <ActionCard
@@ -151,7 +151,7 @@ function OverviewTab({ pendingHeats, duePDChecks, upcomingCalvings, kpis }: {
         </Section>
       )}
 
-      {duePDChecks.length > 0 && (
+      {(duePDChecks ?? []).length > 0 && (
         <Section title="🔍 Pregnancy Checks Due" action="Record PD" onAction={() => router.visit('/breeding/pd/new')}>
           {duePDChecks.map(s => (
             <ActionCard
@@ -166,7 +166,7 @@ function OverviewTab({ pendingHeats, duePDChecks, upcomingCalvings, kpis }: {
         </Section>
       )}
 
-      {upcomingCalvings.length > 0 && (
+      {(upcomingCalvings ?? []).length > 0 && (
         <Section title="🐄 Upcoming Calvings" action="Record Calving" onAction={() => router.visit('/breeding/calving/new')}>
           {upcomingCalvings.map(s => (
             <ActionCard
@@ -181,7 +181,7 @@ function OverviewTab({ pendingHeats, duePDChecks, upcomingCalvings, kpis }: {
         </Section>
       )}
 
-      {pendingHeats.length === 0 && duePDChecks.length === 0 && upcomingCalvings.length === 0 && (
+      {(pendingHeats ?? []).length === 0 && (duePDChecks ?? []).length === 0 && (upcomingCalvings ?? []).length === 0 && (
         <Card className="text-center py-10">
           <p className="text-3xl mb-2">✅</p>
           <p className="text-sm font-semibold text-gray-800">All clear</p>

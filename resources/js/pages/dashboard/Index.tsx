@@ -34,9 +34,14 @@ export default function Dashboard() {
     kpis, active_alerts, recent_animals, today_date, auth, today_report, milk_trend,
   } = usePage<DashboardProps>().props;
 
-  const hour    = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  const isPositive = kpis.milk_delta_percent >= 0;
+  const hour      = new Date().getHours();
+  const greeting  = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const milkToday = kpis?.milk_today_litres  ?? 0;
+  const milkDelta = kpis?.milk_delta_percent ?? 0;
+  const isPositive = milkDelta >= 0;
+
+  // Guard: if kpis is missing don't crash
+  if (!kpis) return <AppLayout title="Dashboard"><div className="p-8 text-center text-gray-500">Loading dashboard…</div></AppLayout>;
 
   return (
     <AppLayout title="Dashboard">
@@ -82,7 +87,7 @@ export default function Dashboard() {
               <p className="text-[13px] font-medium text-brand-200">Today's Milk</p>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-[44px] font-bold tracking-[-1px] text-white leading-none">
-                  {kpis.milk_today_litres.toFixed(1)}
+                  {milkToday.toFixed(1)}
                 </span>
                 <span className="text-[22px] font-medium text-brand-300">L</span>
               </div>
@@ -92,7 +97,7 @@ export default function Dashboard() {
                   : <TrendingDown className="h-3.5 w-3.5 text-[#FF3B30]" />
                 }
                 <span className={clsx('text-[13px] font-medium', isPositive ? 'text-[#34C759]' : 'text-[#FF6B6B]')}>
-                  {isPositive ? '+' : ''}{kpis.milk_delta_percent.toFixed(1)}% vs yesterday
+                  {isPositive ? '+' : ''}{milkDelta.toFixed(1)}% vs yesterday
                 </span>
               </div>
             </div>
@@ -185,7 +190,7 @@ export default function Dashboard() {
         </section>
 
         {/* ── Active Alerts ── */}
-        {active_alerts.length > 0 && (
+        {(active_alerts ?? []).length > 0 && (
           <section aria-labelledby="alerts-heading">
             <SectionHeader
               id="alerts-heading"
@@ -217,7 +222,7 @@ export default function Dashboard() {
         )}
 
         {/* ── Herd Overview ── */}
-        {recent_animals.length > 0 && (
+        {(recent_animals ?? []).length > 0 && (
           <section aria-labelledby="herd-heading">
             <SectionHeader
               id="herd-heading"
