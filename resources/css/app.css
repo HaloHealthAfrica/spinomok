@@ -66,6 +66,8 @@
     font-family: var(--font-sans);
     -webkit-tap-highlight-color: transparent;
     -webkit-font-smoothing: antialiased;
+    /* Eliminate 300ms tap delay on ALL elements globally — iOS Safari fix */
+    touch-action: manipulation;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }

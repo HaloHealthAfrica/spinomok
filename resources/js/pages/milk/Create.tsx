@@ -152,20 +152,22 @@ export default function MilkCreate() {
             <span>✓</span>
             <span>Saved {todayTotal.toFixed(1)} L{!isOnline ? ' locally — will sync when connected' : ''}.</span>
           </div>
-          <button
-            onClick={() => router.visit('/reports/daily/new')}
+          <a
+            href="/reports/daily/new"
+            onClick={(e) => { e.preventDefault(); router.visit('/reports/daily/new'); }}
             className="w-full p-3.5 bg-primary-900 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
-            style={{ touchAction: 'manipulation' }}
+            style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', display: 'flex' }}
           >
             📋 Continue to Daily Report →
-          </button>
-          <button
-            onClick={() => router.visit('/dashboard')}
-            className="w-full p-3 bg-white border border-gray-200 text-gray-600 rounded-xl text-sm font-medium"
-            style={{ touchAction: 'manipulation' }}
+          </a>
+          <a
+            href="/dashboard"
+            onClick={(e) => { e.preventDefault(); router.visit('/dashboard'); }}
+            className="w-full p-3 bg-white border border-gray-200 text-gray-600 rounded-xl text-sm font-medium flex items-center justify-center"
+            style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', display: 'flex' }}
           >
             Back to Dashboard
-          </button>
+          </a>
         </div>
       )}
 
