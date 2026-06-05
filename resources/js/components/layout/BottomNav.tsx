@@ -61,8 +61,7 @@ export function BottomNav() {
           {/* Central FAB */}
           <div className="flex-1 flex justify-center items-center">
             <button
-              // onPointerDown fires instantly on iOS (no 300ms click delay)
-              onPointerDown={(e) => { e.preventDefault(); openQuickAdd(); }}
+              onClick={openQuickAdd}
               aria-label="Quick add"
               aria-haspopup="dialog"
               className={clsx(
@@ -74,7 +73,11 @@ export function BottomNav() {
                 'active:scale-[0.94] transition-transform duration-100',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2',
               )}
-              style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+              style={{
+                touchAction: 'manipulation',       // eliminates 300ms delay without breaking touch
+                WebkitTapHighlightColor: 'transparent',
+                userSelect: 'none',
+              }}
             >
               <Plus className="h-[26px] w-[26px]" strokeWidth={2.2} />
             </button>

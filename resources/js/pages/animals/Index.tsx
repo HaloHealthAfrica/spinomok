@@ -43,13 +43,15 @@ export default function AnimalsIndex() {
       <header className="px-4 pt-[env(safe-area-inset-top)] pt-3 pb-3">
         <div className="flex items-center justify-between">
           <h1 className="text-[34px] font-bold tracking-[-0.5px] text-black">Animals</h1>
-          <button
-            onClick={() => router.visit('/animals/create')}
+          <a
+            href="/animals/create"
+            onClick={(e) => { e.preventDefault(); router.visit('/animals/create'); }}
             aria-label="Add animal"
             className="h-9 w-9 rounded-full bg-brand-900 flex items-center justify-center shadow-[0_2px_8px_rgba(27,94,32,0.35)]"
+            style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
           >
             <Plus className="h-5 w-5 text-white" strokeWidth={2.2} />
-          </button>
+          </a>
         </div>
 
         {/* Summary pills */}
