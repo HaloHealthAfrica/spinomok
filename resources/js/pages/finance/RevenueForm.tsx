@@ -7,19 +7,18 @@ import { ArrowLeft } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { PageProps, Animal } from '@/types';
 import { today } from '@/utils/format';
-import { goBack } from '@/utils/navigation';
 
 interface RevenueFormProps extends PageProps {
   animals: Animal[];
 }
 
 const CATEGORIES = [
-  { value: 'milk_sales',    label: 'ðŸ¥› Milk Sales',     desc: 'Direct milk revenue (use if not using Milk Sales module)' },
-  { value: 'animal_sales',  label: 'ðŸ„ Animal Sales',   desc: 'Calf, heifer, bull, cow sold' },
-  { value: 'manure_sales',  label: 'â™»ï¸ Manure',          desc: 'Compost, fresh manure sold' },
-  { value: 'crop_sales',    label: 'ðŸŒ¿ Crop / Fodder',  desc: 'Surplus napier, hay, silage sold' },
-  { value: 'subsidy',       label: 'ðŸ›ï¸ Subsidy / Grant', desc: 'Government, NGO support' },
-  { value: 'other',         label: 'ðŸ’° Other',           desc: 'Insurance claim, miscellaneous' },
+  { value: 'milk_sales',    label: '🥛 Milk Sales',     desc: 'Direct milk revenue (use if not using Milk Sales module)' },
+  { value: 'animal_sales',  label: '🐄 Animal Sales',   desc: 'Calf, heifer, bull, cow sold' },
+  { value: 'manure_sales',  label: '♻️ Manure',          desc: 'Compost, fresh manure sold' },
+  { value: 'crop_sales',    label: '🌿 Crop / Fodder',  desc: 'Surplus napier, hay, silage sold' },
+  { value: 'subsidy',       label: '🏛️ Subsidy / Grant', desc: 'Government, NGO support' },
+  { value: 'other',         label: '💰 Other',           desc: 'Insurance claim, miscellaneous' },
 ];
 
 export default function RevenueForm() {
@@ -127,7 +126,7 @@ export default function RevenueForm() {
           <Button type="submit" fullWidth size="lg" loading={processing}
             disabled={!data.description || !data.amount}
             className="bg-green-600 hover:bg-green-700">
-            Record Revenue {data.amount ? `â€” KES ${parseFloat(data.amount || '0').toLocaleString()}` : ''}
+            Record Revenue {data.amount ? `— KES ${parseFloat(data.amount || '0').toLocaleString()}` : ''}
           </Button>
         </div>
       </form>

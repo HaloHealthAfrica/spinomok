@@ -7,7 +7,6 @@ import { ArrowLeft } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { PageProps, Animal } from '@/types';
 import { today } from '@/utils/format';
-import { goBack } from '@/utils/navigation';
 
 interface ExpenseFormProps extends PageProps {
   animals: Animal[];
@@ -15,15 +14,15 @@ interface ExpenseFormProps extends PageProps {
 }
 
 const CATEGORIES = [
-  { value: 'feed',      label: 'ðŸŒ¾ Feed',          desc: 'Dairy meal, hay, silage, minerals' },
-  { value: 'vet',       label: 'ðŸ¥ Veterinary',    desc: 'Drugs, vet fees, vaccinations' },
-  { value: 'labour',    label: 'ðŸ‘· Labour',         desc: 'Salaries, casual wages' },
-  { value: 'equipment', label: 'ðŸ”§ Equipment',     desc: 'Repairs, purchases, tools' },
-  { value: 'utilities', label: 'ðŸ’¡ Utilities',     desc: 'Electricity, water, fuel' },
-  { value: 'transport', label: 'ðŸš› Transport',     desc: 'Milk delivery, livestock transport' },
-  { value: 'breeding',  label: 'ðŸ‚ Breeding',      desc: 'AI services, semen, sync drugs' },
-  { value: 'land',      label: 'ðŸŒ± Land / Fodder', desc: 'Rental, planting, fertilizer' },
-  { value: 'other',     label: 'ðŸ“¦ Other',         desc: 'Miscellaneous expenses' },
+  { value: 'feed',      label: '🌾 Feed',          desc: 'Dairy meal, hay, silage, minerals' },
+  { value: 'vet',       label: '🏥 Veterinary',    desc: 'Drugs, vet fees, vaccinations' },
+  { value: 'labour',    label: '👷 Labour',         desc: 'Salaries, casual wages' },
+  { value: 'equipment', label: '🔧 Equipment',     desc: 'Repairs, purchases, tools' },
+  { value: 'utilities', label: '💡 Utilities',     desc: 'Electricity, water, fuel' },
+  { value: 'transport', label: '🚛 Transport',     desc: 'Milk delivery, livestock transport' },
+  { value: 'breeding',  label: '🐂 Breeding',      desc: 'AI services, semen, sync drugs' },
+  { value: 'land',      label: '🌱 Land / Fodder', desc: 'Rental, planting, fertilizer' },
+  { value: 'other',     label: '📦 Other',         desc: 'Miscellaneous expenses' },
 ];
 
 export default function ExpenseForm() {
@@ -133,7 +132,7 @@ export default function ExpenseForm() {
           <Button type="submit" fullWidth size="lg" loading={processing}
             disabled={!data.description || !data.amount}
             className="bg-red-600 hover:bg-red-700">
-            Record Expense {data.amount ? `â€” KES ${parseFloat(data.amount || '0').toLocaleString()}` : ''}
+            Record Expense {data.amount ? `— KES ${parseFloat(data.amount || '0').toLocaleString()}` : ''}
           </Button>
         </div>
       </form>
