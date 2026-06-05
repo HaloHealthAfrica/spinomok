@@ -75,7 +75,7 @@ class MilkSaleController extends Controller
             'price_per_litre' => $request->price_per_litre,
             'total_amount'    => $request->quantity_litres * $request->price_per_litre,
             'payment_method'  => $request->payment_method ?? 'cash',
-            'is_paid'         => in_array($request->payment_method, ['cash', 'mpesa']),
+            'is_paid'         => !in_array($request->payment_method ?? 'cash', ['credit']),
             'receipt_number'  => $request->receipt_number,
             'notes'           => $request->notes,
             'created_by'      => $request->user()->id,

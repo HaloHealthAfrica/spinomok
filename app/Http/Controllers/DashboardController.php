@@ -48,6 +48,11 @@ class DashboardController extends Controller
         $calves    = (int) ($animalCounts['calf'] ?? 0);
         $heifers   = (int) ($animalCounts['heifer'] ?? 0);
 
+        // Revenue today from milk_sales
+        $revenueToday = (float) MilkSale::where('farm_id', $farmId)
+            ->whereDate('sale_date', $today)
+            ->sum('total_amount');
+
         // Revenue MTD from milk_sales table
         $revenueMtd = (float) MilkSale::where('farm_id', $farmId)
             ->whereYear('sale_date', now()->year)
@@ -88,7 +93,7 @@ class DashboardController extends Controller
                 'milk_today_litres'    => (float) $milkToday,
                 'milk_yesterday_litres'=> (float) $milkYesterday,
                 'milk_delta_percent'   => $milkDeltaPercent,
-                'revenue_today_kes'    => 0,
+                'revenue_today_kes'    => $revenueToday,
                 'revenue_mtd_kes'      => $revenueMtd,
                 'active_animals'       => $animalCounts->sum(),
                 'lactating_cows'       => $lactating,
