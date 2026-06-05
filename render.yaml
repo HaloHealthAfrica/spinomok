@@ -37,7 +37,7 @@ services:
       - key: DB_SSLMODE
         value: require
       - key: SESSION_DRIVER
-        value: file
+        value: cookie
       - key: SESSION_LIFETIME
         value: "120"
       - key: SESSION_SECURE_COOKIE
