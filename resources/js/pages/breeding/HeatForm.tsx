@@ -6,20 +6,19 @@ import { ArrowLeft, Flame } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { PageProps, Animal } from '@/types';
 import { today } from '@/utils/format';
-import { goBack } from '@/utils/navigation';
 
 interface HeatFormProps extends PageProps {
   animals: Animal[];
 }
 
 const SIGNS = [
-  { key: 'standing_heat', label: 'Standing heat (being mounted)' },
+  { key: 'standing_heat',   label: 'Standing heat (being mounted)' },
   { key: 'mounting_others', label: 'Mounting other animals' },
   { key: 'clear_discharge', label: 'Clear mucus discharge' },
-  { key: 'swollen_vulva', label: 'Swollen/red vulva' },
-  { key: 'restless', label: 'Restlessness / bellowing' },
-  { key: 'reduced_milk', label: 'Reduced milk yield' },
-  { key: 'off_feed', label: 'Reduced feed intake' },
+  { key: 'swollen_vulva',   label: 'Swollen / red vulva' },
+  { key: 'restless',        label: 'Restlessness / bellowing' },
+  { key: 'reduced_milk',    label: 'Reduced milk yield' },
+  { key: 'off_feed',        label: 'Reduced feed intake' },
 ];
 
 export default function HeatForm() {
@@ -49,35 +48,40 @@ export default function HeatForm() {
     post('/breeding/heat');
   };
 
-  // Calculate AI window preview
   const aiWindow = (() => {
     if (!data.observed_at) return null;
-    const base = new Date(`${data.observed_on}T${data.observed_at}`);
+    const base  = new Date(`${data.observed_on}T${data.observed_at}`);
     const start = new Date(base.getTime() + 12 * 3600000);
     const end   = new Date(base.getTime() + 18 * 3600000);
-    return `${start.toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })} â€“ ${end.toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })}`;
+    const fmt   = (d: Date) => d.toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' });
+    return `${fmt(start)} — ${fmt(end)}`;
   })();
 
   return (
     <AppLayout title="Record Heat" showBottomNav={false}>
       <div className="bg-primary-900 pt-safe-top px-4 pb-4">
         <div className="flex items-center gap-3 pt-3">
-          <button onClick={() => router.visit('/breeding')} className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-white">
+          <button
+            onClick={() => router.visit('/breeding')}
+            className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-white"
+          >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div>
             <h1 className="text-white text-lg font-bold">Record Heat Detection</h1>
-            <p className="text-primary-300 text-xs">Standing heat = AI within 12â€“18 hours</p>
+            <p className="text-primary-300 text-xs">Standing heat = AI within 12–18 hours</p>
           </div>
         </div>
       </div>
 
       <form onSubmit={submit} noValidate>
-        <div className="px-4 py-4 space-y-5">
+        <div className="px-4 py-4 space-y-5 pb-8">
 
           {/* Animal */}
           <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">Animal <span className="text-red-500">*</span></label>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Animal <span className="text-red-500">*</span>
+            </label>
             <select
               value={data.animal_id}
               onChange={e => setData('animal_id', e.target.value)}
@@ -86,7 +90,9 @@ export default function HeatForm() {
             >
               <option value="">Select cow or heifer...</option>
               {animals.map(a => (
-                <option key={a.id} value={a.id}>{a.name ?? a.tag_number} ({a.tag_number}) â€” {a.breed}</option>
+                <option key={a.id} value={a.id}>
+                  {a.name ?? a.tag_number} ({a.tag_number}) — {a.breed}
+                </option>
               ))}
             </select>
             {errors.animal_id && <p className="text-xs text-red-600 mt-1">{errors.animal_id}</p>}
@@ -95,7 +101,9 @@ export default function HeatForm() {
           {/* Date and time */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">Date Observed <span className="text-red-500">*</span></label>
+              <label className="text-sm font-medium text-gray-700 block mb-1">
+                Date Observed <span className="text-red-500">*</span>
+              </label>
               <input
                 type="date"
                 value={data.observed_on}
@@ -118,9 +126,9 @@ export default function HeatForm() {
           {/* AI window preview */}
           {aiWindow && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
-              <p className="text-sm font-bold text-amber-900">â° Optimal AI Window</p>
+              <p className="text-sm font-bold text-amber-900">⏰ Optimal AI Window</p>
               <p className="text-lg font-bold text-amber-800">{aiWindow}</p>
-              <p className="text-xs text-amber-600 mt-1">12â€“18 hours after standing heat detection</p>
+              <p className="text-xs text-amber-600 mt-1">12–18 hours after standing heat detection</p>
             </div>
           )}
 
@@ -129,9 +137,9 @@ export default function HeatForm() {
             <label className="text-sm font-medium text-gray-700 block mb-2">Heat Confidence</label>
             <div className="flex gap-2">
               {[
-                { value: 'certain',  label: 'Certain',  color: 'text-green-700 bg-green-50 border-green-200' },
-                { value: 'probable', label: 'Probable', color: 'text-amber-700 bg-amber-50 border-amber-200' },
-                { value: 'suspected',label: 'Suspected',color: 'text-gray-700 bg-gray-50 border-gray-200' },
+                { value: 'certain',   label: 'Certain',   color: 'text-green-700 bg-green-50 border-green-200' },
+                { value: 'probable',  label: 'Probable',  color: 'text-amber-700 bg-amber-50 border-amber-200' },
+                { value: 'suspected', label: 'Suspected', color: 'text-gray-700 bg-gray-50 border-gray-200' },
               ].map(c => (
                 <button
                   key={c.value}
@@ -139,7 +147,9 @@ export default function HeatForm() {
                   onClick={() => setData('confidence', c.value)}
                   className={clsx(
                     'flex-1 py-2.5 rounded-xl border text-xs font-semibold transition-all',
-                    data.confidence === c.value ? c.color + ' ring-2 ring-offset-1 ring-primary-600' : 'text-gray-400 bg-white border-gray-200',
+                    data.confidence === c.value
+                      ? c.color + ' ring-2 ring-offset-1 ring-primary-600'
+                      : 'text-gray-400 bg-white border-gray-200',
                   )}
                 >
                   {c.label}
@@ -159,8 +169,6 @@ export default function HeatForm() {
                     key={sign.key}
                     type="button"
                     onClick={() => toggleSign(sign.key)}
-                    aria-pressed={selected}
-                    style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', minHeight: 44 }}
                     className={clsx(
                       'w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-sm text-left transition-all',
                       selected
@@ -169,8 +177,8 @@ export default function HeatForm() {
                     )}
                   >
                     <div className={clsx(
-                      'h-5 w-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors',
-                      selected ? 'bg-primary-900 border-primary-900' : 'border-gray-300 bg-white',
+                      'h-5 w-5 rounded border-2 flex items-center justify-center flex-shrink-0',
+                      selected ? 'bg-primary-900 border-primary-900' : 'border-gray-300',
                     )}>
                       {selected && (
                         <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -212,7 +220,14 @@ export default function HeatForm() {
             />
           </div>
 
-          <Button type="submit" fullWidth size="lg" loading={processing} leftIcon={<Flame className="h-5 w-5" />}>
+          <Button
+            type="submit"
+            fullWidth
+            size="lg"
+            loading={processing}
+            disabled={!data.animal_id}
+            leftIcon={<Flame className="h-5 w-5" />}
+          >
             Record Heat Event
           </Button>
         </div>

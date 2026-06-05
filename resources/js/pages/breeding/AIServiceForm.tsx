@@ -6,14 +6,18 @@ import { Input } from '@/components/ui/Input';
 import { ArrowLeft, Syringe } from 'lucide-react';
 import type { PageProps, Animal, SemenInventory, HeatEvent } from '@/types';
 import { today, formatDate } from '@/utils/format';
-import { goBack } from '@/utils/navigation';
 
 interface AIFormProps extends PageProps {
-  animals: Animal[];
+  animals: Animal[];          // controller passes as 'females' — fixed in controller
   semen: SemenInventory[];
   pendingHeats: HeatEvent[];
   preselectedAnimal: string | null;
 }
+
+const GESTATION_DAYS: Record<string, number> = {
+  Friesian: 280, Ayrshire: 280, Jersey: 276,
+  'Brown Swiss': 290, Sahiwal: 283, Crossbreed: 281,
+};
 
 export default function AIServiceForm() {
   const { animals, semen, pendingHeats, preselectedAnimal } = usePage<AIFormProps>().props;
@@ -30,7 +34,6 @@ export default function AIServiceForm() {
     notes:              '',
   });
 
-  // Auto-select heat event when animal changes
   useEffect(() => {
     const heat = pendingHeats.find(h => h.animal_id === data.animal_id);
     if (heat) setData('heat_event_id', heat.id);
@@ -39,11 +42,9 @@ export default function AIServiceForm() {
   const selectedAnimal = animals.find(a => a.id === data.animal_id);
   const selectedSemen  = semen.find(s => s.id === data.semen_inventory_id);
 
-  // Calculate expected calving date
   const expectedCalving = (() => {
-    if (!data.service_date) return null;
-    const gestDays: Record<string, number> = { Friesian: 280, Ayrshire: 280, Jersey: 276, 'Brown Swiss': 290, Sahiwal: 283, Crossbreed: 281 };
-    const days = gestDays[selectedAnimal?.breed ?? ''] ?? 280;
+    if (!data.service_date || !selectedAnimal) return null;
+    const days = GESTATION_DAYS[selectedAnimal.breed] ?? 280;
     const d = new Date(data.service_date);
     d.setDate(d.getDate() + days);
     return d.toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -58,7 +59,10 @@ export default function AIServiceForm() {
     <AppLayout title="Record AI Service" showBottomNav={false}>
       <div className="bg-primary-900 pt-safe-top px-4 pb-4">
         <div className="flex items-center gap-3 pt-3">
-          <button onClick={() => router.visit('/breeding')} className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-white">
+          <button
+            onClick={() => router.visit('/breeding')}
+            className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-white"
+          >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div>
@@ -69,11 +73,13 @@ export default function AIServiceForm() {
       </div>
 
       <form onSubmit={submit} noValidate>
-        <div className="px-4 py-4 space-y-5">
+        <div className="px-4 py-4 space-y-5 pb-8">
 
           {/* Animal */}
           <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">Animal <span className="text-red-500">*</span></label>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Animal <span className="text-red-500">*</span>
+            </label>
             <select
               value={data.animal_id}
               onChange={e => setData('animal_id', e.target.value)}
@@ -83,7 +89,7 @@ export default function AIServiceForm() {
               <option value="">Select cow or heifer...</option>
               {animals.map(a => (
                 <option key={a.id} value={a.id} disabled={a.is_pregnant}>
-                  {a.name ?? a.tag_number} ({a.tag_number}) {a.is_pregnant ? 'â€” Already pregnant' : ''}
+                  {a.name ?? a.tag_number} ({a.tag_number}){a.is_pregnant ? ' — Already pregnant' : ''}
                 </option>
               ))}
             </select>
@@ -101,17 +107,19 @@ export default function AIServiceForm() {
                 <option value="">No linked heat event</option>
                 {pendingHeats.map(h => (
                   <option key={h.id} value={h.id}>
-                    {h.animal?.name ?? h.animal?.tag_number} â€” Heat on {formatDate(h.observed_on)}
+                    {h.animal?.name ?? h.animal?.tag_number} — Heat on {formatDate(h.observed_on)}
                   </option>
                 ))}
               </select>
             </div>
           )}
 
-          {/* Service date & time */}
+          {/* Service date and time */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">Service Date <span className="text-red-500">*</span></label>
+              <label className="text-sm font-medium text-gray-700 block mb-1">
+                Service Date <span className="text-red-500">*</span>
+              </label>
               <input
                 type="date"
                 value={data.service_date}
@@ -133,11 +141,13 @@ export default function AIServiceForm() {
           </div>
 
           {/* Expected calving preview */}
-          {expectedCalving && selectedAnimal && (
+          {expectedCalving && (
             <div className="bg-green-50 border border-green-200 rounded-xl p-3">
               <p className="text-xs text-green-700 font-medium">Expected Calving Date</p>
               <p className="text-lg font-bold text-green-900">{expectedCalving}</p>
-              <p className="text-xs text-green-600">Based on {selectedAnimal.breed} gestation (280 days)</p>
+              <p className="text-xs text-green-600">
+                Based on {selectedAnimal?.breed ?? ''} gestation ({GESTATION_DAYS[selectedAnimal?.breed ?? ''] ?? 280} days)
+              </p>
             </div>
           )}
 
@@ -153,13 +163,13 @@ export default function AIServiceForm() {
                 <option value="">No semen selected</option>
                 {semen.map(s => (
                   <option key={s.id} value={s.id}>
-                    {s.bull_name} {s.batch_number ? `(${s.batch_number})` : ''} â€” {s.straws_remaining} straws
+                    {s.bull_name}{s.batch_number ? ` (${s.batch_number})` : ''} — {s.straws_remaining} straws
                   </option>
                 ))}
               </select>
               {selectedSemen && (
                 <p className="text-xs text-gray-500 mt-1">
-                  {selectedSemen.straws_remaining} straws remaining Â· {selectedSemen.bull_breed ?? 'Unknown breed'}
+                  {selectedSemen.straws_remaining} straws remaining · {selectedSemen.bull_breed ?? 'Unknown breed'}
                 </p>
               )}
             </div>
@@ -175,7 +185,6 @@ export default function AIServiceForm() {
             placeholder="e.g. John Kamau"
             value={data.technician_name}
             onChange={e => setData('technician_name', e.target.value)}
-            error={errors.technician_name}
           />
 
           <div className="grid grid-cols-2 gap-3">
@@ -210,7 +219,14 @@ export default function AIServiceForm() {
             />
           </div>
 
-          <Button type="submit" fullWidth size="lg" loading={processing} leftIcon={<Syringe className="h-5 w-5" />}>
+          <Button
+            type="submit"
+            fullWidth
+            size="lg"
+            loading={processing}
+            disabled={!data.animal_id}
+            leftIcon={<Syringe className="h-5 w-5" />}
+          >
             Record AI Service
           </Button>
         </div>

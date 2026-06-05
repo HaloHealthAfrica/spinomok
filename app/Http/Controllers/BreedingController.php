@@ -150,7 +150,12 @@ class BreedingController extends Controller
 
         $preselectedAnimal = $request->input('animal_id');
 
-        return Inertia::render('breeding/AIServiceForm', compact('females', 'semen', 'pendingHeats', 'preselectedAnimal'));
+        return Inertia::render('breeding/AIServiceForm', [
+            'animals'           => $females,
+            'semen'             => $semen,
+            'pendingHeats'      => $pendingHeats,
+            'preselectedAnimal' => $preselectedAnimal,
+        ]);
     }
 
     public function storeAI(Request $request): JsonResponse|RedirectResponse
@@ -201,7 +206,10 @@ class BreedingController extends Controller
             ->orderBy('service_date')
             ->get();
 
-        return Inertia::render('breeding/PDForm', compact('females', 'pendingServices'));
+        return Inertia::render('breeding/PDForm', [
+            'animals'         => $females,
+            'pendingServices' => $pendingServices,
+        ]);
     }
 
     public function storePD(Request $request): JsonResponse|RedirectResponse

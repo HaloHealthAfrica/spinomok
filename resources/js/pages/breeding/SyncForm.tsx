@@ -7,7 +7,6 @@ import { clsx } from 'clsx';
 import type { PageProps, Animal } from '@/types';
 import { today } from '@/utils/format';
 import { Card } from '@/components/ui/Card';
-import { goBack } from '@/utils/navigation';
 
 interface SyncFormProps extends PageProps {
   animals: Animal[];
@@ -15,23 +14,25 @@ interface SyncFormProps extends PageProps {
 
 const PROGRAMS = [
   {
-    type: 'Ovsynch',
-    description: 'GnRH â†’ PGF2Î± â†’ GnRH â†’ TAI (10 days)',
-    steps: ['Day 0: GnRH injection', 'Day 7: PGF2Î± injection', 'Day 9: GnRH injection', 'Day 10 AM: Timed AI'],
-    color: 'text-blue-700 bg-blue-50 border-blue-300',
+    type:        'Ovsynch',
+    description: 'GnRH → PGF2a → GnRH → Timed AI (10 days)',
+    steps:       ['Day 0: GnRH injection', 'Day 7: PGF2a injection', 'Day 9: GnRH injection', 'Day 10 AM: Timed AI'],
+    offsets:     [0, 7, 9, 10],
+    color:       'text-blue-700 bg-blue-50 border-blue-300',
   },
   {
-    type: 'CIDR',
-    description: 'CIDR insert â†’ PGF2Î± â†’ GnRH â†’ TAI (10 days)',
-    steps: ['Day 0: Insert CIDR', 'Day 7: PGF2Î± + Remove CIDR', 'Day 9: GnRH injection', 'Day 10: Timed AI'],
-    color: 'text-purple-700 bg-purple-50 border-purple-300',
+    type:        'CIDR',
+    description: 'CIDR insert → PGF2a → GnRH → Timed AI (10 days)',
+    steps:       ['Day 0: Insert CIDR', 'Day 7: PGF2a + Remove CIDR', 'Day 9: GnRH injection', 'Day 10: Timed AI'],
+    offsets:     [0, 7, 9, 10],
+    color:       'text-purple-700 bg-purple-50 border-purple-300',
   },
 ];
 
 export default function SyncForm() {
   const { animals } = usePage<SyncFormProps>().props;
 
-  const { data, setData, post, processing, errors } = useForm({
+  const { data, setData, post, processing } = useForm({
     animal_id:    '',
     program_type: 'Ovsynch',
     start_date:   today(),
@@ -39,7 +40,6 @@ export default function SyncForm() {
   });
 
   const selectedProgram = PROGRAMS.find(p => p.type === data.program_type);
-  const startDate = new Date(data.start_date);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +50,10 @@ export default function SyncForm() {
     <AppLayout title="Synchronization Program" showBottomNav={false}>
       <div className="bg-primary-900 pt-safe-top px-4 pb-4">
         <div className="flex items-center gap-3 pt-3">
-          <button onClick={() => router.visit('/breeding')} className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-white">
+          <button
+            onClick={() => router.visit('/breeding')}
+            className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-white"
+          >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div>
@@ -61,11 +64,13 @@ export default function SyncForm() {
       </div>
 
       <form onSubmit={submit} noValidate>
-        <div className="px-4 py-4 space-y-5">
+        <div className="px-4 py-4 space-y-5 pb-8">
 
-          {/* Program type */}
+          {/* Protocol */}
           <div>
-            <label className="text-sm font-medium text-gray-700 block mb-2">Protocol <span className="text-red-500">*</span></label>
+            <label className="text-sm font-medium text-gray-700 block mb-2">
+              Protocol <span className="text-red-500">*</span>
+            </label>
             <div className="space-y-2">
               {PROGRAMS.map(p => (
                 <button
@@ -88,7 +93,9 @@ export default function SyncForm() {
 
           {/* Animal */}
           <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">Animal <span className="text-red-500">*</span></label>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Animal <span className="text-red-500">*</span>
+            </label>
             <select
               value={data.animal_id}
               onChange={e => setData('animal_id', e.target.value)}
@@ -97,14 +104,18 @@ export default function SyncForm() {
             >
               <option value="">Select cow or heifer...</option>
               {animals.map(a => (
-                <option key={a.id} value={a.id}>{a.name ?? a.tag_number} ({a.tag_number}) â€” {a.breed}</option>
+                <option key={a.id} value={a.id}>
+                  {a.name ?? a.tag_number} ({a.tag_number}) — {a.breed}
+                </option>
               ))}
             </select>
           </div>
 
           {/* Start date */}
           <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">Start Date (Day 0) <span className="text-red-500">*</span></label>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Start Date (Day 0) <span className="text-red-500">*</span>
+            </label>
             <input
               type="date"
               value={data.start_date}
@@ -114,13 +125,13 @@ export default function SyncForm() {
             />
           </div>
 
-          {/* Protocol step schedule preview */}
+          {/* Schedule preview */}
           {selectedProgram && data.start_date && (
             <Card padding="md" className="bg-gray-50">
-              <p className="text-sm font-bold text-gray-800 mb-3">ðŸ“… Schedule Preview</p>
+              <p className="text-sm font-bold text-gray-800 mb-3">📅 Schedule Preview</p>
               <div className="space-y-2">
-                {[0, 7, 9, 10].map((offset, i) => {
-                  const d = new Date(startDate);
+                {selectedProgram.offsets.map((offset, i) => {
+                  const d = new Date(data.start_date);
                   d.setDate(d.getDate() + offset);
                   return (
                     <div key={i} className="flex items-center gap-3">
@@ -153,7 +164,10 @@ export default function SyncForm() {
           </div>
 
           <Button
-            type="submit" fullWidth size="lg" loading={processing}
+            type="submit"
+            fullWidth
+            size="lg"
+            loading={processing}
             disabled={!data.animal_id}
             leftIcon={<Calendar className="h-5 w-5" />}
           >
