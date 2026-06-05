@@ -5,7 +5,6 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/Button';
 import type { PageProps } from '@/types';
 import { formatDate } from '@/utils/format';
-import { goBack } from '@/utils/navigation';
 
 interface WhatsappProps extends PageProps {
   message: string;
