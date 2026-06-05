@@ -12,7 +12,7 @@ import axios from 'axios';
 import type { PageProps, DailyReport, AnimalMilkRecord, MilkBuyer } from '@/types';
 import { formatDate, formatKES, formatLitres } from '@/utils/format';
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Types Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ──── Types ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 interface WizardProps extends PageProps {
   report: DailyReport;
@@ -31,7 +31,7 @@ const STEPS = [
   { num: 5, label: 'Submit',   icon: FileText,     color: 'text-purple-600' },
 ];
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Main Wizard Component Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ──── Main Wizard Component ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 export default function DailyReportCreate() {
   const { report, date, animal_records, milk_summary, buyers, current_step } = usePage<WizardProps>().props;
@@ -46,7 +46,7 @@ export default function DailyReportCreate() {
 
   const saveStep = async (stepNum: number, data: unknown) => {
     setStepData(prev => ({ ...prev, [stepNum]: data }));
-    // Best-effort save Ã¢â‚¬â€ data is held in local state even if server save fails
+    // Best-effort save — data is held in local state even if server save fails
     await axios.patch(`/reports/daily/${report.id}/step`, { step: stepNum, data })
       .catch(() => null); // Data preserved in stepData state; server will get it on submit
   };
@@ -55,7 +55,7 @@ export default function DailyReportCreate() {
     setSaving(true);
     await saveStep(step, currentStepData);
     setSaving(false);
-    // Always advance Ã¢â‚¬â€ local state holds all data even if server save missed
+    // Always advance — local state holds all data even if server save missed
     if (step < 5) setStep(s => s + 1);
     else window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -144,7 +144,7 @@ export default function DailyReportCreate() {
   );
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Step Indicator Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ──── Step Indicator ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 function StepIndicator({ currentStep }: { currentStep: number }) {
   return (
@@ -180,7 +180,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
   );
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Step 1: Milk Production Confirmation Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ──── Step 1: Milk Production Confirmation ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 interface Step1Data { confirmed: boolean; notes: string }
 
@@ -198,7 +198,7 @@ function Step1Milk({
   return (
     <div className="px-4 py-4 space-y-4">
       <div>
-        <h2 className="text-lg font-bold text-gray-900">Ã°Å¸Â¥â€º Milk Production</h2>
+        <h2 className="text-lg font-bold text-gray-900">🥛 Milk Production</h2>
         <p className="text-sm text-gray-500 mt-0.5">Review today's milk records</p>
       </div>
 
@@ -207,9 +207,9 @@ function Step1Milk({
         <p className="text-2xl font-bold text-blue-900">{milkSummary.total_litres.toFixed(1)} L</p>
         <p className="text-sm text-blue-600 mt-0.5">Total production today</p>
         <div className="flex gap-4 mt-3 text-sm">
-          <span className="text-blue-600">Ã°Å¸Å’â€¦ {milkSummary.morning_litres.toFixed(1)}L</span>
-          <span className="text-blue-600">Ã¢Ëœâ‚¬Ã¯Â¸Â {milkSummary.midday_litres.toFixed(1)}L</span>
-          <span className="text-blue-600">Ã°Å¸Å’â€  {milkSummary.evening_litres.toFixed(1)}L</span>
+          <span className="text-blue-600">🌅 {milkSummary.morning_litres.toFixed(1)}L</span>
+          <span className="text-blue-600">☀️ {milkSummary.midday_litres.toFixed(1)}L</span>
+          <span className="text-blue-600">🌆 {milkSummary.evening_litres.toFixed(1)}L</span>
         </div>
         <p className="text-xs text-blue-500 mt-2">{milkSummary.cows_milked} cow{milkSummary.cows_milked !== 1 ? 's' : ''} milked</p>
       </div>
@@ -218,7 +218,7 @@ function Step1Milk({
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-amber-700 text-sm">
           No milk records found for today.{' '}
           <button onClick={() => router.visit('/milk-records/create')} className="font-medium underline">
-            Record milk now Ã¢â€ â€™
+            Record milk now →
           </button>
         </div>
       )}
@@ -256,7 +256,7 @@ function Step1Milk({
   );
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Step 2: Milk Sales Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ──── Step 2: Milk Sales ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 interface SaleEntry { buyer_id: string; channel_label: string; litres: string; price: string }
 interface Step2Data { sales: SaleEntry[]; notes: string }
@@ -423,7 +423,7 @@ function Step2Sales({
   );
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Step 3: Health Events Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ──── Step 3: Health Events ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 interface Step3Data { events: string; notes: string }
 
@@ -441,7 +441,7 @@ function Step3Health({
   return (
     <div className="px-4 py-4 space-y-4">
       <div>
-        <h2 className="text-lg font-bold text-gray-900">Ã°Å¸ÂÂ¥ Herd Health</h2>
+        <h2 className="text-lg font-bold text-gray-900">🏥 Herd Health</h2>
         <p className="text-sm text-gray-500">Record any health events today</p>
       </div>
 
@@ -451,7 +451,7 @@ function Step3Health({
           onClick={() => router.visit('/health/create')}
           className="text-primary-900 font-medium underline"
         >
-          Health Events Ã¢â€ â€™ Add Event
+          Health Events → Add Event
         </button>
       </div>
 
@@ -461,7 +461,7 @@ function Step3Health({
           value={events}
           onChange={e => setEvents(e.target.value)}
           rows={3}
-          placeholder="e.g. Cow #3 (Bella) Ã¢â‚¬â€ mastitis check done, Cow #7 Ã¢â‚¬â€ dewormed..."
+          placeholder="e.g. Cow #3 (Bella) — mastitis check done, Cow #7 — dewormed..."
           className="rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600 resize-none"
         />
       </div>
@@ -487,7 +487,7 @@ function Step3Health({
   );
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Step 4: Feed Usage Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ──── Step 4: Feed Usage ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 interface FeedEntry { feed_type: string; quantity: string; unit: string; cost: string }
 interface Step4Data { feeds: FeedEntry[]; notes: string }
@@ -516,7 +516,7 @@ function Step4Feed({
   return (
     <div className="px-4 py-4 space-y-4">
       <div>
-        <h2 className="text-lg font-bold text-gray-900">Ã°Å¸Å’Â¾ Feed Usage</h2>
+        <h2 className="text-lg font-bold text-gray-900">🌾 Feed Usage</h2>
         <p className="text-sm text-gray-500">Record today's feed quantities and costs</p>
       </div>
 
@@ -591,7 +591,7 @@ function Step4Feed({
   );
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Step 5: Review & Submit Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ──── Step 5: Review & Submit ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 const WEATHER_OPTIONS = ['Sunny', 'Partly Cloudy', 'Overcast', 'Rainy', 'Heavy Rain', 'Cold', 'Dry'];
 
@@ -622,19 +622,19 @@ function Step5Submit({
   return (
     <div className="px-4 py-4 space-y-4">
       <div>
-        <h2 className="text-lg font-bold text-gray-900">Ã°Å¸â€œâ€¹ Review & Submit</h2>
+        <h2 className="text-lg font-bold text-gray-900">📋 Review & Submit</h2>
         <p className="text-sm text-gray-500">{formatDate(date)}</p>
       </div>
 
       {/* Summary */}
       <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
-        <SummaryRow label="Ã°Å¸Â¥â€º Total Milk" value={`${milkSummary.total_litres.toFixed(1)} L`} />
-        <SummaryRow label="Ã°Å¸Ââ€ž Cows Milked" value={milkSummary.cows_milked.toString()} />
-        <SummaryRow label="Ã°Å¸â€™Â° Milk Revenue" value={formatKES(totalRevenue)} highlight={totalRevenue > 0} />
-        <SummaryRow label="Ã°Å¸Å’Â¾ Feed Cost" value={formatKES(totalFeedCost)} />
+        <SummaryRow label="🥛 Total Milk" value={`${milkSummary.total_litres.toFixed(1)} L`} />
+        <SummaryRow label="🐄 Cows Milked" value={milkSummary.cows_milked.toString()} />
+        <SummaryRow label="💰 Milk Revenue" value={formatKES(totalRevenue)} highlight={totalRevenue > 0} />
+        <SummaryRow label="🌾 Feed Cost" value={formatKES(totalFeedCost)} />
         {totalRevenue > 0 && totalFeedCost > 0 && (
           <SummaryRow
-            label="Ã°Å¸â€œÅ  Gross Margin"
+            label="📊 Gross Margin"
             value={formatKES(totalRevenue - totalFeedCost)}
             highlight
           />
@@ -678,7 +678,7 @@ function Step5Submit({
 
       {/* WhatsApp preview hint */}
       <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-xs text-green-700">
-        Ã°Å¸â€™Â¬ After submitting, a WhatsApp summary will be prepared for your farm owner.
+        💬 After submitting, a WhatsApp summary will be prepared for your farm owner.
       </div>
 
       {/* Buttons */}
@@ -689,17 +689,17 @@ function Step5Submit({
           onClick={() => onSubmit({ weather, manager_notes: managerNotes })}
           className="bg-green-600 hover:bg-green-700"
         >
-          Ã¢Å“â€œ Submit Daily Report
+          ✓ Submit Daily Report
         </Button>
         <Button fullWidth variant="ghost" onClick={onBack} disabled={saving}>
-          Ã¢â€ Â Back
+          ← Back
         </Button>
       </div>
     </div>
   );
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Shared sub-components Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ──── Shared sub-components ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 function WizardFooter({
   onNext, onBack, loading, nextLabel, showBack = true,
