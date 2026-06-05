@@ -62,10 +62,10 @@ export function AppLayout({ children, title, showBottomNav = true }: AppLayoutPr
         {children}
       </main>
 
-      {showBottomNav && <BottomNav />}
+      {/* PWA install prompt — rendered INSIDE scrollable main, not as fixed overlay */}
+      {showBottomNav && <PWAInstallBanner />}
 
-      {/* PWA install prompt */}
-      <PWAInstallBanner />
+      {showBottomNav && <BottomNav />}
 
       {/* Sync drawer */}
       <SyncDrawer open={syncDrawerOpen} onClose={() => setSyncDrawerOpen(false)} />
