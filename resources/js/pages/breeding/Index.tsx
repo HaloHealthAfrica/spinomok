@@ -60,11 +60,13 @@ export default function BreedingIndex() {
         {TABS.map((t) => (
           <button
             key={t}
+            type="button"
             onClick={() => setTab(t)}
             className={clsx(
-              'flex-1 py-3 text-sm font-medium border-b-2 transition-colors',
+              'flex-1 py-3 text-sm font-medium border-b-2 transition-colors cursor-pointer',
               tab === t ? 'text-primary-900 border-primary-900' : 'text-gray-500 border-transparent',
             )}
+            style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
           >
             {t}
           </button>

@@ -152,31 +152,36 @@ export default function HeatForm() {
           <div>
             <label className="text-sm font-medium text-gray-700 block mb-2">Signs Observed</label>
             <div className="space-y-2">
-              {SIGNS.map(sign => (
-                <button
-                  key={sign.key}
-                  type="button"
-                  onClick={() => toggleSign(sign.key)}
-                  className={clsx(
-                    'w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-sm text-left transition-all',
-                    selectedSigns.includes(sign.key)
-                      ? 'bg-primary-50 border-primary-400 text-primary-900'
-                      : 'bg-white border-gray-200 text-gray-700',
-                  )}
-                >
-                  <div className={clsx(
-                    'h-5 w-5 rounded border-2 flex items-center justify-center flex-shrink-0',
-                    selectedSigns.includes(sign.key) ? 'bg-primary-900 border-primary-900' : 'border-gray-300',
-                  )}>
-                    {selectedSigns.includes(sign.key) && (
-                      <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
+              {SIGNS.map(sign => {
+                const selected = selectedSigns.includes(sign.key);
+                return (
+                  <button
+                    key={sign.key}
+                    type="button"
+                    onClick={() => toggleSign(sign.key)}
+                    aria-pressed={selected}
+                    style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', minHeight: 44 }}
+                    className={clsx(
+                      'w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-sm text-left transition-all',
+                      selected
+                        ? 'bg-primary-50 border-primary-400 text-primary-900'
+                        : 'bg-white border-gray-200 text-gray-700',
                     )}
-                  </div>
-                  {sign.label}
-                </button>
-              ))}
+                  >
+                    <div className={clsx(
+                      'h-5 w-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors',
+                      selected ? 'bg-primary-900 border-primary-900' : 'border-gray-300 bg-white',
+                    )}>
+                      {selected && (
+                        <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    {sign.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

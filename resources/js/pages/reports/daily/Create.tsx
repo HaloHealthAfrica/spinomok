@@ -258,8 +258,28 @@ function Step1Milk({
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Step 2: Milk Sales Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
-interface SaleEntry { buyer_id: string; litres: string; price: string }
+interface SaleEntry { buyer_id: string; channel_label: string; litres: string; price: string }
 interface Step2Data { sales: SaleEntry[]; notes: string }
+
+const SALE_CHANNELS = [
+  { label: 'Farm Gate',    type: 'direct',      icon: '🏡', defaultPrice: 65 },
+  { label: 'Sacco',        type: 'cooperative', icon: '🤝', defaultPrice: 43 },
+  { label: 'Brookside',    type: 'processor',   icon: '🏭', defaultPrice: 42 },
+  { label: 'New KCC',      type: 'processor',   icon: '🏭', defaultPrice: 40 },
+  { label: 'Home Use',     type: 'home_use',    icon: '🏠', defaultPrice: 0  },
+  { label: 'Calf Feeding', type: 'calf_feeding',icon: '🐄', defaultPrice: 0  },
+];
+
+function resolveChannel(buyers: MilkBuyer[], channelType: string): { buyer_id: string; price: string } {
+  const buyer = buyers.find(b => b.buyer_type === channelType);
+  const fallback = SALE_CHANNELS.find(c => c.type === channelType);
+  return {
+    buyer_id: buyer?.id ?? '',
+    price: buyer?.default_price_per_litre != null
+      ? buyer.default_price_per_litre.toString()
+      : (fallback?.defaultPrice ?? 0).toString(),
+  };
+}
 
 function Step2Sales({
   buyers, milkTotal, initialData, onNext, onBack, saving,
@@ -271,25 +291,37 @@ function Step2Sales({
   onBack: () => void;
   saving: boolean;
 }) {
+  const defaultChannel = SALE_CHANNELS[0];
+  const defaultResolved = resolveChannel(buyers, defaultChannel.type);
+
   const [sales, setSales] = useState<SaleEntry[]>(
-    initialData?.sales ?? [{ buyer_id: buyers[0]?.id ?? '', litres: '', price: buyers[0]?.default_price_per_litre?.toString() ?? '' }]
+    initialData?.sales ?? [{
+      buyer_id: defaultResolved.buyer_id,
+      channel_label: defaultChannel.label,
+      litres: '',
+      price: defaultResolved.price,
+    }]
   );
   const [notes, setNotes] = useState(initialData?.notes ?? '');
 
   const updateSale = (idx: number, field: keyof SaleEntry, value: string) => {
-    setSales(prev => prev.map((s, i) => {
-      if (i !== idx) return s;
-      const updated = { ...s, [field]: value };
-      // Auto-fill price when buyer changes
-      if (field === 'buyer_id') {
-        const buyer = buyers.find(b => b.id === value);
-        updated.price = buyer?.default_price_per_litre?.toString() ?? '';
-      }
-      return updated;
+    setSales(prev => prev.map((s, i) => i !== idx ? s : { ...s, [field]: value }));
+  };
+
+  const selectChannel = (idx: number, channel: typeof SALE_CHANNELS[number]) => {
+    const resolved = resolveChannel(buyers, channel.type);
+    setSales(prev => prev.map((s, i) => i !== idx ? s : {
+      ...s,
+      channel_label: channel.label,
+      buyer_id: resolved.buyer_id,
+      price: resolved.price,
     }));
   };
 
-  const addSale = () => setSales(prev => [...prev, { buyer_id: buyers[0]?.id ?? '', litres: '', price: '' }]);
+  const addSale = () => {
+    const resolved = resolveChannel(buyers, defaultChannel.type);
+    setSales(prev => [...prev, { buyer_id: resolved.buyer_id, channel_label: defaultChannel.label, litres: '', price: resolved.price }]);
+  };
   const removeSale = (idx: number) => setSales(prev => prev.filter((_, i) => i !== idx));
 
   const totalSold = sales.reduce((sum, s) => sum + (parseFloat(s.litres) || 0), 0);
@@ -298,7 +330,7 @@ function Step2Sales({
   return (
     <div className="px-4 py-4 space-y-4">
       <div>
-        <h2 className="text-lg font-bold text-gray-900">Ã°Å¸â€™Â° Milk Sales</h2>
+        <h2 className="text-lg font-bold text-gray-900">🛒 Milk Sales</h2>
         <p className="text-sm text-gray-500">Available: {milkTotal.toFixed(1)} L produced today</p>
       </div>
 
@@ -315,18 +347,30 @@ function Step2Sales({
               <button onClick={() => removeSale(idx)} className="text-xs text-red-500">Remove</button>
             )}
           </div>
+
+          {/* Channel chips */}
           <div>
-            <label className="text-xs font-medium text-gray-600 mb-1 block">Buyer / Channel</label>
-            <select
-              value={sale.buyer_id}
-              onChange={e => updateSale(idx, 'buyer_id', e.target.value)}
-              className="h-11 w-full rounded-xl border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600"
-            >
-              {buyers.map(b => (
-                <option key={b.id} value={b.id}>{b.name}</option>
+            <label className="text-xs font-medium text-gray-600 mb-2 block">Channel</label>
+            <div className="flex flex-wrap gap-2">
+              {SALE_CHANNELS.map(ch => (
+                <button
+                  key={ch.label}
+                  type="button"
+                  onClick={() => selectChannel(idx, ch)}
+                  className={clsx(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
+                    sale.channel_label === ch.label
+                      ? 'bg-primary-900 text-white border-primary-900'
+                      : 'bg-white text-gray-600 border-gray-300 hover:border-primary-400',
+                  )}
+                >
+                  <span>{ch.icon}</span>
+                  {ch.label}
+                </button>
               ))}
-            </select>
+            </div>
           </div>
+
           <div className="grid grid-cols-2 gap-3">
             <Input
               label="Quantity"
@@ -355,7 +399,7 @@ function Step2Sales({
         onClick={addSale}
         className="w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-sm text-gray-500 hover:border-primary-400 hover:text-primary-600 transition-colors"
       >
-        + Add Another Buyer
+        + Add Another Sale
       </button>
 
       <div className="flex flex-col gap-1">
