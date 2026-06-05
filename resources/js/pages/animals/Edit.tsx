@@ -7,6 +7,7 @@ import { Select } from '@/components/ui/Select';
 import { router } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import type { PageProps, Animal } from '@/types';
+import { goBack } from '@/utils/navigation';
 
 interface EditProps extends PageProps { animal: Animal; }
 
@@ -40,7 +41,7 @@ export default function AnimalsEdit() {
             <ArrowLeft className="h-5 w-5" />
           </button>
           <h1 className="text-white text-lg font-bold">
-            Edit — {animal.name ?? animal.tag_number}
+            Edit â€” {animal.name ?? animal.tag_number}
           </h1>
         </div>
       </div>

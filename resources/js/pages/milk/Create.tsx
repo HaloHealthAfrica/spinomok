@@ -11,6 +11,7 @@ import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { enqueueOperation } from '@/lib/sync/SyncService';
 import { db } from '@/lib/db/database';
 import axios from 'axios';
+import { goBack } from '@/utils/navigation';
 
 interface MilkCreateProps extends PageProps {
   date: string;
@@ -21,9 +22,9 @@ type SessionKey = 'morning' | 'midday' | 'evening';
 type EntryMap = Record<string, Record<SessionKey, string>>;
 
 const SESSIONS: { key: SessionKey; label: string; emoji: string }[] = [
-  { key: 'morning', label: 'AM', emoji: '🌅' },
-  { key: 'midday',  label: 'MD', emoji: '☀️' },
-  { key: 'evening', label: 'PM', emoji: '🌆' },
+  { key: 'morning', label: 'AM', emoji: 'ðŸŒ…' },
+  { key: 'midday',  label: 'MD', emoji: 'â˜€ï¸' },
+  { key: 'evening', label: 'PM', emoji: 'ðŸŒ†' },
 ];
 
 export default function MilkCreate() {
@@ -129,7 +130,7 @@ export default function MilkCreate() {
       <div className="bg-primary-900 pt-safe-top px-4 pb-4">
         <div className="flex items-center gap-3 pt-3">
           <button
-            onClick={() => router.visit('/milk-records')}
+            onClick={() => goBack('/milk-records')}
             className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-white"
             aria-label="Back"
           >
@@ -149,8 +150,8 @@ export default function MilkCreate() {
       {saved && (
         <div className="mx-4 mt-4 space-y-2">
           <div className="p-3 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2 text-green-700 text-sm">
-            <span>✓</span>
-            <span>Saved {todayTotal.toFixed(1)} L{!isOnline ? ' locally — will sync when connected' : ''}.</span>
+            <span>âœ“</span>
+            <span>Saved {todayTotal.toFixed(1)} L{!isOnline ? ' locally â€” will sync when connected' : ''}.</span>
           </div>
           <a
             href="/reports/daily/new"
@@ -158,7 +159,7 @@ export default function MilkCreate() {
             className="w-full p-3.5 bg-primary-900 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
             style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', display: 'flex' }}
           >
-            📋 Continue to Daily Report →
+            ðŸ“‹ Continue to Daily Report â†’
           </a>
           <a
             href="/dashboard"
@@ -221,7 +222,7 @@ export default function MilkCreate() {
         )}
       </div>
 
-      {/* Save button — sticky */}
+      {/* Save button â€” sticky */}
       <div className="sticky bottom-16 px-4 pb-4 bg-gradient-to-t from-gray-50 pt-6">
         <Button
           fullWidth
@@ -231,7 +232,7 @@ export default function MilkCreate() {
           leftIcon={<Save className="h-5 w-5" />}
           disabled={saved && isOnline}
         >
-          {saved && isOnline ? 'Saved ✓' : `Save ${todayTotal.toFixed(1)} L`}
+          {saved && isOnline ? 'Saved âœ“' : `Save ${todayTotal.toFixed(1)} L`}
         </Button>
       </div>
     </AppLayout>

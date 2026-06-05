@@ -7,6 +7,7 @@ import { clsx } from 'clsx';
 import type { PageProps, Animal } from '@/types';
 import { today } from '@/utils/format';
 import { Card } from '@/components/ui/Card';
+import { goBack } from '@/utils/navigation';
 
 interface SyncFormProps extends PageProps {
   animals: Animal[];
@@ -15,14 +16,14 @@ interface SyncFormProps extends PageProps {
 const PROGRAMS = [
   {
     type: 'Ovsynch',
-    description: 'GnRH → PGF2α → GnRH → TAI (10 days)',
-    steps: ['Day 0: GnRH injection', 'Day 7: PGF2α injection', 'Day 9: GnRH injection', 'Day 10 AM: Timed AI'],
+    description: 'GnRH â†’ PGF2Î± â†’ GnRH â†’ TAI (10 days)',
+    steps: ['Day 0: GnRH injection', 'Day 7: PGF2Î± injection', 'Day 9: GnRH injection', 'Day 10 AM: Timed AI'],
     color: 'text-blue-700 bg-blue-50 border-blue-300',
   },
   {
     type: 'CIDR',
-    description: 'CIDR insert → PGF2α → GnRH → TAI (10 days)',
-    steps: ['Day 0: Insert CIDR', 'Day 7: PGF2α + Remove CIDR', 'Day 9: GnRH injection', 'Day 10: Timed AI'],
+    description: 'CIDR insert â†’ PGF2Î± â†’ GnRH â†’ TAI (10 days)',
+    steps: ['Day 0: Insert CIDR', 'Day 7: PGF2Î± + Remove CIDR', 'Day 9: GnRH injection', 'Day 10: Timed AI'],
     color: 'text-purple-700 bg-purple-50 border-purple-300',
   },
 ];
@@ -96,7 +97,7 @@ export default function SyncForm() {
             >
               <option value="">Select cow or heifer...</option>
               {animals.map(a => (
-                <option key={a.id} value={a.id}>{a.name ?? a.tag_number} ({a.tag_number}) — {a.breed}</option>
+                <option key={a.id} value={a.id}>{a.name ?? a.tag_number} ({a.tag_number}) â€” {a.breed}</option>
               ))}
             </select>
           </div>
@@ -116,7 +117,7 @@ export default function SyncForm() {
           {/* Protocol step schedule preview */}
           {selectedProgram && data.start_date && (
             <Card padding="md" className="bg-gray-50">
-              <p className="text-sm font-bold text-gray-800 mb-3">📅 Schedule Preview</p>
+              <p className="text-sm font-bold text-gray-800 mb-3">ðŸ“… Schedule Preview</p>
               <div className="space-y-2">
                 {[0, 7, 9, 10].map((offset, i) => {
                   const d = new Date(startDate);

@@ -7,6 +7,7 @@ import { clsx } from 'clsx';
 import type { PageProps, FeedType, FeedInventoryItem } from '@/types';
 import { today, formatKES } from '@/utils/format';
 import axios from 'axios';
+import { goBack } from '@/utils/navigation';
 
 interface ConsumeFormProps extends PageProps {
   feedTypes: FeedType[];
@@ -163,7 +164,7 @@ export default function ConsumeForm() {
                 )}
 
                 {inv?.is_low && entry.quantity_kg && parseFloat(entry.quantity_kg) > 0 && (
-                  <p className="text-xs text-amber-600">⚠️ This feed is at low stock ({inv.quantity_kg.toFixed(0)} kg remaining)</p>
+                  <p className="text-xs text-amber-600">âš ï¸ This feed is at low stock ({inv.quantity_kg.toFixed(0)} kg remaining)</p>
                 )}
               </div>
             );
@@ -181,7 +182,7 @@ export default function ConsumeForm() {
           onClick={save}
           leftIcon={<TrendingDown className="h-5 w-5" />}
         >
-          {saved ? 'Saved! ✓' : `Record ${filledCount > 0 ? filledCount + ' Feed Type' + (filledCount !== 1 ? 's' : '') : 'Consumption'}`}
+          {saved ? 'Saved! âœ“' : `Record ${filledCount > 0 ? filledCount + ' Feed Type' + (filledCount !== 1 ? 's' : '') : 'Consumption'}`}
         </Button>
       </div>
     </AppLayout>

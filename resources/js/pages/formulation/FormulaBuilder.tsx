@@ -7,6 +7,7 @@ import { clsx } from 'clsx';
 import axios from 'axios';
 import type { PageProps, MealIngredient, MealFormula, FormulaCalculation } from '@/types';
 import { formatKES } from '@/utils/format';
+import { goBack } from '@/utils/navigation';
 
 interface BuilderProps extends PageProps {
   ingredients: MealIngredient[];
@@ -19,7 +20,7 @@ interface RowEntry {
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
-  energy: '⚡ Energy', protein: '💪 Protein', mineral: '🪨 Mineral', additive: '🧪 Additive',
+  energy: 'âš¡ Energy', protein: 'ðŸ’ª Protein', mineral: 'ðŸª¨ Mineral', additive: 'ðŸ§ª Additive',
 };
 
 export default function FormulaBuilder() {
@@ -127,7 +128,7 @@ export default function FormulaBuilder() {
           </button>
           <div className="flex-1">
             <h1 className="text-white text-lg font-bold">{isEdit ? 'Edit Formula' : 'Build Dairy Meal Formula'}</h1>
-            <p className="text-primary-300 text-xs">Batch: {batchSize} kg · Target CP: {targetCp}%</p>
+            <p className="text-primary-300 text-xs">Batch: {batchSize} kg Â· Target CP: {targetCp}%</p>
           </div>
           {calculating && <RefreshCw className="h-4 w-4 text-primary-300 animate-spin" />}
         </div>
@@ -177,8 +178,8 @@ export default function FormulaBuilder() {
             <select value={season} onChange={e => setSeason(e.target.value)}
               className="h-11 w-full rounded-xl border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600">
               <option value="general">General (Year-round)</option>
-              <option value="wet_season">Wet Season (Mar–May, Oct–Dec)</option>
-              <option value="dry_season">Dry Season (Jun–Sep, Jan–Feb)</option>
+              <option value="wet_season">Wet Season (Marâ€“May, Octâ€“Dec)</option>
+              <option value="dry_season">Dry Season (Junâ€“Sep, Janâ€“Feb)</option>
             </select>
           </div>
         </div>
@@ -269,7 +270,7 @@ export default function FormulaBuilder() {
             <Card padding="md" className="bg-blue-50 border-blue-200">
               <p className="text-sm font-bold text-blue-900 mb-3">Formula Nutrition Results</p>
               <div className="grid grid-cols-2 gap-3">
-                <NutrientResult label="Crude Protein (CP%)" value={calc.computed_cp_percent} unit="%" good={calc.computed_cp_percent >= 14 && calc.computed_cp_percent <= 20} goodRange="14–20%" />
+                <NutrientResult label="Crude Protein (CP%)" value={calc.computed_cp_percent} unit="%" good={calc.computed_cp_percent >= 14 && calc.computed_cp_percent <= 20} goodRange="14â€“20%" />
                 <NutrientResult label="Metabolizable Energy" value={calc.computed_me} unit=" MJ/kg DM" good={calc.computed_me >= 10} goodRange=">10" />
                 <NutrientResult label="Calcium" value={calc.computed_calcium_percent} unit="%" />
                 <NutrientResult label="Phosphorus" value={calc.computed_phosphorus_percent} unit="%" />

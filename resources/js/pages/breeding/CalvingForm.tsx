@@ -7,6 +7,7 @@ import { ArrowLeft, Baby } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { PageProps, Animal, AIService } from '@/types';
 import { today, formatDate } from '@/utils/format';
+import { goBack } from '@/utils/navigation';
 
 interface CalvingFormProps extends PageProps {
   pregnant: Animal[];
@@ -40,11 +41,11 @@ export default function CalvingForm() {
   };
 
   const EASE_OPTIONS = [
-    { value: 'easy',             label: '1 — Easy (no help)' },
-    { value: 'slight_assistance',label: '2 — Slight help' },
-    { value: 'major_assistance', label: '3 — Major help' },
-    { value: 'caesarean',        label: '4 — C-section' },
-    { value: 'abnormal',         label: '5 — Abnormal' },
+    { value: 'easy',             label: '1 â€” Easy (no help)' },
+    { value: 'slight_assistance',label: '2 â€” Slight help' },
+    { value: 'major_assistance', label: '3 â€” Major help' },
+    { value: 'caesarean',        label: '4 â€” C-section' },
+    { value: 'abnormal',         label: '5 â€” Abnormal' },
   ];
 
   return (
@@ -85,8 +86,8 @@ export default function CalvingForm() {
                 <option value="">Select pregnant cow...</option>
                 {pregnant.map(a => (
                   <option key={a.id} value={a.id}>
-                    {a.name ?? a.tag_number} ({a.tag_number}) · Lactation {a.parity + 1}
-                    {a.expected_calving_date ? ` · Due ${formatDate(a.expected_calving_date)}` : ''}
+                    {a.name ?? a.tag_number} ({a.tag_number}) Â· Lactation {a.parity + 1}
+                    {a.expected_calving_date ? ` Â· Due ${formatDate(a.expected_calving_date)}` : ''}
                   </option>
                 ))}
               </select>
@@ -144,9 +145,9 @@ export default function CalvingForm() {
             <label className="text-sm font-medium text-gray-700 block mb-2">Calf Outcome <span className="text-red-500">*</span></label>
             <div className="flex gap-2">
               {[
-                { value: 'alive',            label: '✅ Alive',      color: 'text-green-700 bg-green-50 border-green-300' },
-                { value: 'stillborn',        label: '💔 Stillborn',  color: 'text-red-700 bg-red-50 border-red-300' },
-                { value: 'died_within_24h',  label: '⚠️ Died <24h', color: 'text-amber-700 bg-amber-50 border-amber-300' },
+                { value: 'alive',            label: 'âœ… Alive',      color: 'text-green-700 bg-green-50 border-green-300' },
+                { value: 'stillborn',        label: 'ðŸ’” Stillborn',  color: 'text-red-700 bg-red-50 border-red-300' },
+                { value: 'died_within_24h',  label: 'âš ï¸ Died <24h', color: 'text-amber-700 bg-amber-50 border-amber-300' },
               ].map(o => (
                 <button
                   key={o.value}
@@ -170,8 +171,8 @@ export default function CalvingForm() {
                 <label className="text-sm font-medium text-gray-700 block mb-2">Calf Sex <span className="text-red-500">*</span></label>
                 <div className="flex gap-3">
                   {[
-                    { value: 'female', label: '♀ Heifer (Female)' },
-                    { value: 'male',   label: '♂ Bull Calf (Male)' },
+                    { value: 'female', label: 'â™€ Heifer (Female)' },
+                    { value: 'male',   label: 'â™‚ Bull Calf (Male)' },
                   ].map(s => (
                     <button
                       key={s.value}
@@ -243,9 +244,9 @@ export default function CalvingForm() {
           {/* Colostrum reminder */}
           {data.calf_outcome === 'alive' && (
             <div className="bg-amber-50 border border-amber-300 rounded-xl p-3">
-              <p className="text-sm font-bold text-amber-900">⚠️ Colostrum Reminder</p>
+              <p className="text-sm font-bold text-amber-900">âš ï¸ Colostrum Reminder</p>
               <p className="text-xs text-amber-700 mt-0.5">
-                Feed 3–4 litres of colostrum to the calf <strong>within 1 hour</strong> of birth. Critical for immunity!
+                Feed 3â€“4 litres of colostrum to the calf <strong>within 1 hour</strong> of birth. Critical for immunity!
               </p>
             </div>
           )}

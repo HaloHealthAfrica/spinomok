@@ -3,6 +3,7 @@ import { router, useForm, usePage } from '@inertiajs/react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ArrowLeft, Save, Settings } from 'lucide-react';
 import type { PageProps } from '@/types';
+import { goBack } from '@/utils/navigation';
 
 export default function FarmSettings() {
   const { auth } = usePage<PageProps>().props;
@@ -12,7 +13,7 @@ export default function FarmSettings() {
   if (!farm) {
     return (
       <AppLayout title="Farm Settings" showBottomNav={false}>
-        <div className="p-8 text-center text-gray-500">Loading farm settings…</div>
+        <div className="p-8 text-center text-gray-500">Loading farm settingsâ€¦</div>
       </AppLayout>
     );
   }

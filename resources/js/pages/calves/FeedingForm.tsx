@@ -7,6 +7,7 @@ import { ArrowLeft, Milk } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { PageProps, Animal } from '@/types';
 import { today } from '@/utils/format';
+import { goBack } from '@/utils/navigation';
 
 interface FeedingFormProps extends PageProps {
   calves: Animal[];
@@ -14,12 +15,12 @@ interface FeedingFormProps extends PageProps {
 }
 
 const FEED_TYPES = [
-  { value: 'whole_milk',      label: '🥛 Whole Milk',       unit: 'litres' },
-  { value: 'milk_replacer',   label: '🍼 Milk Replacer',    unit: 'litres' },
-  { value: 'starter_pellets', label: '🌾 Calf Pellets',     unit: 'kg' },
-  { value: 'hay',             label: '🌿 Hay / Roughage',   unit: 'kg' },
-  { value: 'water',           label: '💧 Water',            unit: 'litres' },
-  { value: 'other',           label: '🧪 Other',            unit: 'kg' },
+  { value: 'whole_milk',      label: 'ðŸ¥› Whole Milk',       unit: 'litres' },
+  { value: 'milk_replacer',   label: 'ðŸ¼ Milk Replacer',    unit: 'litres' },
+  { value: 'starter_pellets', label: 'ðŸŒ¾ Calf Pellets',     unit: 'kg' },
+  { value: 'hay',             label: 'ðŸŒ¿ Hay / Roughage',   unit: 'kg' },
+  { value: 'water',           label: 'ðŸ’§ Water',            unit: 'litres' },
+  { value: 'other',           label: 'ðŸ§ª Other',            unit: 'kg' },
 ];
 
 export default function FeedingForm() {
@@ -83,7 +84,7 @@ export default function FeedingForm() {
                     : null;
                   return (
                     <option key={a.id} value={a.id}>
-                      {a.name ?? a.tag_number} ({a.tag_number}){ageDays !== null ? ` · ${ageDays}d old` : ''}
+                      {a.name ?? a.tag_number} ({a.tag_number}){ageDays !== null ? ` Â· ${ageDays}d old` : ''}
                     </option>
                   );
                 })}
@@ -102,9 +103,9 @@ export default function FeedingForm() {
               <label className="text-sm font-medium text-gray-700 block mb-1">Session</label>
               <select value={data.session} onChange={e => setData('session', e.target.value)}
                 className="h-12 w-full rounded-xl border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600">
-                <option value="morning">🌅 Morning</option>
-                <option value="midday">☀️ Midday</option>
-                <option value="evening">🌆 Evening</option>
+                <option value="morning">ðŸŒ… Morning</option>
+                <option value="midday">â˜€ï¸ Midday</option>
+                <option value="evening">ðŸŒ† Evening</option>
               </select>
             </div>
           </div>

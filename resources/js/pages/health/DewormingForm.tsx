@@ -7,6 +7,7 @@ import { ArrowLeft, Bug } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { PageProps, Animal } from '@/types';
 import { today } from '@/utils/format';
+import { goBack } from '@/utils/navigation';
 
 interface DewormProps extends PageProps {
   animals: Animal[];
@@ -94,7 +95,7 @@ export default function DewormingForm() {
                       </svg>
                     )}
                   </div>
-                  <span>{a.name ?? a.tag_number} ({a.tag_number}) — {a.breed}</span>
+                  <span>{a.name ?? a.tag_number} ({a.tag_number}) â€” {a.breed}</span>
                 </button>
               ))}
             </div>
@@ -111,7 +112,7 @@ export default function DewormingForm() {
               {dewormDrugs.map(d => <option key={d.name} value={d.name}>{d.name} (WD: {d.withdrawal}d)</option>)}
             </select>
             {selectedDrug && (
-              <p className="text-xs text-gray-500 mt-1">Active: {selectedDrug.ingredient} · Milk withdrawal: {selectedDrug.withdrawal} days</p>
+              <p className="text-xs text-gray-500 mt-1">Active: {selectedDrug.ingredient} Â· Milk withdrawal: {selectedDrug.withdrawal} days</p>
             )}
           </div>
 
@@ -153,7 +154,7 @@ export default function DewormingForm() {
           </div>
 
           <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-xs text-green-700">
-            <p className="font-bold mb-1">✅ Auto-schedule</p>
+            <p className="font-bold mb-1">âœ… Auto-schedule</p>
             <p>Next deworming alert will be created 83 days after today (alerting 7 days before the 90-day due date).</p>
           </div>
 

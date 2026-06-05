@@ -6,6 +6,7 @@ import { Badge, getSeverityVariant } from '@/components/ui/Badge';
 import { CardGroup, CardRow } from '@/components/ui/Card';
 import type { Alert, PageProps } from '@/types';
 import { formatDate } from '@/utils/format';
+import { goBack } from '@/utils/navigation';
 
 interface AlertsPageProps extends PageProps {
   alerts: Alert[];

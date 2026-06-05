@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { clsx } from 'clsx';
 import type { PageProps, FeedTransaction } from '@/types';
 import { formatDate, formatKES } from '@/utils/format';
+import { goBack } from '@/utils/navigation';
 
 interface ShowProps extends PageProps {
   inventory: {
@@ -74,14 +75,14 @@ export default function FeedShow() {
           <Card padding="md" className="text-center">
             <p className="text-xs text-gray-500">Avg Cost</p>
             <p className="text-xl font-bold text-gray-900">
-              {inventory.avg_cost_per_kg ? `${inventory.avg_cost_per_kg}` : '—'}
+              {inventory.avg_cost_per_kg ? `${inventory.avg_cost_per_kg}` : 'â€”'}
             </p>
             <p className="text-xs text-gray-400">KES/kg</p>
           </Card>
           <Card padding="md" className="text-center">
             <p className="text-xs text-gray-500">Reorder At</p>
             <p className="text-xl font-bold text-gray-900">
-              {inventory.reorder_level_kg ?? '—'}
+              {inventory.reorder_level_kg ?? 'â€”'}
             </p>
             <p className="text-xs text-gray-400">kg</p>
           </Card>
@@ -132,19 +133,19 @@ export default function FeedShow() {
                     <div className="flex items-center gap-3">
                       <div className={clsx('h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0',
                         isIn ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700')}>
-                        {isIn ? '+' : '−'}
+                        {isIn ? '+' : 'âˆ’'}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900">{typeLabel[txn.transaction_type] ?? txn.transaction_type}</p>
                         <p className="text-xs text-gray-500">
                           {formatDate(txn.transaction_date)}
-                          {txn.supplier ? ` · ${txn.supplier}` : ''}
-                          {txn.animal_group ? ` · ${txn.animal_group}` : ''}
+                          {txn.supplier ? ` Â· ${txn.supplier}` : ''}
+                          {txn.animal_group ? ` Â· ${txn.animal_group}` : ''}
                         </p>
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className={clsx('text-sm font-bold', isIn ? 'text-green-700' : 'text-amber-700')}>
-                          {isIn ? '+' : '−'}{Math.abs(txn.quantity_kg).toFixed(0)} kg
+                          {isIn ? '+' : 'âˆ’'}{Math.abs(txn.quantity_kg).toFixed(0)} kg
                         </p>
                         {txn.total_cost ? <p className="text-xs text-gray-400">{formatKES(txn.total_cost)}</p> : null}
                       </div>

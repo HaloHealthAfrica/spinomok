@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import type { PageProps, Vaccination } from '@/types';
 import { formatDate } from '@/utils/format';
+import { goBack } from '@/utils/navigation';
 
 interface ScheduleProps extends PageProps {
   upcoming: Vaccination[];
@@ -37,14 +38,14 @@ export default function VaccinationSchedule() {
 
         {/* Kenya standard schedule reference */}
         <Card padding="md" className="bg-blue-50 border-blue-200">
-          <p className="text-sm font-bold text-blue-900 mb-2">🇰🇪 Kenya Standard Schedule</p>
+          <p className="text-sm font-bold text-blue-900 mb-2">ðŸ‡°ðŸ‡ª Kenya Standard Schedule</p>
           <div className="space-y-1 text-xs text-blue-700">
-            <p>• <strong>FMD</strong> — Every 6 months (Mar + Aug)</p>
-            <p>• <strong>LSD / Sheeppox</strong> — Annually (Feb, before rains)</p>
-            <p>• <strong>Anthrax</strong> — Annually (endemic areas only)</p>
-            <p>• <strong>Brucellosis S19</strong> — Heifers 4–8 months (once only)</p>
-            <p>• <strong>ECF-ITM</strong> — Once per lifetime</p>
-            <p>• <strong>Blackleg</strong> — Annually, young stock</p>
+            <p>â€¢ <strong>FMD</strong> â€” Every 6 months (Mar + Aug)</p>
+            <p>â€¢ <strong>LSD / Sheeppox</strong> â€” Annually (Feb, before rains)</p>
+            <p>â€¢ <strong>Anthrax</strong> â€” Annually (endemic areas only)</p>
+            <p>â€¢ <strong>Brucellosis S19</strong> â€” Heifers 4â€“8 months (once only)</p>
+            <p>â€¢ <strong>ECF-ITM</strong> â€” Once per lifetime</p>
+            <p>â€¢ <strong>Blackleg</strong> â€” Annually, young stock</p>
           </div>
         </Card>
 
@@ -98,7 +99,7 @@ function VaccRow({ vacc, status }: { vacc: Vaccination; status: 'overdue' | 'upc
   const badgeProps = {
     overdue:  { variant: 'error' as const,   label: 'Overdue' },
     upcoming: { variant: 'warning' as const, label: dueDate ? formatDate(dueDate) : 'Due' },
-    done:     { variant: 'success' as const, label: 'Done ✓' },
+    done:     { variant: 'success' as const, label: 'Done âœ“' },
   }[status];
 
   return (

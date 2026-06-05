@@ -7,6 +7,7 @@ import { ArrowLeft, Heart, Plus, Trash2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { PageProps, Animal, DiseaseType, MedicationType } from '@/types';
 import { today } from '@/utils/format';
+import { goBack } from '@/utils/navigation';
 
 interface CreateProps extends PageProps {
   animals: Animal[];
@@ -117,11 +118,11 @@ export default function HealthCreate() {
             <select value={data.disease_type_id} onChange={e => setData('disease_type_id', e.target.value)}
               className="h-12 w-full rounded-xl border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600">
               <option value="">Select condition (optional)...</option>
-              {diseases.map(d => <option key={d.id} value={d.id}>{d.name}{d.is_notifiable ? ' ⚠️' : ''}</option>)}
+              {diseases.map(d => <option key={d.id} value={d.id}>{d.name}{d.is_notifiable ? ' âš ï¸' : ''}</option>)}
             </select>
             {selectedDisease?.common_signs && (
               <p className="text-xs text-blue-700 mt-1 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
-                💡 Common signs: {selectedDisease.common_signs}
+                ðŸ’¡ Common signs: {selectedDisease.common_signs}
               </p>
             )}
           </div>
@@ -227,7 +228,7 @@ export default function HealthCreate() {
                     </div>
                     {meds.find(m => m.id === t.medication_type_id)?.withdrawal_period_days !== 0 && (
                       <p className="text-[10px] text-red-600 font-medium">
-                        ⚠️ Milk withdrawal: {meds.find(m => m.id === t.medication_type_id)?.withdrawal_period_days} days — will be auto-flagged
+                        âš ï¸ Milk withdrawal: {meds.find(m => m.id === t.medication_type_id)?.withdrawal_period_days} days â€” will be auto-flagged
                       </p>
                     )}
                   </div>

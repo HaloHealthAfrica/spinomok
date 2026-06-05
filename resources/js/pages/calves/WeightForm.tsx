@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/Input';
 import { ArrowLeft, Scale } from 'lucide-react';
 import type { PageProps, Animal } from '@/types';
 import { today } from '@/utils/format';
+import { goBack } from '@/utils/navigation';
 
 interface WeightFormProps extends PageProps {
   animals: Animal[];
@@ -64,14 +65,14 @@ export default function WeightForm() {
               <optgroup label="Calves & Heifers">
                 {animals.map(a => (
                   <option key={a.id} value={a.id}>
-                    {a.name ?? a.tag_number} ({a.tag_number}) · {a.status}
+                    {a.name ?? a.tag_number} ({a.tag_number}) Â· {a.status}
                   </option>
                 ))}
               </optgroup>
               <optgroup label="Cows (for BCS)">
                 {cows.map(a => (
                   <option key={a.id} value={a.id}>
-                    {a.name ?? a.tag_number} ({a.tag_number}) · {a.status}
+                    {a.name ?? a.tag_number} ({a.tag_number}) Â· {a.status}
                   </option>
                 ))}
               </optgroup>
@@ -80,7 +81,7 @@ export default function WeightForm() {
 
           {selectedAnimal && ageDays !== null && (
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-700">
-              <p><strong>{selectedAnimal.name ?? selectedAnimal.tag_number}</strong> · {ageDays} days old · {selectedAnimal.breed}</p>
+              <p><strong>{selectedAnimal.name ?? selectedAnimal.tag_number}</strong> Â· {ageDays} days old Â· {selectedAnimal.breed}</p>
               {selectedAnimal.weight_kg && <p className="text-xs mt-0.5">Last recorded: {selectedAnimal.weight_kg} kg</p>}
             </div>
           )}
@@ -109,7 +110,7 @@ export default function WeightForm() {
                   className="h-12 w-full rounded-xl border border-gray-300 px-4 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600" />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">/5</span>
               </div>
-              <p className="text-xs text-gray-400 mt-1">1=thin · 3=ideal · 5=obese</p>
+              <p className="text-xs text-gray-400 mt-1">1=thin Â· 3=ideal Â· 5=obese</p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 block mb-1">Measurement Method</label>

@@ -5,6 +5,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/Card';
 import type { PageProps, DailyReport, AnimalMilkRecord, MilkSale } from '@/types';
 import { formatDate, formatKES, formatLitres } from '@/utils/format';
+import { goBack } from '@/utils/navigation';
 
 interface ShowProps extends PageProps {
   report: DailyReport & { submitted_by?: { id: string; name: string } };
@@ -19,10 +20,10 @@ export default function DailyReportShow() {
   const totalRevenue = sales.reduce((sum, s) => sum + s.total_amount, 0);
 
   const whatsAppMessage = encodeURIComponent(
-    `🐄 *DAILY FARM REPORT* — ${formatDate(report.report_date)}\n\n` +
-    `🥛 *MILK*: ${milk_summary.total_litres.toFixed(1)} L (${milk_summary.cows_milked} cows)\n` +
-    `💰 *REVENUE*: ${formatKES(totalRevenue)}\n` +
-    (report.manager_notes ? `📝 *NOTES*: ${report.manager_notes}\n` : '') +
+    `ðŸ„ *DAILY FARM REPORT* â€” ${formatDate(report.report_date)}\n\n` +
+    `ðŸ¥› *MILK*: ${milk_summary.total_litres.toFixed(1)} L (${milk_summary.cows_milked} cows)\n` +
+    `ðŸ’° *REVENUE*: ${formatKES(totalRevenue)}\n` +
+    (report.manager_notes ? `ðŸ“ *NOTES*: ${report.manager_notes}\n` : '') +
     `\n_SpinoMok FarmOps_`
   );
 
@@ -54,15 +55,15 @@ export default function DailyReportShow() {
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
           <CheckCircle className="h-8 w-8 text-green-600 flex-shrink-0" />
           <div>
-            <p className="text-sm font-bold text-green-900">Report Submitted ✓</p>
+            <p className="text-sm font-bold text-green-900">Report Submitted âœ“</p>
             <p className="text-xs text-green-600">
-              by {report.submitted_by?.name ?? 'Unknown'} · {report.submitted_at ? new Date(report.submitted_at).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' }) : ''}
+              by {report.submitted_by?.name ?? 'Unknown'} Â· {report.submitted_at ? new Date(report.submitted_at).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' }) : ''}
             </p>
           </div>
         </div>
 
         {/* Milk summary */}
-        <Section title="🥛 Milk Production">
+        <Section title="ðŸ¥› Milk Production">
           <div className="grid grid-cols-2 gap-2">
             <StatBox label="Total" value={formatLitres(milk_summary.total_litres)} highlight />
             <StatBox label="Cows" value={`${milk_summary.cows_milked}`} />
@@ -82,7 +83,7 @@ export default function DailyReportShow() {
         </Section>
 
         {/* Sales */}
-        <Section title="💰 Milk Sales">
+        <Section title="ðŸ’° Milk Sales">
           {sales.length === 0 ? (
             <p className="text-sm text-gray-500">No sales recorded.</p>
           ) : (
@@ -106,7 +107,7 @@ export default function DailyReportShow() {
 
         {/* Manager notes */}
         {report.manager_notes && (
-          <Section title="📝 Manager Notes">
+          <Section title="ðŸ“ Manager Notes">
             <p className="text-sm text-gray-700">{report.manager_notes}</p>
           </Section>
         )}

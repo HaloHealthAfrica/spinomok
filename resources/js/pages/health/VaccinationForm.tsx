@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/Input';
 import { ArrowLeft, Syringe } from 'lucide-react';
 import type { PageProps, Animal, VaccineType } from '@/types';
 import { today } from '@/utils/format';
+import { goBack } from '@/utils/navigation';
 
 interface VaccFormProps extends PageProps {
   animals: Animal[];
@@ -66,7 +67,7 @@ export default function VaccinationForm() {
             </select>
             {selectedType?.disease_prevented && (
               <p className="text-xs text-blue-700 mt-1">Prevents: {selectedType.disease_prevented}
-                {selectedType.booster_interval_days ? ` · Repeat every ${selectedType.booster_interval_days} days` : ' · One-time vaccination'}
+                {selectedType.booster_interval_days ? ` Â· Repeat every ${selectedType.booster_interval_days} days` : ' Â· One-time vaccination'}
               </p>
             )}
           </div>

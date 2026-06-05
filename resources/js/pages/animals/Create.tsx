@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { router } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
+import { goBack } from '@/utils/navigation';
 
 const breedOptions = [
   { value: 'Friesian', label: 'Holstein-Friesian' },
@@ -19,7 +20,7 @@ const breedOptions = [
 ];
 
 const statusOptions = [
-  { value: 'calf', label: 'Calf (0–6 months)' },
+  { value: 'calf', label: 'Calf (0â€“6 months)' },
   { value: 'heifer', label: 'Heifer (6+ months, not calved)' },
   { value: 'lactating', label: 'Lactating Cow' },
   { value: 'dry', label: 'Dry Cow' },

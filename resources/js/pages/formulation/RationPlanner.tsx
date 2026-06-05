@@ -8,16 +8,17 @@ import { clsx } from 'clsx';
 import axios from 'axios';
 import type { PageProps, MealFormula, RationCalculation } from '@/types';
 import { formatKES, today } from '@/utils/format';
+import { goBack } from '@/utils/navigation';
 
 interface RationProps extends PageProps {
   formulas: MealFormula[];
 }
 
 const GROUP_OPTIONS = [
-  { value: 'lactating', label: '🥛 Lactating Cows', hint: 'High-producing cows · target CP 16–18%' },
-  { value: 'dry',       label: '🌿 Dry Cows',       hint: 'Pre-calving · no concentrates' },
-  { value: 'heifer',    label: '🐄 Heifers',         hint: 'Growing animals · target CP 14–16%' },
-  { value: 'calf',      label: '🐮 Calves',          hint: 'Starter phase · target CP 18–20%' },
+  { value: 'lactating', label: 'ðŸ¥› Lactating Cows', hint: 'High-producing cows Â· target CP 16â€“18%' },
+  { value: 'dry',       label: 'ðŸŒ¿ Dry Cows',       hint: 'Pre-calving Â· no concentrates' },
+  { value: 'heifer',    label: 'ðŸ„ Heifers',         hint: 'Growing animals Â· target CP 14â€“16%' },
+  { value: 'calf',      label: 'ðŸ® Calves',          hint: 'Starter phase Â· target CP 18â€“20%' },
 ];
 
 export default function RationPlanner() {
@@ -169,7 +170,7 @@ export default function RationPlanner() {
               <div className="space-y-1">
                 {ration.warnings.map((w, i) => (
                   <div key={i} className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-700">
-                    ⚠️ {w}
+                    âš ï¸ {w}
                   </div>
                 ))}
               </div>
@@ -178,7 +179,7 @@ export default function RationPlanner() {
             {/* Feed components */}
             <div className="bg-green-50 border border-green-200 rounded-xl p-4">
               <p className="text-sm font-bold text-green-900 mb-3">
-                📋 Recommended Daily Ration — {selectedGroup?.label}
+                ðŸ“‹ Recommended Daily Ration â€” {selectedGroup?.label}
               </p>
               <div className="space-y-2">
                 {ration.components.map((comp, i) => (
@@ -186,7 +187,7 @@ export default function RationPlanner() {
                     <div className="flex-1">
                       <p className="text-sm font-medium text-green-900">{comp.component_name}</p>
                       <p className="text-xs text-green-600">
-                        CP: {comp.cp_contribution_percent.toFixed(1)}% · ME: {comp.me_contribution.toFixed(1)} MJ
+                        CP: {comp.cp_contribution_percent.toFixed(1)}% Â· ME: {comp.me_contribution.toFixed(1)} MJ
                       </p>
                     </div>
                     <div className="text-right">
@@ -211,7 +212,7 @@ export default function RationPlanner() {
             {/* Save plan form */}
             <form onSubmit={submit} className="space-y-3">
               <p className="text-sm font-semibold text-gray-700">Save as Ration Plan</p>
-              <Input label="Plan Name" placeholder="e.g. Lactating Cows — High Yield" required
+              <Input label="Plan Name" placeholder="e.g. Lactating Cows â€” High Yield" required
                 value={data.name} onChange={e => setData('name', e.target.value)} error={errors.name} />
               <div className="grid grid-cols-2 gap-3">
                 <div>

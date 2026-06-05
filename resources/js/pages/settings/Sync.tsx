@@ -9,6 +9,7 @@ import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { runSync } from '@/lib/sync/SyncService';
 import { db } from '@/lib/db/database';
+import { goBack } from '@/utils/navigation';
 
 export default function SyncSettings() {
   const { isOnline, connectionType, isSyncing, pendingCount, lastSyncedAt } = useNetworkStatus();
@@ -97,7 +98,7 @@ export default function SyncSettings() {
             onClick={handleSyncNow}
             leftIcon={<RefreshCw className={clsx('h-4 w-4', (syncing || isSyncing) && 'animate-spin')} />}
           >
-            {syncing || isSyncing ? 'Syncing…' : 'Sync Now'}
+            {syncing || isSyncing ? 'Syncingâ€¦' : 'Sync Now'}
           </Button>
         </Card>
 
@@ -146,7 +147,7 @@ export default function SyncSettings() {
             <div className="flex items-center gap-3">
               <CheckCircle className="h-6 w-6 text-green-600" />
               <div>
-                <p className="text-sm font-semibold text-green-800">Installed ✓</p>
+                <p className="text-sm font-semibold text-green-800">Installed âœ“</p>
                 <p className="text-xs text-gray-500">FarmOps is installed on this device</p>
               </div>
             </div>
@@ -160,7 +161,7 @@ export default function SyncSettings() {
           ) : isIOS ? (
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-700">
               <p className="font-semibold mb-1">Install on iPhone / iPad:</p>
-              <p>1. Tap the Share button (↑) in Safari</p>
+              <p>1. Tap the Share button (â†‘) in Safari</p>
               <p>2. Scroll down and tap "Add to Home Screen"</p>
               <p>3. Tap "Add" to confirm</p>
             </div>

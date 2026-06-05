@@ -3,6 +3,7 @@ import { router, useForm, usePage } from '@inertiajs/react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ArrowLeft, Save, User } from 'lucide-react';
 import type { PageProps } from '@/types';
+import { goBack } from '@/utils/navigation';
 
 export default function ProfileSettings() {
   const { auth } = usePage<PageProps>().props;

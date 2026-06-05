@@ -4,6 +4,7 @@ import { ArrowLeft, Scale, TrendingUp, TrendingDown } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { goBack } from '@/utils/navigation';
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine,
 } from 'recharts';
@@ -60,7 +61,7 @@ export default function CalfShow() {
             </button>
             <div>
               <h1 className="text-white text-lg font-bold">{animal.name ?? animal.tag_number}</h1>
-              <p className="text-primary-300 text-xs">{animal.breed} · {ageLabel}</p>
+              <p className="text-primary-300 text-xs">{animal.breed} Â· {ageLabel}</p>
             </div>
           </div>
           <button
@@ -75,17 +76,17 @@ export default function CalfShow() {
         <div className="grid grid-cols-3 gap-2">
           <div className="bg-white/10 rounded-xl p-3 text-center">
             <p className="text-primary-200 text-xs">Current Weight</p>
-            <p className="text-white text-lg font-bold">{latest_weight?.toFixed(1) ?? '—'} kg</p>
+            <p className="text-white text-lg font-bold">{latest_weight?.toFixed(1) ?? 'â€”'} kg</p>
           </div>
           <div className={clsx('rounded-xl p-3 text-center', adgGood ? 'bg-green-500/20' : current_adg !== null ? 'bg-red-500/20' : 'bg-white/10')}>
             <p className="text-primary-200 text-xs">ADG</p>
             <div className="flex items-center justify-center gap-1">
               {current_adg !== null && (adgGood ? <TrendingUp className="h-4 w-4 text-green-300" /> : <TrendingDown className="h-4 w-4 text-red-300" />)}
               <p className="text-white text-lg font-bold">
-                {current_adg !== null ? `${current_adg >= 0 ? '+' : ''}${current_adg.toFixed(2)}` : '—'}
+                {current_adg !== null ? `${current_adg >= 0 ? '+' : ''}${current_adg.toFixed(2)}` : 'â€”'}
               </p>
             </div>
-            <p className="text-primary-200 text-[10px]">kg/day · target {target_adg}</p>
+            <p className="text-primary-200 text-[10px]">kg/day Â· target {target_adg}</p>
           </div>
           <div className="bg-white/10 rounded-xl p-3 text-center">
             <p className="text-primary-200 text-xs">Weighings</p>
@@ -99,7 +100,7 @@ export default function CalfShow() {
         {/* Projected calving */}
         {projected_calving && (
           <div className="bg-purple-50 border border-purple-200 rounded-xl p-3">
-            <p className="text-xs font-semibold text-purple-800">🐄 Projected First Calving (at current ADG)</p>
+            <p className="text-xs font-semibold text-purple-800">ðŸ„ Projected First Calving (at current ADG)</p>
             <p className="text-sm font-bold text-purple-900 mt-0.5">{projected_calving}</p>
             <p className="text-xs text-purple-600">Based on reaching 340 kg breeding weight + 280 day gestation</p>
           </div>
@@ -117,7 +118,7 @@ export default function CalfShow() {
                 <Tooltip formatter={(val, name) => [`${val} kg`, name === 'actual' ? 'Actual' : 'Target']} labelFormatter={l => `Age: ${l} days`} />
                 <Line type="monotone" dataKey="target" stroke="#d1d5db" strokeDasharray="5 5" strokeWidth={2} dot={false} name="target" />
                 <Line type="monotone" dataKey="actual" stroke="#1B5E20" strokeWidth={2.5} dot={{ r: 4, fill: '#1B5E20' }} name="actual" />
-                {/* Target ADG reference line at 0.5 kg/day — shown as note, not a line */}
+                {/* Target ADG reference line at 0.5 kg/day â€” shown as note, not a line */}
               </LineChart>
             </ResponsiveContainer>
             <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
@@ -185,13 +186,13 @@ export default function CalfShow() {
 
         {/* Kenya protocol reference */}
         <Card padding="md" className="bg-green-50 border-green-200">
-          <p className="text-sm font-bold text-green-900 mb-2">🇰🇪 Calf Feeding Protocol</p>
+          <p className="text-sm font-bold text-green-900 mb-2">ðŸ‡°ðŸ‡ª Calf Feeding Protocol</p>
           <div className="space-y-1 text-xs text-green-700">
-            <p>• <strong>Days 1–3:</strong> Colostrum (3–4 L/day)</p>
-            <p>• <strong>Days 4–60:</strong> Whole milk 4–6 L/day (AM + PM)</p>
-            <p>• <strong>Day 14+:</strong> Introduce calf pellets (starter)</p>
-            <p>• <strong>Day 60–90:</strong> Wean (reduce milk by 1L every 5 days)</p>
-            <p>• <strong>Target weaning weight:</strong> 70–80 kg</p>
+            <p>â€¢ <strong>Days 1â€“3:</strong> Colostrum (3â€“4 L/day)</p>
+            <p>â€¢ <strong>Days 4â€“60:</strong> Whole milk 4â€“6 L/day (AM + PM)</p>
+            <p>â€¢ <strong>Day 14+:</strong> Introduce calf pellets (starter)</p>
+            <p>â€¢ <strong>Day 60â€“90:</strong> Wean (reduce milk by 1L every 5 days)</p>
+            <p>â€¢ <strong>Target weaning weight:</strong> 70â€“80 kg</p>
           </div>
         </Card>
       </div>

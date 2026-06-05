@@ -7,6 +7,7 @@ import { ArrowLeft, Search } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { PageProps, Animal, AIService } from '@/types';
 import { today, formatDate } from '@/utils/format';
+import { goBack } from '@/utils/navigation';
 
 interface PDFormProps extends PageProps {
   animals: Animal[];
@@ -35,9 +36,9 @@ export default function PDForm() {
   };
 
   const RESULTS = [
-    { value: 'pregnant',     label: '✅ Pregnant',      color: 'text-green-700 bg-green-50 border-green-300' },
-    { value: 'not_pregnant', label: '❌ Not Pregnant',  color: 'text-red-700 bg-red-50 border-red-300' },
-    { value: 'inconclusive', label: '❓ Inconclusive',  color: 'text-amber-700 bg-amber-50 border-amber-300' },
+    { value: 'pregnant',     label: 'âœ… Pregnant',      color: 'text-green-700 bg-green-50 border-green-300' },
+    { value: 'not_pregnant', label: 'âŒ Not Pregnant',  color: 'text-red-700 bg-red-50 border-red-300' },
+    { value: 'inconclusive', label: 'â“ Inconclusive',  color: 'text-amber-700 bg-amber-50 border-amber-300' },
   ];
 
   return (
@@ -73,13 +74,13 @@ export default function PDForm() {
                 <option value="">Select animal / AI service...</option>
                 {pendingServices.map(s => (
                   <option key={s.id} value={s.id}>
-                    {s.animal?.name ?? s.animal?.tag_number} — AI on {formatDate(s.service_date)}
+                    {s.animal?.name ?? s.animal?.tag_number} â€” AI on {formatDate(s.service_date)}
                   </option>
                 ))}
               </select>
               {selectedService && (
                 <p className="text-xs text-gray-500 mt-1">
-                  AI service date: {formatDate(selectedService.service_date)} · Service #{selectedService.service_number}
+                  AI service date: {formatDate(selectedService.service_date)} Â· Service #{selectedService.service_number}
                 </p>
               )}
             </div>

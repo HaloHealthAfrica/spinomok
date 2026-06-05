@@ -6,6 +6,7 @@ import { ArrowLeft, Flame } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { PageProps, Animal } from '@/types';
 import { today } from '@/utils/format';
+import { goBack } from '@/utils/navigation';
 
 interface HeatFormProps extends PageProps {
   animals: Animal[];
@@ -54,7 +55,7 @@ export default function HeatForm() {
     const base = new Date(`${data.observed_on}T${data.observed_at}`);
     const start = new Date(base.getTime() + 12 * 3600000);
     const end   = new Date(base.getTime() + 18 * 3600000);
-    return `${start.toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })} – ${end.toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })}`;
+    return `${start.toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })} â€“ ${end.toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })}`;
   })();
 
   return (
@@ -66,7 +67,7 @@ export default function HeatForm() {
           </button>
           <div>
             <h1 className="text-white text-lg font-bold">Record Heat Detection</h1>
-            <p className="text-primary-300 text-xs">Standing heat = AI within 12–18 hours</p>
+            <p className="text-primary-300 text-xs">Standing heat = AI within 12â€“18 hours</p>
           </div>
         </div>
       </div>
@@ -85,7 +86,7 @@ export default function HeatForm() {
             >
               <option value="">Select cow or heifer...</option>
               {animals.map(a => (
-                <option key={a.id} value={a.id}>{a.name ?? a.tag_number} ({a.tag_number}) — {a.breed}</option>
+                <option key={a.id} value={a.id}>{a.name ?? a.tag_number} ({a.tag_number}) â€” {a.breed}</option>
               ))}
             </select>
             {errors.animal_id && <p className="text-xs text-red-600 mt-1">{errors.animal_id}</p>}
@@ -117,9 +118,9 @@ export default function HeatForm() {
           {/* AI window preview */}
           {aiWindow && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
-              <p className="text-sm font-bold text-amber-900">⏰ Optimal AI Window</p>
+              <p className="text-sm font-bold text-amber-900">â° Optimal AI Window</p>
               <p className="text-lg font-bold text-amber-800">{aiWindow}</p>
-              <p className="text-xs text-amber-600 mt-1">12–18 hours after standing heat detection</p>
+              <p className="text-xs text-amber-600 mt-1">12â€“18 hours after standing heat detection</p>
             </div>
           )}
 

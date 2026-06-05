@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { clsx } from 'clsx';
 import type { Animal, HealthEvent, PageProps } from '@/types';
 import { formatDate, formatLitres } from '@/utils/format';
+import { goBack } from '@/utils/navigation';
 
 interface MilkTotal {
   milked_on: string;

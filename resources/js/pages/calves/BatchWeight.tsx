@@ -7,6 +7,7 @@ import { clsx } from 'clsx';
 import type { PageProps, Animal, WeightRecord } from '@/types';
 import { today, formatDate } from '@/utils/format';
 import axios from 'axios';
+import { goBack } from '@/utils/navigation';
 
 interface BatchProps extends PageProps {
   animals: Animal[];
@@ -103,7 +104,7 @@ export default function BatchWeight() {
                 {/* Animal info */}
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-gray-900 truncate">{animal.name ?? animal.tag_number}</p>
-                  <p className="text-xs text-gray-400">{ageDays !== null ? `${ageDays}d` : ''} · {animal.breed}</p>
+                  <p className="text-xs text-gray-400">{ageDays !== null ? `${ageDays}d` : ''} Â· {animal.breed}</p>
                   {lastRec && (
                     <p className="text-xs text-gray-400">{lastRec.weight_kg} kg on {formatDate(lastRec.measured_on)}</p>
                   )}
@@ -157,7 +158,7 @@ export default function BatchWeight() {
           onClick={save}
           leftIcon={<Save className="h-5 w-5" />}
         >
-          {saved ? 'Saved! ✓' : `Save ${filledCount} Weight Record${filledCount !== 1 ? 's' : ''}`}
+          {saved ? 'Saved! âœ“' : `Save ${filledCount} Weight Record${filledCount !== 1 ? 's' : ''}`}
         </Button>
       </div>
     </AppLayout>
@@ -174,7 +175,7 @@ function AdgPreview({ newWeight, oldWeight, oldDate, newDate }: {
   return (
     <p className={clsx('text-xs font-medium', good ? 'text-green-600' : adg < 0 ? 'text-red-600' : 'text-amber-600')}>
       ADG: {adg >= 0 ? '+' : ''}{adg.toFixed(2)} kg/day over {days} days
-      {good ? ' ✓' : adg < 0 ? ' ⬇' : ' ⚠️ Below 0.5 target'}
+      {good ? ' âœ“' : adg < 0 ? ' â¬‡' : ' âš ï¸ Below 0.5 target'}
     </p>
   );
 }

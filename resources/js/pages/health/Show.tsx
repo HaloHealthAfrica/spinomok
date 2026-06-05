@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import type { PageProps, HealthEvent } from '@/types';
 import { formatDate, formatKES } from '@/utils/format';
 import { clsx } from 'clsx';
+import { goBack } from '@/utils/navigation';
 
 interface ShowProps extends PageProps {
   event: HealthEvent & {
@@ -39,7 +40,7 @@ export default function HealthShow() {
           </button>
           <div>
             <h1 className="text-white text-lg font-bold">{event.animal?.name ?? event.animal?.tag_number}</h1>
-            <p className="text-primary-300 text-xs">{event.disease_type?.name ?? 'Health Observation'} · {formatDate(event.observed_on)}</p>
+            <p className="text-primary-300 text-xs">{event.disease_type?.name ?? 'Health Observation'} Â· {formatDate(event.observed_on)}</p>
           </div>
         </div>
       </div>
@@ -51,7 +52,7 @@ export default function HealthShow() {
           <CheckCircle className={clsx('h-8 w-8 flex-shrink-0', event.is_recovered ? 'text-green-600' : 'text-amber-500')} />
           <div>
             <p className={clsx('text-sm font-bold', event.is_recovered ? 'text-green-900' : 'text-amber-900')}>
-              {event.is_recovered ? `Recovered — ${event.recovery_date ? formatDate(event.recovery_date) : ''}` : 'Case Open'}
+              {event.is_recovered ? `Recovered â€” ${event.recovery_date ? formatDate(event.recovery_date) : ''}` : 'Case Open'}
             </p>
             <div className="flex items-center gap-2 mt-0.5">
               <Badge variant={severityBadge} size="sm">{event.severity}</Badge>
@@ -68,12 +69,12 @@ export default function HealthShow() {
               { label: 'Animal',      value: `${event.animal?.name ?? event.animal?.tag_number} (${event.animal?.tag_number})` },
               { label: 'Condition',   value: event.disease_type?.name ?? 'Undiagnosed' },
               { label: 'Date',        value: formatDate(event.observed_on) },
-              { label: 'Reported by', value: event.reported_by?.name ?? '—' },
-              { label: 'Symptoms',    value: event.symptoms ?? '—' },
+              { label: 'Reported by', value: event.reported_by?.name ?? 'â€”' },
+              { label: 'Symptoms',    value: event.symptoms ?? 'â€”' },
               { label: 'Vet',         value: event.vet_consulted ? (event.vet_name ?? 'Yes') : 'No' },
-              { label: 'Consult cost',value: event.consultation_cost ? formatKES(event.consultation_cost) : '—' },
-              { label: 'Notes',       value: event.notes ?? '—' },
-            ].filter(r => r.value !== '—').map(r => (
+              { label: 'Consult cost',value: event.consultation_cost ? formatKES(event.consultation_cost) : 'â€”' },
+              { label: 'Notes',       value: event.notes ?? 'â€”' },
+            ].filter(r => r.value !== 'â€”').map(r => (
               <div key={r.label} className="flex justify-between gap-2">
                 <span className="text-xs text-gray-500 flex-shrink-0">{r.label}</span>
                 <span className="text-xs font-medium text-gray-900 text-right">{r.value}</span>
@@ -90,11 +91,11 @@ export default function HealthShow() {
               {event.treatments!.map(t => (
                 <div key={t.id} className="bg-purple-50 border border-purple-100 rounded-lg p-3">
                   <p className="text-sm font-semibold text-purple-900">{t.medication?.name ?? 'Unknown drug'}</p>
-                  <p className="text-xs text-purple-600">{t.dose_amount} {t.dose_unit} · {t.route} · {formatDate(t.treated_on)}</p>
+                  <p className="text-xs text-purple-600">{t.dose_amount} {t.dose_unit} Â· {t.route} Â· {formatDate(t.treated_on)}</p>
                   {t.withdrawal_end_date && (
                     <p className={clsx('text-xs font-medium mt-1',
                       t.is_in_withdrawal ? 'text-red-600' : 'text-green-600')}>
-                      {t.is_in_withdrawal ? `⚠️ Withdrawal until ${formatDate(t.withdrawal_end_date)}` : `✓ Withdrawal cleared ${formatDate(t.withdrawal_end_date)}`}
+                      {t.is_in_withdrawal ? `âš ï¸ Withdrawal until ${formatDate(t.withdrawal_end_date)}` : `âœ“ Withdrawal cleared ${formatDate(t.withdrawal_end_date)}`}
                     </p>
                   )}
                   {t.cost && <p className="text-xs text-gray-500 mt-0.5">Cost: {formatKES(t.cost)}</p>}

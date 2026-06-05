@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/Input';
 import { ArrowLeft, Syringe } from 'lucide-react';
 import type { PageProps, Animal, SemenInventory, HeatEvent } from '@/types';
 import { today, formatDate } from '@/utils/format';
+import { goBack } from '@/utils/navigation';
 
 interface AIFormProps extends PageProps {
   animals: Animal[];
@@ -82,7 +83,7 @@ export default function AIServiceForm() {
               <option value="">Select cow or heifer...</option>
               {animals.map(a => (
                 <option key={a.id} value={a.id} disabled={a.is_pregnant}>
-                  {a.name ?? a.tag_number} ({a.tag_number}) {a.is_pregnant ? '— Already pregnant' : ''}
+                  {a.name ?? a.tag_number} ({a.tag_number}) {a.is_pregnant ? 'â€” Already pregnant' : ''}
                 </option>
               ))}
             </select>
@@ -100,7 +101,7 @@ export default function AIServiceForm() {
                 <option value="">No linked heat event</option>
                 {pendingHeats.map(h => (
                   <option key={h.id} value={h.id}>
-                    {h.animal?.name ?? h.animal?.tag_number} — Heat on {formatDate(h.observed_on)}
+                    {h.animal?.name ?? h.animal?.tag_number} â€” Heat on {formatDate(h.observed_on)}
                   </option>
                 ))}
               </select>
@@ -152,13 +153,13 @@ export default function AIServiceForm() {
                 <option value="">No semen selected</option>
                 {semen.map(s => (
                   <option key={s.id} value={s.id}>
-                    {s.bull_name} {s.batch_number ? `(${s.batch_number})` : ''} — {s.straws_remaining} straws
+                    {s.bull_name} {s.batch_number ? `(${s.batch_number})` : ''} â€” {s.straws_remaining} straws
                   </option>
                 ))}
               </select>
               {selectedSemen && (
                 <p className="text-xs text-gray-500 mt-1">
-                  {selectedSemen.straws_remaining} straws remaining · {selectedSemen.bull_breed ?? 'Unknown breed'}
+                  {selectedSemen.straws_remaining} straws remaining Â· {selectedSemen.bull_breed ?? 'Unknown breed'}
                 </p>
               )}
             </div>
