@@ -45,18 +45,18 @@ export default function DailyReportCreate() {
 
   const saveStep = async (stepNum: number, data: unknown) => {
     setStepData(prev => ({ ...prev, [stepNum]: data }));
-    try {
-      await axios.patch(`/reports/daily/${report.id}/step`, { step: stepNum, data });
-    } catch {
-      // Silently queue — offline handling
-    }
+    // Best-effort save — data is held in local state even if server save fails
+    await axios.patch(`/reports/daily/${report.id}/step`, { step: stepNum, data })
+      .catch(() => null); // Data preserved in stepData state; server will get it on submit
   };
 
   const goNext = async (currentStepData: unknown) => {
     setSaving(true);
     await saveStep(step, currentStepData);
     setSaving(false);
+    // Always advance — local state holds all data even if server save missed
     if (step < 5) setStep(s => s + 1);
+    else window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const goPrev = () => {
@@ -668,11 +668,22 @@ function WizardFooter({
   return (
     <div className="flex gap-3 pb-4 pt-2">
       {showBack && (
-        <Button variant="secondary" onClick={onBack} className="flex-shrink-0">
+        <Button
+          variant="secondary"
+          onClick={onBack}
+          className="flex-shrink-0"
+          style={{ touchAction: 'manipulation' } as React.CSSProperties}
+        >
           <ArrowLeft className="h-4 w-4" />
         </Button>
       )}
-      <Button fullWidth onClick={onNext} loading={loading} rightIcon={<ArrowRight className="h-4 w-4" />}>
+      <Button
+        fullWidth
+        onClick={onNext}
+        loading={loading}
+        rightIcon={<ArrowRight className="h-4 w-4" />}
+        style={{ touchAction: 'manipulation' } as React.CSSProperties}
+      >
         {nextLabel}
       </Button>
     </div>

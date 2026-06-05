@@ -147,9 +147,25 @@ export default function MilkCreate() {
       </div>
 
       {saved && (
-        <div className="mx-4 mt-4 p-3 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2 text-green-700 text-sm">
-          <span>✓</span>
-          <span>Milk records saved{!isOnline ? ' locally — will sync when connected' : ''}.</span>
+        <div className="mx-4 mt-4 space-y-2">
+          <div className="p-3 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2 text-green-700 text-sm">
+            <span>✓</span>
+            <span>Saved {todayTotal.toFixed(1)} L{!isOnline ? ' locally — will sync when connected' : ''}.</span>
+          </div>
+          <button
+            onClick={() => router.visit('/reports/daily/new')}
+            className="w-full p-3.5 bg-primary-900 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
+            style={{ touchAction: 'manipulation' }}
+          >
+            📋 Continue to Daily Report →
+          </button>
+          <button
+            onClick={() => router.visit('/dashboard')}
+            className="w-full p-3 bg-white border border-gray-200 text-gray-600 rounded-xl text-sm font-medium"
+            style={{ touchAction: 'manipulation' }}
+          >
+            Back to Dashboard
+          </button>
         </div>
       )}
 
