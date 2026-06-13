@@ -45,7 +45,11 @@ class LivestockHealthController extends Controller
 
         $content = $response->json('content.0.text');
 
-        $recommendation = json_decode($content, true);
+        // Strip markdown code fences if the model wraps its JSON response
+        $content = preg_replace('/^```(?:json)?\s*/i', '', trim($content));
+        $content = preg_replace('/\s*```$/', '', $content);
+
+        $recommendation = json_decode(trim($content), true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
             Log::error('Anthropic JSON parse error', ['raw' => $content]);
