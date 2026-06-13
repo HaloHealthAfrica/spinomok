@@ -292,14 +292,17 @@ export interface SemenInventory {
   id: string;
   farm_id: string;
   bull_name: string;
-  bull_breed: string | null;
   batch_number: string | null;
-  supplier: string | null;
+  semen_type: 'conventional' | 'sexed';
+  cost_per_straw: number | null;
+  inseminator: string | null;
   straws_received: number;
   straws_remaining: number;
-  cost_per_straw: number | null;
   received_on: string;
-  expiry_date: string | null;
+  // legacy fields kept for backwards compat
+  bull_breed?: string | null;
+  supplier?: string | null;
+  expiry_date?: string | null;
 }
 
 export type AIResult = 'pending' | 'confirmed_pregnant' | 'not_pregnant' | 'repeat';
@@ -322,7 +325,7 @@ export interface AIService {
   notes: string | null;
   created_at: string;
   animal?: Pick<Animal, 'id' | 'tag_number' | 'name' | 'breed' | 'parity'>;
-  semen?: Pick<SemenInventory, 'id' | 'bull_name' | 'bull_breed' | 'batch_number'>;
+  semen?: Pick<SemenInventory, 'id' | 'bull_name' | 'batch_number' | 'semen_type' | 'inseminator'>;
 }
 
 export interface PregnancyCheck {

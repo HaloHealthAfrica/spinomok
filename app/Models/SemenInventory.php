@@ -19,9 +19,9 @@ class SemenInventory extends Model
     public $incrementing = false;
 
     protected $fillable = [
-        'farm_id', 'bull_name', 'bull_breed', 'batch_number', 'supplier',
-        'straws_received', 'straws_remaining', 'cost_per_straw',
-        'received_on', 'expiry_date', 'notes', 'created_by',
+        'farm_id', 'bull_name', 'bull_breed', 'semen_type', 'inseminator',
+        'batch_number', 'supplier', 'straws_received', 'straws_remaining',
+        'cost_per_straw', 'received_on', 'expiry_date', 'notes', 'created_by',
     ];
 
     protected $casts = [

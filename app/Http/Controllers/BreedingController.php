@@ -175,6 +175,9 @@ class BreedingController extends Controller
         $farmId = app('current.farm.id');
         $this->verifyAnimalBelongsToFarm($request->animal_id, $farmId);
 
+        $animal = Animal::withoutGlobalScopes()->findOrFail($request->animal_id);
+        abort_if($animal->is_pregnant, 422, 'This animal is already confirmed pregnant.');
+
         $service = $this->service->recordAIService([
             ...$request->only(['animal_id', 'service_date', 'service_time', 'technician_name', 'technician_phone', 'semen_inventory_id', 'heat_event_id', 'service_cost', 'notes']),
             'farm_id' => $farmId,
@@ -227,6 +230,16 @@ class BreedingController extends Controller
 
         $farmId = app('current.farm.id');
         $this->verifyAnimalBelongsToFarm($request->animal_id, $farmId);
+
+        // Ensure the linked AI service belongs to this farm and this animal
+        if ($request->ai_service_id) {
+            $svcExists = \App\Models\AIService::withoutGlobalScopes()
+                ->where('id', $request->ai_service_id)
+                ->where('farm_id', $farmId)
+                ->where('animal_id', $request->animal_id)
+                ->exists();
+            abort_unless($svcExists, 422, 'AI service does not belong to this animal or farm.');
+        }
 
         $check = $this->service->recordPregnancyCheck([
             ...$request->only(['animal_id', 'checked_on', 'method', 'result', 'ai_service_id', 'checked_by', 'cost', 'notes']),
@@ -283,16 +296,19 @@ class BreedingController extends Controller
             'calf_sex'            => ['required', 'in:male,female'],
             'calf_tag'            => ['nullable', 'string', 'max:40'],
             'calf_birth_weight_kg'=> ['nullable', 'numeric', 'min:15', 'max:80'],
-            'breeding_record_id'  => ['nullable', 'uuid'],
-            'complications'       => ['nullable', 'string', 'max:500'],
-            'notes'               => ['nullable', 'string', 'max:500'],
+            'breeding_record_id'   => ['nullable', 'uuid'],
+            'is_twin'              => ['nullable', 'boolean'],
+            'placenta_passed'      => ['nullable', 'boolean'],
+            'colostrum_given'      => ['nullable', 'boolean'],
+            'complications'        => ['nullable', 'string', 'max:500'],
+            'notes'                => ['nullable', 'string', 'max:500'],
         ]);
 
         $farmId = app('current.farm.id');
         $this->verifyAnimalBelongsToFarm($request->dam_id, $farmId);
 
         $calving = $this->service->recordCalving([
-            ...$request->only(['dam_id', 'calved_on', 'calved_at', 'ease', 'calf_outcome', 'calf_sex', 'calf_tag', 'calf_birth_weight_kg', 'breeding_record_id', 'is_twin', 'complications', 'notes']),
+            ...$request->only(['dam_id', 'calved_on', 'calved_at', 'ease', 'calf_outcome', 'calf_sex', 'calf_tag', 'calf_birth_weight_kg', 'breeding_record_id', 'is_twin', 'placenta_passed', 'colostrum_given', 'complications', 'notes']),
             'farm_id' => $farmId,
         ], $request->user()->id);
 
@@ -356,7 +372,17 @@ class BreedingController extends Controller
             'notes'           => $request->input('notes'),
         ]);
 
-        return response()->json(['message' => 'Step marked complete.']);
+        // Auto-complete the program when all steps are done
+        $program      = $step->program;
+        $allCompleted = $program->steps()->where('is_completed', false)->doesntExist();
+        if ($allCompleted) {
+            $program->update(['status' => 'completed']);
+        }
+
+        return response()->json([
+            'message'           => 'Step marked complete.',
+            'program_completed' => $allCompleted,
+        ]);
     }
 
     private function verifyAnimalBelongsToFarm(string $animalId, string $farmId): void

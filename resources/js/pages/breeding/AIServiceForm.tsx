@@ -93,6 +93,7 @@ export default function AIServiceForm() {
                 </option>
               ))}
             </select>
+            {errors.animal_id && <p className="text-xs text-red-600 mt-1">{errors.animal_id}</p>}
           </div>
 
           {/* Linked heat event */}
@@ -128,6 +129,7 @@ export default function AIServiceForm() {
                 required
                 className="h-12 w-full rounded-xl border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600"
               />
+              {errors.service_date && <p className="text-xs text-red-600 mt-1">{errors.service_date}</p>}
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 block mb-1">Time</label>
@@ -154,7 +156,7 @@ export default function AIServiceForm() {
           {/* Semen */}
           {semen.length > 0 ? (
             <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">Semen (Bull / Batch)</label>
+              <label className="text-sm font-medium text-gray-700 block mb-1">Semen</label>
               <select
                 value={data.semen_inventory_id}
                 onChange={e => setData('semen_inventory_id', e.target.value)}
@@ -163,19 +165,31 @@ export default function AIServiceForm() {
                 <option value="">No semen selected</option>
                 {semen.map(s => (
                   <option key={s.id} value={s.id}>
-                    {s.bull_name}{s.batch_number ? ` (${s.batch_number})` : ''} — {s.straws_remaining} straws
+                    {s.bull_name}
+                    {s.batch_number ? ` · #${s.batch_number}` : ''}
+                    {' · '}{s.semen_type === 'sexed' ? 'Sexed' : 'Conventional'}
+                    {' · '}{s.straws_remaining} straws
                   </option>
                 ))}
               </select>
               {selectedSemen && (
-                <p className="text-xs text-gray-500 mt-1">
-                  {selectedSemen.straws_remaining} straws remaining · {selectedSemen.bull_breed ?? 'Unknown breed'}
+                <p className={`text-xs mt-1 ${selectedSemen.straws_remaining <= 2 ? 'text-amber-600 font-medium' : 'text-gray-500'}`}>
+                  {selectedSemen.straws_remaining} straw{selectedSemen.straws_remaining !== 1 ? 's' : ''} remaining
+                  {selectedSemen.straws_remaining <= 2 ? ' — running low!' : ''}
+                  {selectedSemen.inseminator ? ` · ${selectedSemen.inseminator}` : ''}
                 </p>
               )}
             </div>
           ) : (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-700">
-              No semen in inventory. The service will be recorded without a semen link.
+              No semen in inventory. The service will be recorded without a semen link.{' '}
+              <button
+                type="button"
+                onClick={() => router.visit('/semen/new')}
+                className="underline font-medium"
+              >
+                Add batch
+              </button>
             </div>
           )}
 

@@ -7,6 +7,7 @@ use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\MilkProductionController;
 use App\Http\Controllers\MilkSaleController;
 use App\Http\Controllers\BreedingController;
+use App\Http\Controllers\SemenInventoryController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\LivestockHealthController;
 use App\Http\Controllers\CalfController;
@@ -81,18 +82,30 @@ Route::middleware(['auth', 'set.farm'])->group(function () {
     Route::get('/breeding/ai/new', [BreedingController::class, 'createAI'])->name('breeding.ai.create');
     Route::post('/breeding/ai', [BreedingController::class, 'storeAI'])->name('breeding.ai.store');
 
-    // Pregnancy checks
-    Route::get('/breeding/pd/new', [BreedingController::class, 'createPD'])->name('breeding.pd.create');
-    Route::post('/breeding/pd', [BreedingController::class, 'storePD'])->name('breeding.pd.store');
+    // Pregnancy checks — vet officer and above only
+    Route::middleware('farm.role:farm_owner,farm_manager,vet_officer')->group(function () {
+        Route::get('/breeding/pd/new', [BreedingController::class, 'createPD'])->name('breeding.pd.create');
+        Route::post('/breeding/pd', [BreedingController::class, 'storePD'])->name('breeding.pd.store');
+    });
 
     // Calving
     Route::get('/breeding/calving/new', [BreedingController::class, 'createCalving'])->name('breeding.calving.create');
     Route::post('/breeding/calving', [BreedingController::class, 'storeCalving'])->name('breeding.calving.store');
 
-    // Sync programs
-    Route::get('/breeding/sync/new', [BreedingController::class, 'createSync'])->name('breeding.sync.create');
-    Route::post('/breeding/sync', [BreedingController::class, 'storeSync'])->name('breeding.sync.store');
-    Route::patch('/breeding/sync-step/{stepId}/complete', [BreedingController::class, 'completeSyncStep'])->name('breeding.sync.step.complete');
+    // Sync programs — vet officer and above only
+    Route::middleware('farm.role:farm_owner,farm_manager,vet_officer')->group(function () {
+        Route::get('/breeding/sync/new', [BreedingController::class, 'createSync'])->name('breeding.sync.create');
+        Route::post('/breeding/sync', [BreedingController::class, 'storeSync'])->name('breeding.sync.store');
+        Route::patch('/breeding/sync-step/{stepId}/complete', [BreedingController::class, 'completeSyncStep'])->name('breeding.sync.step.complete');
+    });
+
+    // Semen inventory
+    Route::get('/semen', [SemenInventoryController::class, 'index'])->name('semen.index');
+    Route::middleware('farm.role:farm_owner,farm_manager,vet_officer')->group(function () {
+        Route::get('/semen/new', [SemenInventoryController::class, 'create'])->name('semen.create');
+        Route::post('/semen', [SemenInventoryController::class, 'store'])->name('semen.store');
+        Route::delete('/semen/{id}', [SemenInventoryController::class, 'destroy'])->name('semen.destroy');
+    });
 
     // Legacy /breeding/new redirect (used by QuickAdd)
     Route::get('/breeding/new', fn () => redirect()->route('breeding.ai.create'));

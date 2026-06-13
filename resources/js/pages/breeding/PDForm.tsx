@@ -85,6 +85,7 @@ export default function PDForm() {
                   Service date: {formatDate(selectedService.service_date)} · Service #{selectedService.service_number}
                 </p>
               )}
+              {errors.ai_service_id && <p className="text-xs text-red-600 mt-1">{errors.ai_service_id}</p>}
             </div>
           )}
 
@@ -105,6 +106,7 @@ export default function PDForm() {
                   <option key={a.id} value={a.id}>{a.name ?? a.tag_number} ({a.tag_number})</option>
                 ))}
               </select>
+              {errors.animal_id && <p className="text-xs text-red-600 mt-1">{errors.animal_id}</p>}
             </div>
           )}
 
@@ -120,6 +122,7 @@ export default function PDForm() {
               onChange={e => setData('checked_on', e.target.value)}
               className="h-12 w-full rounded-xl border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600"
             />
+            {errors.checked_on && <p className="text-xs text-red-600 mt-1">{errors.checked_on}</p>}
           </div>
 
           {/* Diagnosis method */}

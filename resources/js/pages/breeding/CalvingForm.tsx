@@ -41,6 +41,8 @@ export default function CalvingForm() {
     calf_birth_weight_kg: '',
     breeding_record_id:   '',
     is_twin:              false,
+    placenta_passed:      false,
+    colostrum_given:      false,
     complications:        '',
     notes:                '',
   });
@@ -244,6 +246,39 @@ export default function CalvingForm() {
               </div>
             </>
           )}
+
+          {/* Placenta & colostrum */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700 block">Post-Calving Checklist</label>
+            {[
+              { field: 'placenta_passed' as const, label: 'Placenta passed' },
+              { field: 'colostrum_given' as const, label: 'Colostrum given to calf' },
+            ].map(({ field, label }) => (
+              <button
+                key={field}
+                type="button"
+                onClick={() => setData(field, !data[field])}
+                className={clsx(
+                  'w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-sm text-left transition-all',
+                  data[field]
+                    ? 'bg-green-50 border-green-400 text-green-900'
+                    : 'bg-white border-gray-200 text-gray-700',
+                )}
+              >
+                <div className={clsx(
+                  'h-5 w-5 rounded border-2 flex items-center justify-center flex-shrink-0',
+                  data[field] ? 'bg-green-600 border-green-600' : 'border-gray-300',
+                )}>
+                  {data[field] && (
+                    <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+                {label}
+              </button>
+            ))}
+          </div>
 
           {/* Complications */}
           <div>

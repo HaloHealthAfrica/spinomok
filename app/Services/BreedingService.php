@@ -256,6 +256,22 @@ class BreedingService
             $animal->update(['is_pregnant' => false, 'expected_calving_date' => null]);
             $aiService?->update(['result' => 'not_pregnant']);
 
+            // Alert: watch for return heat in 21 days
+            $returnHeat = $checkedOn->copy()->addDays(21);
+            \App\Models\Alert::create([
+                'id'              => Str::uuid(),
+                'farm_id'         => $data['farm_id'],
+                'alert_type'      => 'heat_expected',
+                'severity'        => 'warning',
+                'status'          => 'pending',
+                'title'           => "Check for Return Heat — {$animal->display_name}",
+                'message'         => "Not pregnant after AI. Watch for return heat around {$returnHeat->format('d M Y')} (21-day cycle).",
+                'animal_id'       => $data['animal_id'],
+                'due_on'          => $returnHeat->toDateString(),
+                'reference_table' => 'pregnancy_checks',
+                'reference_id'    => $check->id,
+            ]);
+
         } elseif ($data['result'] === 'inconclusive') {
             // Schedule a follow-up check in 14 days
             $followUp = $checkedOn->copy()->addDays(14);
@@ -316,7 +332,8 @@ class BreedingService
             'calf_tag'             => $data['calf_tag'] ?? null,
             'calf_birth_weight_kg' => $data['calf_birth_weight_kg'] ?? null,
             'is_twin'              => $data['is_twin'] ?? false,
-            'colostrum_given'      => false,
+            'placenta_passed'      => $data['placenta_passed'] ?? null,
+            'colostrum_given'      => $data['colostrum_given'] ?? false,
             'complications'        => $data['complications'] ?? null,
             'notes'                => $data['notes'] ?? null,
             'created_by'           => $userId,

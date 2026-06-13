@@ -22,14 +22,17 @@ interface BreedingIndexProps extends PageProps {
   recentServices: AIService[];
 }
 
+
 const TABS = ['Overview', 'Services', 'Sync'] as const;
 type Tab = typeof TABS[number];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function BreedingIndex() {
-  const { kpis, upcomingCalvings, duePDChecks, pendingHeats, activeSync, recentServices } =
+  const { kpis, upcomingCalvings, duePDChecks, pendingHeats, activeSync, recentServices, auth } =
     usePage<BreedingIndexProps>().props;
+
+  const isVetOrAbove = ['farm_owner', 'farm_manager', 'vet_officer'].includes(auth.role);
 
   const [tab, setTab] = useState<Tab>('Overview');
 
@@ -49,10 +52,33 @@ export default function BreedingIndex() {
         </div>
 
         {/* KPI strip */}
-        <div className="grid grid-cols-3 gap-2">
-          <KpiBox label="Pregnant" value={kpis.confirmed_pregnant} icon="🤰" />
-          <KpiBox label="Conception" value={`${kpis.conception_rate_90d}%`} icon="🎯" sub="last 90 days" />
-          <KpiBox label="Calvings (14d)" value={kpis.upcoming_calvings_14d} icon="🐄" />
+        <div className="grid grid-cols-4 gap-2">
+          <KpiBox
+            label="Pregnant"
+            value={kpis.confirmed_pregnant}
+            icon="🤰"
+            onClick={() => { setTab('Services'); }}
+          />
+          <KpiBox
+            label="Conception"
+            value={`${kpis.conception_rate_90d}%`}
+            icon="🎯"
+            sub="90 days"
+            onClick={() => { setTab('Services'); }}
+          />
+          <KpiBox
+            label="PD Due"
+            value={kpis.pending_pd_checks}
+            icon="🔍"
+            onClick={() => router.visit('/breeding/pd/new')}
+          />
+          <KpiBox
+            label="Calvings"
+            value={kpis.upcoming_calvings_14d}
+            icon="🐄"
+            sub="14 days"
+            onClick={() => { setTab('Overview'); }}
+          />
         </div>
       </div>
 
@@ -80,19 +106,22 @@ export default function BreedingIndex() {
             pendingHeats={pendingHeats}
             duePDChecks={duePDChecks}
             upcomingCalvings={upcomingCalvings}
+            isVetOrAbove={isVetOrAbove}
           />
         )}
         {tab === 'Services' && <ServicesTab services={recentServices} />}
-        {tab === 'Sync'     && <SyncTab programs={activeSync} />}
+        {tab === 'Sync'     && <SyncTab programs={activeSync} isVetOrAbove={isVetOrAbove} />}
       </div>
 
       {/* ── Quick action bar ── */}
       <div className="fixed bottom-16 left-0 right-0 px-4 pb-3 pointer-events-none">
-        <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-3 grid grid-cols-4 gap-2 pointer-events-auto">
-          <QuickBtn label="Heat"    icon={<Flame className="h-5 w-5" />}   color="text-red-600 bg-red-50"     href="/breeding/heat/new" />
-          <QuickBtn label="AI"      icon={<Syringe className="h-5 w-5" />} color="text-blue-600 bg-blue-50"   href="/breeding/ai/new" />
-          <QuickBtn label="PD"      icon={<Search className="h-5 w-5" />}  color="text-purple-600 bg-purple-50" href="/breeding/pd/new" />
-          <QuickBtn label="Calving" icon={<Baby className="h-5 w-5" />}    color="text-green-600 bg-green-50" href="/breeding/calving/new" />
+        <div className={`bg-white border border-gray-200 rounded-xl shadow-lg p-3 grid gap-2 pointer-events-auto ${isVetOrAbove ? 'grid-cols-4' : 'grid-cols-3'}`}>
+          <QuickBtn label="Heat"    icon={<Flame className="h-5 w-5" />}   color="text-red-600 bg-red-50"       href="/breeding/heat/new" />
+          <QuickBtn label="AI"      icon={<Syringe className="h-5 w-5" />} color="text-blue-600 bg-blue-50"     href="/breeding/ai/new" />
+          {isVetOrAbove && (
+            <QuickBtn label="PD"    icon={<Search className="h-5 w-5" />}  color="text-purple-600 bg-purple-50" href="/breeding/pd/new" />
+          )}
+          <QuickBtn label="Calving" icon={<Baby className="h-5 w-5" />}    color="text-green-600 bg-green-50"   href="/breeding/calving/new" />
         </div>
       </div>
     </AppLayout>
@@ -111,25 +140,36 @@ function QuickBtn({ label, icon, color, href }: { label: string; icon: React.Rea
   );
 }
 
-function KpiBox({ label, value, icon, sub }: { label: string; value: number | string; icon: string; sub?: string }) {
+function KpiBox({ label, value, icon, sub, onClick }: {
+  label: string;
+  value: number | string;
+  icon: string;
+  sub?: string;
+  onClick?: () => void;
+}) {
   return (
-    <div className="bg-white/10 rounded-xl p-3 text-center">
-      <p className="text-lg">{icon}</p>
-      <p className="text-white text-lg font-bold leading-tight">{value}</p>
-      <p className="text-primary-200 text-xs mt-0.5">{label}</p>
-      {sub && <p className="text-primary-300 text-[10px]">{sub}</p>}
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className="bg-white/10 rounded-xl p-2 text-center active:bg-white/20 transition-colors"
+    >
+      <p className="text-base">{icon}</p>
+      <p className="text-white text-base font-bold leading-tight">{value}</p>
+      <p className="text-primary-200 text-[10px] mt-0.5">{label}</p>
+      {sub && <p className="text-primary-300 text-[9px]">{sub}</p>}
+    </button>
   );
 }
 
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 
 function OverviewTab({
-  pendingHeats, duePDChecks, upcomingCalvings,
+  pendingHeats, duePDChecks, upcomingCalvings, isVetOrAbove,
 }: {
   pendingHeats: HeatEvent[];
   duePDChecks: AIService[];
   upcomingCalvings: AIService[];
+  isVetOrAbove: boolean;
 }) {
   const allClear = pendingHeats.length === 0 && duePDChecks.length === 0 && upcomingCalvings.length === 0;
 
@@ -150,7 +190,7 @@ function OverviewTab({
         </Section>
       )}
 
-      {duePDChecks.length > 0 && (
+      {duePDChecks.length > 0 && isVetOrAbove && (
         <Section title="🔍 Pregnancy Checks Due" action="Record PD" onAction={() => router.visit('/breeding/pd/new')}>
           {duePDChecks.map(s => (
             <ActionCard
@@ -189,15 +229,17 @@ function OverviewTab({
       )}
 
       {/* Shortcut tiles */}
-      <div className="grid grid-cols-2 gap-3">
-        <button
-          onClick={() => router.visit('/breeding/sync/new')}
-          className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 text-left active:opacity-80"
-        >
-          <Calendar className="h-6 w-6 text-indigo-600 mb-2" />
-          <p className="text-sm font-semibold text-indigo-900">Sync Program</p>
-          <p className="text-xs text-indigo-600">Ovsynch / CIDR</p>
-        </button>
+      <div className={`grid gap-3 ${isVetOrAbove ? 'grid-cols-2' : 'grid-cols-1'}`}>
+        {isVetOrAbove && (
+          <button
+            onClick={() => router.visit('/breeding/sync/new')}
+            className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 text-left active:opacity-80"
+          >
+            <Calendar className="h-6 w-6 text-indigo-600 mb-2" />
+            <p className="text-sm font-semibold text-indigo-900">Sync Program</p>
+            <p className="text-xs text-indigo-600">Ovsynch / CIDR</p>
+          </button>
+        )}
         <button
           onClick={() => router.visit('/breeding/heat/new')}
           className="bg-rose-50 border border-rose-200 rounded-xl p-4 text-left active:opacity-80"
@@ -213,7 +255,34 @@ function OverviewTab({
 
 // ─── Services Tab ─────────────────────────────────────────────────────────────
 
+const RESULT_LABELS: Record<string, string> = {
+  pending:            'Pending PD',
+  confirmed_pregnant: 'Pregnant',
+  not_pregnant:       'Not Pregnant',
+  repeat:             'Repeat',
+};
+
+const RESULT_VARIANTS: Record<string, 'success' | 'error' | 'warning' | 'neutral'> = {
+  pending:            'neutral',
+  confirmed_pregnant: 'success',
+  not_pregnant:       'error',
+  repeat:             'warning',
+};
+
+type ServiceFilter = 'all' | 'pending' | 'confirmed_pregnant' | 'not_pregnant';
+
+const FILTER_OPTIONS: { value: ServiceFilter; label: string }[] = [
+  { value: 'all',               label: 'All' },
+  { value: 'pending',           label: 'Pending PD' },
+  { value: 'confirmed_pregnant',label: 'Pregnant' },
+  { value: 'not_pregnant',      label: 'Not Pregnant' },
+];
+
 function ServicesTab({ services }: { services: AIService[] }) {
+  const [filter, setFilter] = React.useState<ServiceFilter>('all');
+
+  const filtered = filter === 'all' ? services : services.filter(s => s.result === filter);
+
   if (services.length === 0) {
     return (
       <Card className="text-center py-10">
@@ -229,64 +298,99 @@ function ServicesTab({ services }: { services: AIService[] }) {
     );
   }
 
-  const RESULT_LABELS: Record<string, string> = {
-    pending:            'Pending PD',
-    confirmed_pregnant: 'Pregnant',
-    not_pregnant:       'Not Pregnant',
-    repeat:             'Repeat',
-  };
-
-  const RESULT_VARIANTS: Record<string, 'success' | 'error' | 'warning' | 'neutral'> = {
-    pending:            'neutral',
-    confirmed_pregnant: 'success',
-    not_pregnant:       'error',
-    repeat:             'warning',
-  };
-
   return (
-    <div className="space-y-2">
-      {services.map(s => (
-        <Card key={s.id} padding="sm">
-          <div className="flex items-start gap-3">
-            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-              <Syringe className="h-5 w-5 text-blue-600" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900">
-                {s.animal?.name ?? s.animal?.tag_number}
-              </p>
-              <p className="text-xs text-gray-500">{formatDate(s.service_date)} · Service #{s.service_number}</p>
-              {s.expected_calving_date && s.result === 'confirmed_pregnant' && (
-                <p className="text-xs text-green-700 mt-0.5 font-medium">
-                  Due: {formatDate(s.expected_calving_date)}
-                </p>
-              )}
-            </div>
-            <Badge variant={RESULT_VARIANTS[s.result] ?? 'neutral'} size="sm">
-              {RESULT_LABELS[s.result] ?? s.result}
-            </Badge>
-          </div>
+    <div className="space-y-3">
+      {/* Filter strip */}
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+        {FILTER_OPTIONS.map(f => (
+          <button
+            key={f.value}
+            type="button"
+            onClick={() => setFilter(f.value)}
+            className={clsx(
+              'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors',
+              filter === f.value
+                ? 'bg-primary-900 text-white border-primary-900'
+                : 'bg-white text-gray-600 border-gray-300',
+            )}
+          >
+            {f.label}
+            {f.value !== 'all' && (
+              <span className="ml-1 opacity-70">
+                ({services.filter(s => s.result === f.value).length})
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
+        <Card className="text-center py-8">
+          <p className="text-sm text-gray-500">No {RESULT_LABELS[filter] ?? filter} services</p>
         </Card>
-      ))}
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(s => (
+            <Card key={s.id} padding="sm">
+              <div className="flex items-start gap-3">
+                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                  <Syringe className="h-5 w-5 text-blue-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-900">
+                    {s.animal?.name ?? s.animal?.tag_number}
+                  </p>
+                  <p className="text-xs text-gray-500">{formatDate(s.service_date)} · Service #{s.service_number}</p>
+                  {s.expected_calving_date && s.result === 'confirmed_pregnant' && (
+                    <p className="text-xs text-green-700 mt-0.5 font-medium">
+                      Due: {formatDate(s.expected_calving_date)}
+                    </p>
+                  )}
+                </div>
+                <Badge variant={RESULT_VARIANTS[s.result] ?? 'neutral'} size="sm">
+                  {RESULT_LABELS[s.result] ?? s.result}
+                </Badge>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 // ─── Sync Tab ─────────────────────────────────────────────────────────────────
 
-function SyncTab({ programs }: { programs: SyncProgram[] }) {
+function SyncTab({ programs, isVetOrAbove }: { programs: SyncProgram[]; isVetOrAbove: boolean }) {
+  const [completing, setCompleting] = React.useState<string | null>(null);
+
+  const markStepComplete = (stepId: string) => {
+    setCompleting(stepId);
+    router.patch(
+      `/breeding/sync-step/${stepId}/complete`,
+      {},
+      {
+        preserveScroll: true,
+        onSuccess: () => router.reload({ only: ['activeSync'] }),
+        onFinish: () => setCompleting(null),
+      },
+    );
+  };
+
   if (programs.length === 0) {
     return (
       <div className="space-y-3">
         <Card className="text-center py-8">
           <p className="text-3xl mb-2">📅</p>
           <p className="text-sm font-semibold text-gray-800">No active programs</p>
-          <button
-            onClick={() => router.visit('/breeding/sync/new')}
-            className="mt-3 text-primary-900 text-sm font-medium underline"
-          >
-            Start Ovsynch or CIDR program
-          </button>
+          {isVetOrAbove && (
+            <button
+              onClick={() => router.visit('/breeding/sync/new')}
+              className="mt-3 text-primary-900 text-sm font-medium underline"
+            >
+              Start Ovsynch or CIDR program
+            </button>
+          )}
         </Card>
         <Card padding="md" className="bg-blue-50 border border-blue-200">
           <p className="text-sm font-bold text-blue-900 mb-2">Ovsynch Protocol</p>
@@ -326,9 +430,20 @@ function SyncTab({ programs }: { programs: SyncProgram[] }) {
                   <p className="text-[10px] text-gray-400">{formatDate(step.scheduled_on)}</p>
                 </div>
                 {!step.is_completed && (
-                  <Badge variant={new Date(step.scheduled_on) <= new Date() ? 'error' : 'neutral'} size="sm">
-                    {new Date(step.scheduled_on) <= new Date() ? 'Due!' : 'Upcoming'}
-                  </Badge>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <Badge variant={new Date(step.scheduled_on) <= new Date() ? 'error' : 'neutral'} size="sm">
+                      {new Date(step.scheduled_on) <= new Date() ? 'Due!' : 'Upcoming'}
+                    </Badge>
+                    {isVetOrAbove && (
+                      <button
+                        onClick={() => markStepComplete(step.id)}
+                        disabled={completing === step.id}
+                        className="text-[10px] font-semibold text-primary-900 bg-primary-50 border border-primary-200 rounded-lg px-2 py-1 active:opacity-70 disabled:opacity-40"
+                      >
+                        {completing === step.id ? '...' : 'Done'}
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             ))}

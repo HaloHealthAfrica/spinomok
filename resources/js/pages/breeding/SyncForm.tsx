@@ -32,7 +32,7 @@ const PROGRAMS = [
 export default function SyncForm() {
   const { animals } = usePage<SyncFormProps>().props;
 
-  const { data, setData, post, processing } = useForm({
+  const { data, setData, post, processing, errors } = useForm({
     animal_id:    '',
     program_type: 'Ovsynch',
     start_date:   today(),
@@ -109,6 +109,7 @@ export default function SyncForm() {
                 </option>
               ))}
             </select>
+            {errors.animal_id && <p className="text-xs text-red-600 mt-1">{errors.animal_id}</p>}
           </div>
 
           {/* Start date */}
@@ -123,6 +124,7 @@ export default function SyncForm() {
               required
               className="h-12 w-full rounded-xl border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600"
             />
+            {errors.start_date && <p className="text-xs text-red-600 mt-1">{errors.start_date}</p>}
           </div>
 
           {/* Schedule preview */}
