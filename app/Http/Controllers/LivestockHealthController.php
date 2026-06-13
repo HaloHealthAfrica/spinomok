@@ -11,10 +11,14 @@ class LivestockHealthController extends Controller
     public function getRecommendations(Request $request)
     {
         $request->validate([
-            'condition'           => 'required|string',
-            'selected_signs'      => 'required|array',
-            'severity'            => 'required|in:Mild,Moderate,Severe',
-            'additional_symptoms' => 'nullable|string',
+            'condition'            => 'required|string',
+            'selected_signs'       => 'required|array',
+            'severity'             => 'required|in:Mild,Moderate,Severe',
+            'additional_symptoms'  => 'nullable|string',
+            'available_medicines'  => 'nullable|array',
+            'available_medicines.*.name'                    => 'required|string',
+            'available_medicines.*.category'                => 'nullable|string',
+            'available_medicines.*.withdrawal_period_days'  => 'nullable|integer',
         ]);
 
         $userMessage = $this->buildUserMessage($request);
@@ -74,6 +78,19 @@ class LivestockHealthController extends Controller
 
         if ($request->filled('additional_symptoms')) {
             $message .= "Additional symptoms observed: {$request->additional_symptoms}\n";
+        }
+
+        // Inject the farm's actual medicine catalog so AI only recommends from it
+        $meds = $request->input('available_medicines', []);
+        if (!empty($meds)) {
+            $message .= "\nAvailable medicines in this farm's system (ONLY recommend from this list):\n";
+            foreach ($meds as $med) {
+                $wd = isset($med['withdrawal_period_days']) && $med['withdrawal_period_days'] > 0
+                    ? " [Withdrawal: {$med['withdrawal_period_days']} days]"
+                    : ' [No withdrawal]';
+                $cat = isset($med['category']) ? " ({$med['category']})" : '';
+                $message .= "- {$med['name']}{$cat}{$wd}\n";
+            }
         }
 
         $message .= "\nPlease provide treatment recommendations in the required JSON format.";

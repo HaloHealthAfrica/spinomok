@@ -119,6 +119,11 @@ export default function HealthCreate() {
           selected_signs:       signs,
           severity:             data.severity.charAt(0).toUpperCase() + data.severity.slice(1),
           additional_symptoms:  data.symptoms || undefined,
+          available_medicines:  meds.map(m => ({
+            name:                   m.name,
+            category:               m.category,
+            withdrawal_period_days: m.withdrawal_period_days,
+          })),
         }),
       });
       const json = await res.json();

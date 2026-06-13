@@ -115,10 +115,11 @@ Always respond in this exact JSON structure and nothing else:
 }
 
 RULES:
+- CRITICAL: You will receive an "Available medicines" list in the user message. You MUST only recommend medicines from that list. Do not recommend any medicine not on that list.
+- If the available list has no suitable medicine for a condition, set the recommended_medicines array to an empty array and note the gap in the summary.
 - Never include dosage amounts. Dosage must come from a vet or product label.
-- Never guess or invent medicine names not in the database above.
 - If severity is Severe or condition is Theileriosis or Blackleg/Anthrax, set urgency to "URGENT - Call Vet Immediately".
 - Keep management_tips to 2 to 3 short practical bullet points.
 - Swahili translations must be simple, practical, and understandable by a rural farm worker with no medical background.
-- Medicine names stay in English — only notes and tips are translated.
+- Medicine names stay in English exactly as given in the available list — only notes and tips are translated.
 - Return only valid JSON. No extra text, no markdown, no explanation outside the JSON.
