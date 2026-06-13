@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useForm, usePage, router } from '@inertiajs/react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/Button';
@@ -17,6 +17,7 @@ interface CreateProps extends PageProps {
 }
 
 interface TreatmentEntry {
+  _key: number;
   medication_type_id: string;
   treated_on: string;
   dose_amount: string;
@@ -25,10 +26,11 @@ interface TreatmentEntry {
   cost: string;
 }
 
+let _keyCounter = 0;
+
 export default function HealthCreate() {
   const { animals, diseases, meds, preAnimal } = usePage<CreateProps>().props;
   const [treatments, setTreatments] = useState<TreatmentEntry[]>([]);
-  const [addingTreatment, setAddingTreatment] = useState(false);
 
   const { data, setData, post, processing, errors } = useForm({
     animal_id:         preAnimal ?? '',
@@ -40,11 +42,17 @@ export default function HealthCreate() {
     vet_name:          '',
     consultation_cost: '',
     notes:             '',
-    treatments:        [] as TreatmentEntry[],
+    treatments:        [] as Omit<TreatmentEntry, '_key'>[],
   });
 
-  const addTreatmentRow = () => {
-    setTreatments(prev => [...prev, {
+  const syncTreatments = useCallback((next: TreatmentEntry[]) => {
+    setTreatments(next);
+    setData('treatments', next.map(({ _key, ...rest }) => rest));
+  }, [setData]);
+
+  const addTreatmentRow = useCallback(() => {
+    syncTreatments([...treatments, {
+      _key: ++_keyCounter,
       medication_type_id: meds[0]?.id ?? '',
       treated_on: today(),
       dose_amount: '',
@@ -52,29 +60,22 @@ export default function HealthCreate() {
       route: 'IM',
       cost: '',
     }]);
-    setAddingTreatment(true);
-  };
+  }, [treatments, meds, syncTreatments]);
 
-  const updateTreatment = (i: number, field: keyof TreatmentEntry, val: string) => {
-    setTreatments(prev => {
-      const next = [...prev];
-      next[i] = { ...next[i], [field]: val };
-      setData('treatments', next);
-      return next;
-    });
-  };
+  const updateTreatment = useCallback((i: number, field: keyof Omit<TreatmentEntry, '_key'>, val: string) => {
+    const next = [...treatments];
+    next[i] = { ...next[i], [field]: val };
+    syncTreatments(next);
+  }, [treatments, syncTreatments]);
 
-  const removeTreatment = (i: number) => {
-    const next = treatments.filter((_, idx) => idx !== i);
-    setTreatments(next);
-    setData('treatments', next);
-  };
+  const removeTreatment = useCallback((i: number) => {
+    syncTreatments(treatments.filter((_, idx) => idx !== i));
+  }, [treatments, syncTreatments]);
 
   const selectedDisease = diseases.find(d => d.id === data.disease_type_id);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    setData('treatments', treatments);
     post('/health');
   };
 
@@ -118,11 +119,11 @@ export default function HealthCreate() {
             <select value={data.disease_type_id} onChange={e => setData('disease_type_id', e.target.value)}
               className="h-12 w-full rounded-xl border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600">
               <option value="">Select condition (optional)...</option>
-              {diseases.map(d => <option key={d.id} value={d.id}>{d.name}{d.is_notifiable ? ' âš ï¸' : ''}</option>)}
+              {diseases.map(d => <option key={d.id} value={d.id}>{d.name}{d.is_notifiable ? ' ⚠️' : ''}</option>)}
             </select>
             {selectedDisease?.common_signs && (
               <p className="text-xs text-blue-700 mt-1 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
-                ðŸ’¡ Common signs: {selectedDisease.common_signs}
+                💡 Common signs: {selectedDisease.common_signs}
               </p>
             )}
           </div>
@@ -184,8 +185,11 @@ export default function HealthCreate() {
               <p className="text-xs text-gray-400 text-center py-2">No treatments recorded. Tap "Add Drug" if medication was given.</p>
             ) : (
               <div className="space-y-3">
-                {treatments.map((t, i) => (
-                  <div key={i} className="bg-purple-50 border border-purple-200 rounded-xl p-3 space-y-2">
+                {treatments.map((t, i) => {
+                  const med = meds.find(m => m.id === t.medication_type_id);
+                  const withdrawalDays = med?.withdrawal_period_days ?? 0;
+                  return (
+                  <div key={t._key} className="bg-purple-50 border border-purple-200 rounded-xl p-3 space-y-2">
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-semibold text-purple-800">Treatment {i + 1}</p>
                       <button type="button" onClick={() => removeTreatment(i)}>
@@ -226,13 +230,17 @@ export default function HealthCreate() {
                         </select>
                       </div>
                     </div>
-                    {meds.find(m => m.id === t.medication_type_id)?.withdrawal_period_days !== 0 && (
-                      <p className="text-[10px] text-red-600 font-medium">
-                        âš ï¸ Milk withdrawal: {meds.find(m => m.id === t.medication_type_id)?.withdrawal_period_days} days â€” will be auto-flagged
-                      </p>
+                    {withdrawalDays > 0 && (
+                      <div className="flex items-center gap-2 bg-red-50 border border-red-300 rounded-lg px-3 py-2">
+                        <span className="text-base leading-none">⚠️</span>
+                        <p className="text-xs text-red-700 font-semibold">
+                          Milk withdrawal: {withdrawalDays} days — milk will be auto-flagged
+                        </p>
+                      </div>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
