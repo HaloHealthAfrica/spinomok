@@ -8,6 +8,7 @@ use App\Http\Controllers\MilkProductionController;
 use App\Http\Controllers\MilkSaleController;
 use App\Http\Controllers\BreedingController;
 use App\Http\Controllers\HealthController;
+use App\Http\Controllers\LivestockHealthController;
 use App\Http\Controllers\CalfController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\FormulationController;
@@ -194,6 +195,7 @@ Route::middleware(['auth', 'set.farm'])->group(function () {
     Route::get('/api/analytics/per-cow', [AnalyticsController::class, 'perCow']);
     Route::get('/api/analytics/breeding', [AnalyticsController::class, 'breeding']);
     Route::get('/api/analytics/health', [AnalyticsController::class, 'health']);
+    Route::post('/api/health/recommendations', [LivestockHealthController::class, 'getRecommendations'])->name('health.recommendations');
 
     // WhatsApp report previews
     Route::get('/analytics/whatsapp/daily', [AnalyticsController::class, 'whatsappDaily'])->name('analytics.whatsapp.daily');
