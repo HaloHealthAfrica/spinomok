@@ -3,10 +3,26 @@ import { useForm, usePage, router } from '@inertiajs/react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { ArrowLeft, Heart, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Heart, Plus, Trash2, Stethoscope, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { PageProps, Animal, DiseaseType, MedicationType } from '@/types';
 import { today } from '@/utils/format';
+
+interface Medicine {
+  name: string;
+  type: 'Treatment' | 'Prevention' | 'Diagnostic' | 'Supportive';
+  note: string;
+}
+
+interface AIRecommendation {
+  condition: string;
+  severity: string;
+  urgency: string;
+  summary: string;
+  recommended_medicines: Medicine[];
+  management_tips: string[];
+  disclaimer: string;
+}
 
 interface CreateProps extends PageProps {
   animals: Animal[];
@@ -30,6 +46,9 @@ let _keyCounter = 0;
 export default function HealthCreate() {
   const { animals, diseases, meds, preAnimal } = usePage<CreateProps>().props;
   const [treatments, setTreatments] = useState<TreatmentEntry[]>([]);
+  const [aiRec, setAiRec]           = useState<AIRecommendation | null>(null);
+  const [aiLoading, setAiLoading]   = useState(false);
+  const [aiError, setAiError]       = useState<string | null>(null);
 
   const { data, setData, post, processing, errors } = useForm({
     animal_id:         preAnimal ?? '',
@@ -72,6 +91,40 @@ export default function HealthCreate() {
   }, [treatments, syncTreatments]);
 
   const selectedDisease = diseases.find(d => d.id === data.disease_type_id);
+
+  const fetchRecommendations = useCallback(async () => {
+    if (!selectedDisease) return;
+    setAiLoading(true);
+    setAiError(null);
+    setAiRec(null);
+
+    const signs = selectedDisease.common_signs
+      ? selectedDisease.common_signs.split(',').map((s: string) => s.trim()).filter(Boolean)
+      : ['General observation'];
+
+    try {
+      const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+      const csrf = csrfMeta ? (csrfMeta as HTMLMetaElement).content : '';
+
+      const res = await fetch('/api/health/recommendations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        body: JSON.stringify({
+          condition:            selectedDisease.name,
+          selected_signs:       signs,
+          severity:             data.severity.charAt(0).toUpperCase() + data.severity.slice(1),
+          additional_symptoms:  data.symptoms || undefined,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? 'Unknown error');
+      setAiRec(json);
+    } catch (err: any) {
+      setAiError(err.message ?? 'Could not load recommendations. Please try again.');
+    } finally {
+      setAiLoading(false);
+    }
+  }, [selectedDisease, data.severity, data.symptoms]);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,6 +212,81 @@ export default function HealthCreate() {
               ))}
             </div>
           </div>
+
+          {/* AI Recommendations */}
+          {selectedDisease && (
+            <div>
+              <button type="button" onClick={fetchRecommendations} disabled={aiLoading}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-primary-700 text-primary-900 text-sm font-semibold bg-primary-50 hover:bg-primary-100 active:bg-primary-200 disabled:opacity-60 transition-colors">
+                {aiLoading
+                  ? <><Loader2 className="h-4 w-4 animate-spin" /> Getting recommendations...</>
+                  : <><Stethoscope className="h-4 w-4" /> Get AI Treatment Recommendations</>}
+              </button>
+
+              {aiError && (
+                <p className="text-xs text-red-600 mt-2 text-center">{aiError}</p>
+              )}
+
+              {aiRec && (
+                <div className="mt-3 rounded-xl border overflow-hidden">
+                  {/* Urgency header */}
+                  <div className={clsx('px-4 py-2.5 flex items-center gap-2',
+                    aiRec.urgency.startsWith('URGENT') ? 'bg-red-600' :
+                    aiRec.urgency === 'Call Vet'       ? 'bg-amber-500' :
+                    aiRec.urgency === 'Monitor'        ? 'bg-blue-500' : 'bg-green-600')}>
+                    {aiRec.urgency.startsWith('URGENT')
+                      ? <AlertTriangle className="h-4 w-4 text-white flex-shrink-0" />
+                      : <CheckCircle className="h-4 w-4 text-white flex-shrink-0" />}
+                    <span className="text-white text-xs font-bold">{aiRec.urgency}</span>
+                  </div>
+
+                  <div className="bg-white px-4 py-3 space-y-3">
+                    {/* Summary */}
+                    <p className="text-sm text-gray-700">{aiRec.summary}</p>
+
+                    {/* Medicines */}
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Recommended Medicines</p>
+                      <div className="space-y-1.5">
+                        {aiRec.recommended_medicines.map((m, i) => (
+                          <div key={i} className="flex items-start gap-2 bg-gray-50 rounded-lg px-3 py-2">
+                            <span className={clsx('text-[10px] font-bold px-1.5 py-0.5 rounded mt-0.5 flex-shrink-0',
+                              m.type === 'Treatment'   ? 'bg-blue-100 text-blue-700' :
+                              m.type === 'Diagnostic'  ? 'bg-purple-100 text-purple-700' :
+                              m.type === 'Prevention'  ? 'bg-green-100 text-green-700' :
+                                                         'bg-gray-100 text-gray-600')}>
+                              {m.type}
+                            </span>
+                            <div>
+                              <p className="text-sm font-semibold text-gray-800">{m.name}</p>
+                              <p className="text-xs text-gray-500">{m.note}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Tips */}
+                    {aiRec.management_tips.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Management Tips</p>
+                        <ul className="space-y-1">
+                          {aiRec.management_tips.map((tip, i) => (
+                            <li key={i} className="text-xs text-gray-700 flex items-start gap-1.5">
+                              <span className="text-primary-700 mt-0.5">•</span> {tip}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Disclaimer */}
+                    <p className="text-[10px] text-gray-400 italic border-t pt-2">{aiRec.disclaimer}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Symptoms */}
           <div>
