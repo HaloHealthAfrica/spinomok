@@ -12,6 +12,7 @@ interface Medicine {
   name: string;
   type: 'Treatment' | 'Prevention' | 'Diagnostic' | 'Supportive';
   note: string;
+  note_sw: string;
 }
 
 interface AIRecommendation {
@@ -19,9 +20,12 @@ interface AIRecommendation {
   severity: string;
   urgency: string;
   summary: string;
+  summary_sw: string;
   recommended_medicines: Medicine[];
   management_tips: string[];
+  management_tips_sw: string[];
   disclaimer: string;
+  disclaimer_sw: string;
 }
 
 interface CreateProps extends PageProps {
@@ -49,6 +53,7 @@ export default function HealthCreate() {
   const [aiRec, setAiRec]           = useState<AIRecommendation | null>(null);
   const [aiLoading, setAiLoading]   = useState(false);
   const [aiError, setAiError]       = useState<string | null>(null);
+  const [aiLang, setAiLang]         = useState<'en' | 'sw'>('en');
 
   const { data, setData, post, processing, errors } = useForm({
     animal_id:         preAnimal ?? '',
@@ -237,16 +242,33 @@ export default function HealthCreate() {
                     {aiRec.urgency.startsWith('URGENT')
                       ? <AlertTriangle className="h-4 w-4 text-white flex-shrink-0" />
                       : <CheckCircle className="h-4 w-4 text-white flex-shrink-0" />}
-                    <span className="text-white text-xs font-bold">{aiRec.urgency}</span>
+                    <span className="text-white text-xs font-bold flex-1">{aiRec.urgency}</span>
+                    {/* Language toggle */}
+                    <div className="flex rounded-lg overflow-hidden border border-white/30">
+                      <button type="button" onClick={() => setAiLang('en')}
+                        className={clsx('px-2.5 py-1 text-[11px] font-bold transition-colors',
+                          aiLang === 'en' ? 'bg-white text-gray-800' : 'text-white/80 hover:text-white')}>
+                        EN
+                      </button>
+                      <button type="button" onClick={() => setAiLang('sw')}
+                        className={clsx('px-2.5 py-1 text-[11px] font-bold transition-colors',
+                          aiLang === 'sw' ? 'bg-white text-gray-800' : 'text-white/80 hover:text-white')}>
+                        SW
+                      </button>
+                    </div>
                   </div>
 
                   <div className="bg-white px-4 py-3 space-y-3">
                     {/* Summary */}
-                    <p className="text-sm text-gray-700">{aiRec.summary}</p>
+                    <p className="text-sm text-gray-700">
+                      {aiLang === 'sw' ? (aiRec.summary_sw || aiRec.summary) : aiRec.summary}
+                    </p>
 
                     {/* Medicines */}
                     <div>
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Recommended Medicines</p>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                        {aiLang === 'sw' ? 'Dawa Zinazopendekezwa' : 'Recommended Medicines'}
+                      </p>
                       <div className="space-y-1.5">
                         {aiRec.recommended_medicines.map((m, i) => (
                           <div key={i} className="flex items-start gap-2 bg-gray-50 rounded-lg px-3 py-2">
@@ -259,7 +281,9 @@ export default function HealthCreate() {
                             </span>
                             <div>
                               <p className="text-sm font-semibold text-gray-800">{m.name}</p>
-                              <p className="text-xs text-gray-500">{m.note}</p>
+                              <p className="text-xs text-gray-500">
+                                {aiLang === 'sw' ? (m.note_sw || m.note) : m.note}
+                              </p>
                             </div>
                           </div>
                         ))}
@@ -269,9 +293,11 @@ export default function HealthCreate() {
                     {/* Tips */}
                     {aiRec.management_tips.length > 0 && (
                       <div>
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Management Tips</p>
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                          {aiLang === 'sw' ? 'Vidokezo vya Usimamizi' : 'Management Tips'}
+                        </p>
                         <ul className="space-y-1">
-                          {aiRec.management_tips.map((tip, i) => (
+                          {(aiLang === 'sw' ? (aiRec.management_tips_sw ?? aiRec.management_tips) : aiRec.management_tips).map((tip, i) => (
                             <li key={i} className="text-xs text-gray-700 flex items-start gap-1.5">
                               <span className="text-primary-700 mt-0.5">•</span> {tip}
                             </li>
@@ -281,7 +307,9 @@ export default function HealthCreate() {
                     )}
 
                     {/* Disclaimer */}
-                    <p className="text-[10px] text-gray-400 italic border-t pt-2">{aiRec.disclaimer}</p>
+                    <p className="text-[10px] text-gray-400 italic border-t pt-2">
+                      {aiLang === 'sw' ? (aiRec.disclaimer_sw || aiRec.disclaimer) : aiRec.disclaimer}
+                    </p>
                   </div>
                 </div>
               )}

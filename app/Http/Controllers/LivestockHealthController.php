@@ -26,7 +26,7 @@ class LivestockHealthController extends Controller
             'Content-Type'      => 'application/json',
         ])->post('https://api.anthropic.com/v1/messages', [
             'model'      => 'claude-sonnet-4-6',
-            'max_tokens' => 1024,
+            'max_tokens' => 2048,
             'system'     => $this->getSystemPrompt(),
             'messages'   => [
                 ['role' => 'user', 'content' => $userMessage],
