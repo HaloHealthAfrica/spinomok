@@ -3,7 +3,7 @@ import { useForm, usePage, router } from '@inertiajs/react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { ArrowLeft, Heart, Plus, Trash2, Stethoscope, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Heart, Plus, Trash2, Stethoscope, AlertTriangle, CheckCircle, Loader2, PlusCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { PageProps, Animal, DiseaseType, MedicationType } from '@/types';
 import { today } from '@/utils/format';
@@ -94,6 +94,33 @@ export default function HealthCreate() {
   const removeTreatment = useCallback((i: number) => {
     syncTreatments(treatments.filter((_, idx) => idx !== i));
   }, [treatments, syncTreatments]);
+
+  // Track which AI-recommended medicines have been added to the treatment list
+  const [addedMedNames, setAddedMedNames] = useState<Set<string>>(new Set());
+
+  const addRecommendedTreatment = useCallback((medicineName: string) => {
+    // Match by exact name first, then case-insensitive
+    const match = meds.find(m => m.name === medicineName)
+      ?? meds.find(m => m.name.toLowerCase() === medicineName.toLowerCase());
+
+    const newRow: TreatmentEntry = {
+      _key:               ++_keyCounter,
+      medication_type_id: match?.id ?? (meds[0]?.id ?? ''),
+      treated_on:         today(),
+      dose_amount:        '',
+      dose_unit:          match?.unit_of_measure ?? 'ml',
+      route:              'IM',
+      cost:               '',
+    };
+
+    syncTreatments([...treatments, newRow]);
+    setAddedMedNames(prev => new Set(prev).add(medicineName));
+
+    // Scroll to treatments section after a short delay
+    setTimeout(() => {
+      document.getElementById('treatments-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }, [meds, treatments, syncTreatments]);
 
   const selectedDisease = diseases.find(d => d.id === data.disease_type_id);
 
@@ -271,27 +298,60 @@ export default function HealthCreate() {
 
                     {/* Medicines */}
                     <div>
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                        {aiLang === 'sw' ? 'Dawa Zinazopendekezwa' : 'Recommended Medicines'}
-                      </p>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                          {aiLang === 'sw' ? 'Dawa Zinazopendekezwa' : 'Recommended Medicines'}
+                        </p>
+                        {/* Add All Treatments shortcut */}
+                        {aiRec.recommended_medicines.some(m => m.type === 'Treatment' || m.type === 'Supportive') && (
+                          <button type="button"
+                            onClick={() => aiRec.recommended_medicines
+                              .filter(m => (m.type === 'Treatment' || m.type === 'Supportive') && !addedMedNames.has(m.name))
+                              .forEach(m => addRecommendedTreatment(m.name))}
+                            className="text-[11px] font-semibold text-primary-700 flex items-center gap-1">
+                            <PlusCircle className="h-3.5 w-3.5" />
+                            {aiLang === 'sw' ? 'Ongeza Zote' : 'Add All'}
+                          </button>
+                        )}
+                      </div>
                       <div className="space-y-1.5">
-                        {aiRec.recommended_medicines.map((m, i) => (
-                          <div key={i} className="flex items-start gap-2 bg-gray-50 rounded-lg px-3 py-2">
-                            <span className={clsx('text-[10px] font-bold px-1.5 py-0.5 rounded mt-0.5 flex-shrink-0',
-                              m.type === 'Treatment'   ? 'bg-blue-100 text-blue-700' :
-                              m.type === 'Diagnostic'  ? 'bg-purple-100 text-purple-700' :
-                              m.type === 'Prevention'  ? 'bg-green-100 text-green-700' :
-                                                         'bg-gray-100 text-gray-600')}>
-                              {m.type}
-                            </span>
-                            <div>
-                              <p className="text-sm font-semibold text-gray-800">{m.name}</p>
-                              <p className="text-xs text-gray-500">
-                                {aiLang === 'sw' ? (m.note_sw || m.note) : m.note}
-                              </p>
+                        {aiRec.recommended_medicines.map((m, i) => {
+                          const canAdd = m.type === 'Treatment' || m.type === 'Supportive';
+                          const alreadyAdded = addedMedNames.has(m.name);
+                          return (
+                          <div key={i} className="bg-gray-50 rounded-lg px-3 py-2">
+                            <div className="flex items-start gap-2">
+                              <span className={clsx('text-[10px] font-bold px-1.5 py-0.5 rounded mt-0.5 flex-shrink-0',
+                                m.type === 'Treatment'   ? 'bg-blue-100 text-blue-700' :
+                                m.type === 'Diagnostic'  ? 'bg-purple-100 text-purple-700' :
+                                m.type === 'Prevention'  ? 'bg-green-100 text-green-700' :
+                                                           'bg-gray-100 text-gray-600')}>
+                                {m.type}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-gray-800">{m.name}</p>
+                                <p className="text-xs text-gray-500 mt-0.5">
+                                  {aiLang === 'sw' ? (m.note_sw || m.note) : m.note}
+                                </p>
+                              </div>
+                              {canAdd && (
+                                <button type="button"
+                                  onClick={() => !alreadyAdded && addRecommendedTreatment(m.name)}
+                                  className={clsx(
+                                    'flex-shrink-0 flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-colors',
+                                    alreadyAdded
+                                      ? 'bg-green-100 text-green-700 cursor-default'
+                                      : 'bg-primary-900 text-white active:opacity-70'
+                                  )}>
+                                  {alreadyAdded
+                                    ? <><CheckCircle className="h-3 w-3" /> {aiLang === 'sw' ? 'Imeongezwa' : 'Added'}</>
+                                    : <><Plus className="h-3 w-3" /> {aiLang === 'sw' ? 'Ongeza' : 'Add'}</>}
+                                </button>
+                              )}
                             </div>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
 
@@ -355,7 +415,7 @@ export default function HealthCreate() {
           )}
 
           {/* Treatments */}
-          <div>
+          <div id="treatments-section">
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm font-semibold text-gray-700">Treatments Given</label>
               <button type="button" onClick={addTreatmentRow}
