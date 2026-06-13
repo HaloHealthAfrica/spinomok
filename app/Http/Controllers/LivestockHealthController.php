@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class LivestockHealthController extends Controller
 {
@@ -18,7 +19,8 @@ class LivestockHealthController extends Controller
 
         $userMessage = $this->buildUserMessage($request);
 
-        $response = Http::withHeaders([
+        try {
+        $response = Http::timeout(30)->withHeaders([
             'x-api-key'         => config('services.anthropic.key'),
             'anthropic-version' => '2023-06-01',
             'Content-Type'      => 'application/json',
@@ -32,7 +34,13 @@ class LivestockHealthController extends Controller
         ]);
 
         if ($response->failed()) {
-            return response()->json(['error' => 'Could not get recommendations. Please try again.'], 500);
+            Log::error('Anthropic API error', [
+                'status' => $response->status(),
+                'body'   => $response->body(),
+                'key_set' => !empty(config('services.anthropic.key')),
+            ]);
+            $apiError = $response->json('error.message') ?? 'Could not get recommendations. Please try again.';
+            return response()->json(['error' => $apiError], 502);
         }
 
         $content = $response->json('content.0.text');
@@ -40,10 +48,16 @@ class LivestockHealthController extends Controller
         $recommendation = json_decode($content, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
+            Log::error('Anthropic JSON parse error', ['raw' => $content]);
             return response()->json(['error' => 'Invalid response from AI. Please try again.'], 500);
         }
 
         return response()->json($recommendation);
+
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            Log::error('Anthropic connection error', ['message' => $e->getMessage()]);
+            return response()->json(['error' => 'Connection to AI service failed. Please try again.'], 502);
+        }
     }
 
     private function buildUserMessage(Request $request): string
