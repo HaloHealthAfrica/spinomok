@@ -19,6 +19,7 @@ use Database\Seeders\MilkBuyerSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class DashboardCardsTest extends TestCase
@@ -358,6 +359,17 @@ class DashboardCardsTest extends TestCase
         $this->assertSame(1, HealthEvent::where('farm_id', $farm->id)->count());
         $this->assertSame(2, FeedInventoryTransaction::where('farm_id', $farm->id)->count());
         $this->assertSame(1, Expense::where('farm_id', $farm->id)->where('description', 'Smoke feed purchase')->count());
+
+        $this->get("/reports/daily/{$report->id}")
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('reports/daily/Show')
+                ->has('milk_records', 1)
+                ->has('sales', 1)
+                ->has('health_events', 1)
+                ->has('feed_transactions', 2)
+                ->has('expenses', 1)
+            );
     }
 
     public function test_farm_workers_cannot_adjust_feed_inventory(): void

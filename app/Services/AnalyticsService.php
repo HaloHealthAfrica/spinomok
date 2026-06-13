@@ -349,50 +349,146 @@ class AnalyticsService
     public function getDailyReportData(string $farmId, string $date): array
     {
         $milkTotal = (float) MilkProduction::withoutGlobalScopes()
-            ->where('farm_id', $farmId)->whereDate('milked_on', $date)->where('is_withheld', false)
+            ->where('farm_id', $farmId)
+            ->whereDate('milked_on', $date)
+            ->where('is_withheld', false)
             ->sum('quantity_litres');
 
         $milkYesterday = (float) MilkProduction::withoutGlobalScopes()
             ->where('farm_id', $farmId)
             ->whereDate('milked_on', Carbon::parse($date)->subDay()->toDateString())
-            ->where('is_withheld', false)->sum('quantity_litres');
+            ->where('is_withheld', false)
+            ->sum('quantity_litres');
 
         $milkRevenue = (float) MilkSale::withoutGlobalScopes()
-            ->where('farm_id', $farmId)->whereDate('sale_date', $date)->sum('total_amount');
+            ->where('farm_id', $farmId)
+            ->whereDate('sale_date', $date)
+            ->sum('total_amount');
 
-        $healthEvents = HealthEvent::withoutGlobalScopes()
-            ->where('farm_id', $farmId)->whereDate('observed_on', $date)->count();
+        $milkByCow = MilkProduction::withoutGlobalScopes()
+            ->where('milk_production.farm_id', $farmId)
+            ->whereDate('milked_on', $date)
+            ->where('is_withheld', false)
+            ->join('animals', 'animals.id', '=', 'milk_production.animal_id')
+            ->selectRaw('milk_production.animal_id, animals.tag_number, animals.name, SUM(quantity_litres) as total_litres')
+            ->groupBy('milk_production.animal_id', 'animals.tag_number', 'animals.name')
+            ->orderByDesc('total_litres')
+            ->get()
+            ->map(fn ($row) => [
+                'animal_id' => $row->animal_id,
+                'tag_number' => $row->tag_number,
+                'name' => $row->name,
+                'total_litres' => round((float) $row->total_litres, 1),
+            ])
+            ->values()
+            ->all();
+
+        $sales = MilkSale::withoutGlobalScopes()
+            ->where('farm_id', $farmId)
+            ->whereDate('sale_date', $date)
+            ->with('buyer:id,name,buyer_type')
+            ->orderBy('created_at')
+            ->get()
+            ->map(fn (MilkSale $sale) => [
+                'buyer' => $sale->buyer?->name ?? 'Milk buyer',
+                'litres' => round((float) $sale->quantity_litres, 1),
+                'price' => round((float) $sale->price_per_litre, 2),
+                'amount' => round((float) $sale->total_amount, 2),
+                'payment_method' => $sale->payment_method,
+            ])
+            ->values()
+            ->all();
+
+        $healthDetails = HealthEvent::withoutGlobalScopes()
+            ->where('farm_id', $farmId)
+            ->whereDate('observed_on', $date)
+            ->with(['animal:id,tag_number,name', 'diseaseType:id,name'])
+            ->orderBy('created_at')
+            ->get()
+            ->map(fn (HealthEvent $event) => [
+                'animal' => $event->animal?->name ?? $event->animal?->tag_number ?? 'Animal',
+                'severity' => $event->severity,
+                'summary' => $event->diseaseType?->name ?? $event->symptoms ?? 'Health event',
+                'vet_name' => $event->vet_name,
+                'is_recovered' => (bool) $event->is_recovered,
+            ])
+            ->values()
+            ->all();
+
+        $feedTransactions = FeedInventoryTransaction::withoutGlobalScopes()
+            ->where('farm_id', $farmId)
+            ->whereDate('transaction_date', $date)
+            ->with('feedType:id,name')
+            ->orderBy('created_at')
+            ->get()
+            ->map(fn (FeedInventoryTransaction $transaction) => [
+                'type' => $transaction->transaction_type,
+                'feed' => $transaction->feedType?->name ?? 'Feed',
+                'quantity_kg' => abs(round((float) $transaction->quantity_kg, 1)),
+                'cost' => round((float) ($transaction->total_cost ?? 0), 2),
+                'animal_group' => $transaction->animal_group,
+                'supplier' => $transaction->supplier,
+            ])
+            ->values()
+            ->all();
+
+        $expenses = Expense::withoutGlobalScopes()
+            ->where('farm_id', $farmId)
+            ->whereDate('expense_date', $date)
+            ->orderBy('created_at')
+            ->get()
+            ->map(fn (Expense $expense) => [
+                'category' => $expense->category,
+                'description' => $expense->description,
+                'amount' => round((float) $expense->amount, 2),
+                'supplier' => $expense->supplier,
+            ])
+            ->values()
+            ->all();
 
         $openCases = HealthEvent::withoutGlobalScopes()
-            ->where('farm_id', $farmId)->where('is_recovered', false)->count();
+            ->where('farm_id', $farmId)
+            ->where('is_recovered', false)
+            ->count();
 
         $activeAlerts = Alert::withoutGlobalScopes()
-            ->where('farm_id', $farmId)->where('status', 'pending')
-            ->where('severity', 'critical')->limit(3)->pluck('title');
+            ->where('farm_id', $farmId)
+            ->where('status', 'pending')
+            ->where('severity', 'critical')
+            ->limit(3)
+            ->pluck('title');
 
         $cowsMilked = MilkProduction::withoutGlobalScopes()
-            ->where('farm_id', $farmId)->whereDate('milked_on', $date)->distinct('animal_id')->count('animal_id');
+            ->where('farm_id', $farmId)
+            ->whereDate('milked_on', $date)
+            ->distinct('animal_id')
+            ->count('animal_id');
 
-        $deltaL   = $milkTotal - $milkYesterday;
+        $deltaL = $milkTotal - $milkYesterday;
         $deltaPct = $milkYesterday > 0 ? round(($deltaL / $milkYesterday) * 100, 1) : 0;
-
         $farm = \App\Models\Farm::withoutGlobalScopes()->find($farmId);
 
         return [
-            'farm_name'      => $farm?->name ?? 'Farm',
-            'date'           => Carbon::parse($date)->format('d M Y'),
-            'milk_today'     => round($milkTotal, 1),
+            'farm_name' => $farm?->name ?? 'Farm',
+            'date' => Carbon::parse($date)->format('d M Y'),
+            'milk_today' => round($milkTotal, 1),
             'milk_yesterday' => round($milkYesterday, 1),
-            'delta_litres'   => round($deltaL, 1),
-            'delta_percent'  => $deltaPct,
-            'cows_milked'    => $cowsMilked,
-            'milk_revenue'   => round($milkRevenue, 2),
-            'health_events'  => $healthEvents,
-            'open_cases'     => $openCases,
-            'critical_alerts'=> $activeAlerts->all(),
+            'delta_litres' => round($deltaL, 1),
+            'delta_percent' => $deltaPct,
+            'cows_milked' => $cowsMilked,
+            'milk_revenue' => round($milkRevenue, 2),
+            'milk_by_cow' => $milkByCow,
+            'sales' => $sales,
+            'health_events' => count($healthDetails),
+            'health_details' => $healthDetails,
+            'feed_transactions' => $feedTransactions,
+            'feed_usage_cost' => round(collect($feedTransactions)->where('type', 'consumption')->sum('cost'), 2),
+            'expenses' => $expenses,
+            'expense_total' => round(collect($expenses)->sum('amount'), 2),
+            'open_cases' => $openCases,
+            'critical_alerts' => $activeAlerts->all(),
         ];
     }
-
     /**
      * Build the WhatsApp daily message text.
      */
@@ -403,32 +499,73 @@ class AnalyticsService
             : "{$data['delta_litres']}L";
 
         $lines = [
-            "🐄 *DAILY FARM REPORT*",
-            "📅 {$data['date']} | {$data['farm_name']}",
+            "*DAILY FARM REPORT* - {$data['date']}",
+            $data['farm_name'],
             "",
-            "🥛 *MILK PRODUCTION*",
+            "*MILK PRODUCTION*",
             "Total: {$data['milk_today']} L | Cows: {$data['cows_milked']}",
             "vs Yesterday: {$delta} ({$data['delta_percent']}%)",
         ];
 
-        if ($data['milk_revenue'] > 0) {
-            $lines[] = "";
-            $lines[] = "💰 *REVENUE*";
-            $lines[] = "Milk Sales: KES " . number_format($data['milk_revenue'], 0);
+        foreach ($data['milk_by_cow'] ?? [] as $row) {
+            $name = $row['name'] ?: $row['tag_number'];
+            $lines[] = "- {$name}: {$row['total_litres']} L";
         }
 
-        if ($data['health_events'] > 0 || $data['open_cases'] > 0) {
-            $lines[] = "";
-            $lines[] = "🏥 *HEALTH*";
-            if ($data['health_events'] > 0) $lines[] = "New events today: {$data['health_events']}";
-            if ($data['open_cases'] > 0) $lines[] = "Open cases: {$data['open_cases']}";
+        $lines[] = "";
+        $lines[] = "*MILK SALES*";
+        $lines[] = "Total Revenue: KES ".number_format((float) $data['milk_revenue'], 0);
+        if (!empty($data['sales'])) {
+            foreach ($data['sales'] as $sale) {
+                $lines[] = "- {$sale['buyer']}: {$sale['litres']} L x KES ".number_format((float) $sale['price'], 0)." = KES ".number_format((float) $sale['amount'], 0);
+            }
+        } else {
+            $lines[] = "- None recorded";
+        }
+
+        $lines[] = "";
+        $lines[] = "*HEALTH*";
+        if (!empty($data['health_details'])) {
+            foreach ($data['health_details'] as $event) {
+                $status = $event['is_recovered'] ? 'recovered' : 'open';
+                $lines[] = "- {$event['animal']}: {$event['severity']} - {$event['summary']} ({$status})";
+            }
+        } else {
+            $lines[] = "- No health events recorded";
+        }
+        if ($data['open_cases'] > 0) {
+            $lines[] = "Open cases: {$data['open_cases']}";
+        }
+
+        $lines[] = "";
+        $lines[] = "*FEED*";
+        $lines[] = "Usage Cost: KES ".number_format((float) ($data['feed_usage_cost'] ?? 0), 0);
+        if (!empty($data['feed_transactions'])) {
+            foreach ($data['feed_transactions'] as $transaction) {
+                $label = $transaction['type'] === 'consumption' ? 'Used' : 'Received';
+                $suffix = $transaction['animal_group'] ? " ({$transaction['animal_group']})" : '';
+                $lines[] = "- {$label} {$transaction['feed']}: {$transaction['quantity_kg']} kg{$suffix}";
+            }
+        } else {
+            $lines[] = "- No feed movements recorded";
+        }
+
+        $lines[] = "";
+        $lines[] = "*EXPENSES*";
+        $lines[] = "Total: KES ".number_format((float) ($data['expense_total'] ?? 0), 0);
+        if (!empty($data['expenses'])) {
+            foreach ($data['expenses'] as $expense) {
+                $lines[] = "- {$expense['description']}: KES ".number_format((float) $expense['amount'], 0);
+            }
+        } else {
+            $lines[] = "- None recorded";
         }
 
         if (!empty($data['critical_alerts'])) {
             $lines[] = "";
-            $lines[] = "⚠️ *ALERTS*";
+            $lines[] = "*ALERTS*";
             foreach (array_slice($data['critical_alerts'], 0, 3) as $alert) {
-                $lines[] = "• {$alert}";
+                $lines[] = "- {$alert}";
             }
         }
 
@@ -437,7 +574,6 @@ class AnalyticsService
 
         return implode("\n", $lines);
     }
-
     /**
      * Build weekly WhatsApp summary.
      */

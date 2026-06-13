@@ -124,11 +124,31 @@ class DailyReportController extends Controller
             ->with('buyer:id,name,buyer_type')
             ->get();
 
+        $healthEvents = \App\Models\HealthEvent::where('farm_id', $farmId)
+            ->whereDate('observed_on', $date)
+            ->with(['animal:id,tag_number,name', 'diseaseType:id,name'])
+            ->orderBy('created_at')
+            ->get();
+
+        $feedTransactions = \App\Models\FeedInventoryTransaction::where('farm_id', $farmId)
+            ->whereDate('transaction_date', $date)
+            ->with('feedType:id,name')
+            ->orderBy('created_at')
+            ->get();
+
+        $expenses = \App\Models\Expense::where('farm_id', $farmId)
+            ->whereDate('expense_date', $date)
+            ->orderBy('created_at')
+            ->get();
+
         return Inertia::render('reports/daily/Show', [
             'report'        => $report->load('submittedBy:id,name'),
             'milk_records'  => $milkRecords,
             'milk_summary'  => $milkSummary,
             'sales'         => $sales,
+            'health_events' => $healthEvents,
+            'feed_transactions' => $feedTransactions,
+            'expenses'      => $expenses,
         ]);
     }
 
