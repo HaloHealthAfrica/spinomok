@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, usePage, router } from '@inertiajs/react';
+import { usePage, router } from '@inertiajs/react';
 import {
   ChevronRight, Bell, Milk, TrendingUp, TrendingDown,
   AlertTriangle, ClipboardList, Heart, Calendar, Wheat, DollarSign,
@@ -66,7 +66,7 @@ export default function Dashboard() {
             onClick={() => router.visit('/alerts')}
             aria-label="Alerts"
             className="relative h-10 w-10 mt-1 rounded-full flex items-center justify-center"
-            style={{ background: 'rgba(120,120,128,0.12)' }}
+            style={{ background: 'rgba(120,120,128,0.12)', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' } as React.CSSProperties}
           >
             <Bell className="h-5 w-5 text-black" strokeWidth={1.8} />
             {kpis.critical_alerts_count > 0 && (
@@ -153,6 +153,7 @@ export default function Dashboard() {
           <button
             onClick={() => router.visit('/reports/daily/new')}
             className="w-full flex items-center gap-3 bg-white rounded-[12px] px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.08)] active:bg-gray-50 transition-colors"
+            style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' } as React.CSSProperties}
           >
             <div className="h-9 w-9 rounded-full bg-[rgba(255,149,0,0.12)] flex items-center justify-center shrink-0">
               <ClipboardList className="h-5 w-5 text-[#D97706]" />
@@ -172,21 +173,32 @@ export default function Dashboard() {
         {/* ── Quick Actions ── */}
         <section aria-labelledby="quick-actions-heading">
           <SectionHeader id="quick-actions-heading" title="Quick Actions" />
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             {quickActions.map(action => {
               const Icon = action.icon;
               return (
-                <Link
+                <a
                   key={action.href}
-                  className="flex flex-col items-center gap-2 rounded-[12px] py-4 active:opacity-70 transition-opacity"
-                  style={{ background: action.bg }}
                   href={action.href}
+                  onClick={(e) => { e.preventDefault(); router.visit(action.href); }}
+                  className="flex flex-col items-center gap-2.5 rounded-[14px] py-5 active:opacity-60 transition-opacity select-none"
+                  style={{
+                    background: action.bg,
+                    touchAction: 'manipulation',
+                    WebkitTapHighlightColor: 'transparent',
+                    userSelect: 'none',
+                    cursor: 'pointer',
+                    minHeight: '88px',
+                  }}
                 >
-                  <Icon className="h-6 w-6" style={{ color: action.color }} strokeWidth={1.8} />
-                  <span className="text-[12px] font-medium text-center leading-tight" style={{ color: action.color }}>
+                  <div className="h-12 w-12 rounded-full flex items-center justify-center"
+                    style={{ background: action.bg, border: `1.5px solid ${action.color}30` }}>
+                    <Icon className="h-7 w-7" style={{ color: action.color }} strokeWidth={1.8} />
+                  </div>
+                  <span className="text-[14px] font-semibold text-center leading-tight px-2" style={{ color: action.color }}>
                     {action.label}
                   </span>
-                </Link>
+                </a>
               );
             })}
           </div>
@@ -316,6 +328,7 @@ function KpiCard({
     <button
       onClick={onClick}
       className="bg-white rounded-[12px] p-4 text-left w-full shadow-[0_1px_3px_rgba(0,0,0,0.08)] active:bg-gray-50 transition-colors"
+      style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' } as React.CSSProperties}
     >
       <div
         className="h-9 w-9 rounded-full flex items-center justify-center mb-3"
