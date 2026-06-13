@@ -4,6 +4,7 @@ import { BottomNav } from './BottomNav';
 import { OfflineBanner } from './OfflineBanner';
 import { PWAInstallBanner } from '@/components/offline/PWAInstallBanner';
 import { SyncDrawer } from '@/components/offline/SyncDrawer';
+import { FlashToast } from '@/components/ui/FlashToast';
 import type { SharedProps } from '@/types';
 import { useAuthStore } from '@/stores/authStore';
 import { useSyncStore } from '@/stores/syncStore';
@@ -49,6 +50,9 @@ export function AppLayout({ children, title, showBottomNav = true }: AppLayoutPr
      *  - Tab bar fixed at bottom with safe area
      */
     <div className="min-h-dvh flex flex-col" style={{ background: '#F2F2F7' }}>
+      {/* Flash toast — success / error / warning from Laravel redirects */}
+      <FlashToast />
+
       {/* System notification banner (offline/sync) */}
       <OfflineBanner onSyncBadgeClick={() => setSyncDrawerOpen(true)} />
 

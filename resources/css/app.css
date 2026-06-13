@@ -191,4 +191,14 @@
   /* Vibrancy — text that looks like iOS system secondary label */
   .secondary-text { color: rgba(60,60,67,0.6); }
   .tertiary-text  { color: rgba(60,60,67,0.3); }
+
+  /* Flash toast slide-in from top */
+  .animate-slide-down {
+    animation: slideDown 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
