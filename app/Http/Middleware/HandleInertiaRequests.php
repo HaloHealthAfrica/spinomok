@@ -87,9 +87,7 @@ class HandleInertiaRequests extends Middleware
                 'health.view', 'health.create', 'health.edit',
                 'feed.view', 'feed.create', 'feed.edit',
                 'finance.view', 'finance.create',
-                'reports.view', 'reports.export',
-                'staff.view', 'staff.create',
-                'tasks.view', 'tasks.create',
+                'reports.view',
                 'alerts.view', 'alerts.dismiss', 'alerts.resolve',
             ],
             'farm_worker'  => [
@@ -97,7 +95,6 @@ class HandleInertiaRequests extends Middleware
                 'milk.view', 'milk.create',
                 'health.view',
                 'feed.view', 'feed.create',
-                'tasks.view', 'tasks.complete',
                 'alerts.view', 'alerts.dismiss',
             ],
             'veterinarian' => [

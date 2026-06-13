@@ -2,14 +2,15 @@ import React from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
 import {
   ChevronRight, Bell, Milk, TrendingUp, TrendingDown,
-  PawPrint, AlertTriangle, ClipboardList, Heart, Calendar, Wheat, DollarSign,
+  AlertTriangle, ClipboardList, Heart, Calendar, Wheat, DollarSign,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardGroup, CardRow } from '@/components/ui/Card';
-import { Badge, getSeverityVariant } from '@/components/ui/Badge';
+import { Badge } from '@/components/ui/Badge';
 import { clsx } from 'clsx';
 import type { PageProps, DashboardKPIs, Alert, Animal } from '@/types';
 import { formatKES } from '@/utils/format';
+import { useAuth } from '@/hooks/useAuth';
 
 interface DashboardProps extends PageProps {
   kpis: DashboardKPIs;
@@ -33,12 +34,14 @@ export default function Dashboard() {
   const {
     kpis, active_alerts, recent_animals, today_date, auth, today_report, milk_trend,
   } = usePage<DashboardProps>().props;
+  const { isManager } = useAuth();
 
   const hour      = new Date().getHours();
   const greeting  = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   const milkToday = kpis?.milk_today_litres  ?? 0;
   const milkDelta = kpis?.milk_delta_percent ?? 0;
   const isPositive = milkDelta >= 0;
+  const quickActions = QUICK_ACTIONS.filter(action => action.href !== '/finance' || isManager);
 
   // Guard: if kpis is missing don't crash
   if (!kpis) return <AppLayout title="Dashboard"><div className="p-8 text-center text-gray-500">Loading dashboard…</div></AppLayout>;
@@ -133,7 +136,7 @@ export default function Dashboard() {
             value={formatKES(kpis.revenue_mtd_kes)}
             icon={<TrendingUp className="h-5 w-5" />}
             accentColor="#34C759"
-            onClick={() => router.visit('/finance')}
+            onClick={isManager ? () => router.visit('/finance') : undefined}
           />
           <KpiCard
             label="Active Alerts"
@@ -170,7 +173,7 @@ export default function Dashboard() {
         <section aria-labelledby="quick-actions-heading">
           <SectionHeader id="quick-actions-heading" title="Quick Actions" />
           <div className="grid grid-cols-3 gap-3">
-            {QUICK_ACTIONS.map(action => {
+            {quickActions.map(action => {
               const Icon = action.icon;
               return (
                 <Link
@@ -199,7 +202,7 @@ export default function Dashboard() {
               onAction={() => router.visit('/alerts')}
             />
             <CardGroup>
-              {active_alerts.slice(0, 3).map((alert, i) => (
+              {active_alerts.slice(0, 3).map(alert => (
                 <CardRow key={alert.id} onClick={() => router.visit('/alerts')}>
                   <div
                     className="h-2 w-2 rounded-full shrink-0"

@@ -18,6 +18,8 @@ interface RowEntry {
   inclusion_percent: string;
 }
 
+type FormulaSeason = 'general' | 'wet_season' | 'dry_season';
+
 const CATEGORY_LABELS: Record<string, string> = {
   energy:   '⚡ Energy',
   protein:  '💪 Protein',
@@ -33,7 +35,7 @@ export default function FormulaBuilder() {
   const [description, setDescription] = useState(formula?.description ?? '');
   const [batchSize,   setBatchSize]   = useState(formula?.batch_size_kg?.toString() ?? '100');
   const [targetCp,    setTargetCp]    = useState(formula?.target_cp_percent?.toString() ?? '16');
-  const [season,      setSeason]      = useState(formula?.season ?? 'general');
+  const [season,      setSeason]      = useState<FormulaSeason>((formula?.season as FormulaSeason | undefined) ?? 'general');
 
   const initialRows: RowEntry[] = formula?.ingredients_with_details?.map(fi => ({
     meal_ingredient_id: fi.meal_ingredient_id,
@@ -195,7 +197,7 @@ export default function FormulaBuilder() {
             <label className="text-sm font-medium text-gray-700 block mb-1">Season</label>
             <select
               value={season}
-              onChange={e => setSeason(e.target.value)}
+              onChange={e => setSeason(e.target.value as FormulaSeason)}
               className="h-11 w-full rounded-xl border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600"
             >
               <option value="general">General (Year-round)</option>

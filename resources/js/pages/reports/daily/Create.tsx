@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import { goBack } from '@/utils/navigation';
 import {
@@ -259,7 +259,7 @@ function Step1Milk({
 // ──── Step 2: Milk Sales ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 interface SaleEntry { buyer_id: string; channel_label: string; litres: string; price: string }
-interface Step2Data { sales: SaleEntry[]; notes: string }
+interface Step2Data { sales?: SaleEntry[]; reviewed?: boolean; notes: string }
 
 const SALE_CHANNELS = [
   { label: 'Farm Gate',    type: 'direct',      icon: '🏡', defaultPrice: 65 },
@@ -281,7 +281,7 @@ function resolveChannel(buyers: MilkBuyer[], channelType: string): { buyer_id: s
   };
 }
 
-function Step2Sales({
+function Step2SalesDraft({
   buyers, milkTotal, initialData, onNext, onBack, saving,
 }: {
   buyers: MilkBuyer[];
@@ -423,7 +423,72 @@ function Step2Sales({
   );
 }
 
+void Step2SalesDraft;
+
 // ──── Step 3: Health Events ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+function Step2Sales({
+  buyers, milkTotal, initialData, onNext, onBack, saving,
+}: {
+  buyers: MilkBuyer[];
+  milkTotal: number;
+  initialData?: Step2Data;
+  onNext: (data: Step2Data) => void;
+  onBack: () => void;
+  saving: boolean;
+}) {
+  const [notes, setNotes] = useState(initialData?.notes ?? '');
+
+  return (
+    <div className="px-4 py-4 space-y-4">
+      <div>
+        <h2 className="text-lg font-bold text-gray-900">Milk Sales</h2>
+        <p className="text-sm text-gray-500">Confirm saved sales records for this report date.</p>
+      </div>
+
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center justify-between gap-3">
+        <span className="text-sm text-blue-700">Milk produced today</span>
+        <strong className="text-blue-900">{formatLitres(milkTotal)}</strong>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+        <p className="text-sm text-gray-700">
+          Sales totals in the submitted daily report are calculated from saved milk sale records, not from draft notes in this wizard.
+        </p>
+        <button
+          type="button"
+          onClick={() => router.visit('/milk-sales')}
+          className="w-full py-3 rounded-xl bg-primary-900 text-white text-sm font-semibold active:opacity-80"
+        >
+          Open Milk Sales
+        </button>
+        {buyers.length === 0 && (
+          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            No milk buyers are configured yet. Ask a manager to seed or add the default buyers before recording sales.
+          </p>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label className="text-sm font-medium text-gray-700">Sales Notes (optional)</label>
+        <textarea
+          value={notes}
+          onChange={e => setNotes(e.target.value)}
+          rows={2}
+          placeholder="Unpaid buyer, unsold milk, payment follow-up..."
+          className="rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600 resize-none"
+        />
+      </div>
+
+      <WizardFooter
+        onNext={() => onNext({ reviewed: true, notes })}
+        onBack={onBack}
+        loading={saving}
+        nextLabel="Next: Health"
+      />
+    </div>
+  );
+}
 
 interface Step3Data { events: string; notes: string }
 
@@ -490,11 +555,11 @@ function Step3Health({
 // ──── Step 4: Feed Usage ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 interface FeedEntry { feed_type: string; quantity: string; unit: string; cost: string }
-interface Step4Data { feeds: FeedEntry[]; notes: string }
+interface Step4Data { feeds?: FeedEntry[]; reviewed?: boolean; notes: string }
 
 const FEED_TYPES = ['Napier Grass', 'Dairy Meal', 'Hay', 'Maize Silage', 'Oats', 'Minerals/Salt', 'Calf Pellets', 'Other'];
 
-function Step4Feed({
+function Step4FeedDraft({
   initialData, onNext, onBack, saving,
 }: {
   initialData?: Step4Data;
@@ -591,7 +656,69 @@ function Step4Feed({
   );
 }
 
+void Step4FeedDraft;
+
 // ──── Step 5: Review & Submit ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+function Step4Feed({
+  initialData, onNext, onBack, saving,
+}: {
+  initialData?: Step4Data;
+  onNext: (data: Step4Data) => void;
+  onBack: () => void;
+  saving: boolean;
+}) {
+  const [notes, setNotes] = useState(initialData?.notes ?? '');
+
+  return (
+    <div className="px-4 py-4 space-y-4">
+      <div>
+        <h2 className="text-lg font-bold text-gray-900">Feed Usage</h2>
+        <p className="text-sm text-gray-500">Confirm feed movements were recorded in inventory.</p>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+        <p className="text-sm text-gray-700">
+          Feed cost in the submitted daily report is calculated from saved feed inventory transactions for this date.
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => router.visit('/feed/consume')}
+            className="py-3 rounded-xl bg-primary-900 text-white text-sm font-semibold active:opacity-80"
+          >
+            Record Usage
+          </button>
+          <button
+            type="button"
+            onClick={() => router.visit('/feed/receive')}
+            className="py-3 rounded-xl border border-primary-900 text-primary-900 text-sm font-semibold active:bg-primary-50"
+          >
+            Record Stock
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label className="text-sm font-medium text-gray-700">Feed Notes</label>
+        <textarea
+          value={notes}
+          onChange={e => setNotes(e.target.value)}
+          rows={2}
+          placeholder="Delivery received, quality issues, new feed batch..."
+          className="rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600 resize-none"
+        />
+      </div>
+
+      <WizardFooter
+        onNext={() => onNext({ reviewed: true, notes })}
+        onBack={onBack}
+        loading={saving}
+        nextLabel="Review & Submit"
+      />
+    </div>
+  );
+}
 
 const WEATHER_OPTIONS = ['Sunny', 'Partly Cloudy', 'Overcast', 'Rainy', 'Heavy Rain', 'Cold', 'Dry'];
 
@@ -606,18 +733,14 @@ function Step5Submit({
   onSubmit: (data: unknown) => void;
   saving: boolean;
 }) {
+  void stepData;
+
   const [weather, setWeather] = useState(
     (report.draft_data?.step_5 as { weather?: string } | undefined)?.weather ?? 'Sunny'
   );
   const [managerNotes, setManagerNotes] = useState(
     (report.draft_data?.step_5 as { manager_notes?: string } | undefined)?.manager_notes ?? ''
   );
-
-  const step2 = stepData[2] as Step2Data | undefined;
-  const step4 = stepData[4] as Step4Data | undefined;
-
-  const totalRevenue = step2?.sales.reduce((sum, s) => sum + ((parseFloat(s.litres) || 0) * (parseFloat(s.price) || 0)), 0) ?? 0;
-  const totalFeedCost = step4?.feeds.reduce((sum, f) => sum + (parseFloat(f.cost) || 0), 0) ?? 0;
 
   return (
     <div className="px-4 py-4 space-y-4">
@@ -630,15 +753,8 @@ function Step5Submit({
       <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
         <SummaryRow label="🥛 Total Milk" value={`${milkSummary.total_litres.toFixed(1)} L`} />
         <SummaryRow label="🐄 Cows Milked" value={milkSummary.cows_milked.toString()} />
-        <SummaryRow label="💰 Milk Revenue" value={formatKES(totalRevenue)} highlight={totalRevenue > 0} />
-        <SummaryRow label="🌾 Feed Cost" value={formatKES(totalFeedCost)} />
-        {totalRevenue > 0 && totalFeedCost > 0 && (
-          <SummaryRow
-            label="📊 Gross Margin"
-            value={formatKES(totalRevenue - totalFeedCost)}
-            highlight
-          />
-        )}
+        <SummaryRow label="Milk Revenue" value="Calculated from Milk Sales on submit" />
+        <SummaryRow label="Feed Cost" value="Calculated from Feed Inventory on submit" />
       </div>
 
       {/* Weather */}

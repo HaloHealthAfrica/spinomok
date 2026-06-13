@@ -64,7 +64,6 @@ export function getStatusVariant(status: AnimalStatus): BadgeVariant {
   const map: Record<AnimalStatus, BadgeVariant> = {
     lactating: 'success',
     dry:       'neutral',
-    pregnant:  'warning',
     heifer:    'info',
     calf:      'primary',
     bull:      'neutral',

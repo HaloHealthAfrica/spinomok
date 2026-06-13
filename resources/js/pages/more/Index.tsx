@@ -1,4 +1,3 @@
-import React from 'react';
 import { router } from '@inertiajs/react';
 import {
   User, Settings, RefreshCw, LogOut, ChevronRight, BarChart2,
@@ -9,7 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
 export default function MoreIndex() {
-  const { user, farm } = useAuth();
+  const { user, farm, isManager } = useAuth();
   const { isOnline, pendingCount } = useNetworkStatus();
 
   const sections = [
@@ -17,8 +16,8 @@ export default function MoreIndex() {
       title: 'Modules',
       items: [
         { label: 'Analytics', icon: BarChart2, href: '/analytics', badge: null },
-        { label: 'Finance / P&L', icon: DollarSign, href: '/finance', badge: null },
-        { label: 'Feed Formulation', icon: FlaskConical, href: '/formulation', badge: null },
+        { label: 'Finance / P&L', icon: DollarSign, href: '/finance', badge: null, managerOnly: true },
+        { label: 'Feed Formulation', icon: FlaskConical, href: '/formulation', badge: null, managerOnly: true },
         { label: 'Feed Inventory', icon: Wheat, href: '/feed', badge: null },
         { label: 'Calf Growth', icon: Activity, href: '/calves', badge: null },
         { label: 'WhatsApp Reports', icon: MessageSquare, href: '/analytics/whatsapp/daily', badge: null },
@@ -28,8 +27,8 @@ export default function MoreIndex() {
       title: 'Settings',
       items: [
         { label: 'My Profile', icon: User, href: '/profile', badge: null },
-        { label: 'Farm Settings', icon: Settings, href: '/settings/farm', badge: null },
-        { label: 'Sync & Offline', icon: RefreshCw, href: '/settings/sync', badge: pendingCount > 0 ? String(pendingCount) : null },
+        { label: 'Farm Settings', icon: Settings, href: '/settings/farm', badge: null, managerOnly: true },
+        { label: 'Sync Status', icon: RefreshCw, href: '/settings/sync', badge: pendingCount > 0 ? String(pendingCount) : null },
       ],
     },
   ];
@@ -52,7 +51,7 @@ export default function MoreIndex() {
           <div key={section.title}>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 px-1">{section.title}</p>
             <div className="bg-white rounded-xl divide-y divide-gray-100">
-              {section.items.map(item => {
+              {section.items.filter(item => !item.managerOnly || isManager).map(item => {
                 const Icon = item.icon;
                 return (
                   <button

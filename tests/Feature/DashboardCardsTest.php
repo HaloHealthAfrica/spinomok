@@ -4,9 +4,18 @@ namespace Tests\Feature;
 
 use App\Models\Alert;
 use App\Models\Animal;
+use App\Models\DailyReport;
 use App\Models\Farm;
 use App\Models\FarmUser;
+use App\Models\FeedInventoryTransaction;
+use App\Models\FeedType;
+use App\Models\HealthEvent;
+use App\Models\MilkBuyer;
 use App\Models\User;
+use App\Models\Expense;
+use Database\Seeders\FeedReferenceSeeder;
+use Database\Seeders\HealthReferenceSeeder;
+use Database\Seeders\MilkBuyerSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -254,6 +263,118 @@ class DashboardCardsTest extends TestCase
         ]);
 
         $this->assertNotEmpty(Animal::where('tag_number', 'TEST-002')->value('id'));
+    }
+
+    public function test_day_one_seeded_smoke_workflow_records_core_farm_operations(): void
+    {
+        [$user, $animal, $farm] = $this->createFarmContext(role: 'farm_manager');
+        $this->seed([FeedReferenceSeeder::class, HealthReferenceSeeder::class, MilkBuyerSeeder::class]);
+
+        $date = now()->toDateString();
+        $this->actingAs($user);
+
+        $this->post('/animals', [
+            'tag_number' => 'SMOKE-002',
+            'name' => 'Smoke Cow',
+            'sex' => 'female',
+            'status' => 'heifer',
+            'breed' => 'Ayrshire',
+            'birth_date' => now()->subYear()->toDateString(),
+            'weight_kg' => 240,
+        ])->assertRedirect();
+
+        $this->post('/milk-records', [
+            'date' => $date,
+            'entries' => [[
+                'animal_id' => $animal->id,
+                'session' => 'morning',
+                'litres' => 12.5,
+            ]],
+        ])->assertRedirect();
+
+        $buyer = MilkBuyer::where('farm_id', $farm->id)->where('buyer_type', 'direct')->firstOrFail();
+        $this->post('/milk-sales', [
+            'milk_buyer_id' => $buyer->id,
+            'sale_date' => $date,
+            'quantity_litres' => 10,
+            'price_per_litre' => 65,
+            'payment_method' => 'cash',
+        ])->assertRedirect();
+
+        $feedType = FeedType::where('name', 'Dairy Meal (16% CP)')->firstOrFail();
+        $this->post('/feed/receive', [
+            'feed_type_id' => $feedType->id,
+            'quantity_kg' => 100,
+            'unit_cost' => 50,
+            'transaction_date' => $date,
+            'transaction_type' => 'purchase',
+            'supplier' => 'Smoke Supplier',
+        ])->assertRedirect();
+
+        $this->post('/feed/consume', [
+            'entries' => [[
+                'feed_type_id' => $feedType->id,
+                'quantity_kg' => 20,
+                'animal_group' => 'lactating',
+                'transaction_date' => $date,
+            ]],
+        ])->assertRedirect();
+
+        $this->post('/health', [
+            'animal_id' => $animal->id,
+            'observed_on' => $date,
+            'symptoms' => 'Smoke health check',
+            'severity' => 'mild',
+            'vet_consulted' => false,
+        ])->assertRedirect();
+
+        $this->post('/finance/expense', [
+            'category' => 'feed',
+            'expense_date' => $date,
+            'description' => 'Smoke feed purchase',
+            'amount' => 5000,
+            'supplier' => 'Smoke Supplier',
+            'payment_method' => 'cash',
+        ])->assertRedirect();
+
+        $this->get('/reports/daily/new?date='.$date)->assertOk();
+        $report = DailyReport::where('farm_id', $farm->id)->whereDate('report_date', $date)->firstOrFail();
+
+        $this->post("/reports/daily/{$report->id}/submit", [
+            'weather' => 'Sunny',
+            'manager_notes' => 'Smoke report submitted.',
+        ])->assertRedirect();
+
+        $report->refresh();
+
+        $this->assertSame('submitted', $report->status);
+        $this->assertSame(12.5, (float) $report->total_milk_litres);
+        $this->assertSame(10.0, (float) $report->milk_sold_litres);
+        $this->assertSame(650.0, (float) $report->milk_revenue);
+        $this->assertSame(1000.0, (float) $report->total_feed_cost);
+        $this->assertSame(1, (int) $report->health_events_count);
+
+        $this->assertDatabaseHas('animals', ['farm_id' => $farm->id, 'tag_number' => 'SMOKE-002']);
+        $this->assertSame(1, HealthEvent::where('farm_id', $farm->id)->count());
+        $this->assertSame(2, FeedInventoryTransaction::where('farm_id', $farm->id)->count());
+        $this->assertSame(1, Expense::where('farm_id', $farm->id)->where('description', 'Smoke feed purchase')->count());
+    }
+
+    public function test_farm_workers_cannot_adjust_feed_inventory(): void
+    {
+        [$user] = $this->createFarmContext(role: 'farm_worker');
+        $this->seed(FeedReferenceSeeder::class);
+
+        $feedType = FeedType::firstOrFail();
+
+        $this->actingAs($user)
+            ->post('/feed/adjust', [
+                'feed_type_id' => $feedType->id,
+                'quantity_kg' => 10,
+                'transaction_type' => 'adjustment',
+                'transaction_date' => now()->toDateString(),
+            ])
+            ->assertForbidden();
     }
 
     private function createFarmContext(string $role = 'farm_manager', array $farmAttributes = []): array

@@ -11,8 +11,8 @@ class MilkBuyerSeeder extends Seeder
 {
     public function run(): void
     {
-        $farm = Farm::first();
-        if (!$farm) return;
+        $farms = Farm::query()->get();
+        if ($farms->isEmpty()) return;
 
         $buyers = [
             ['name' => 'Brookside Dairy',     'buyer_type' => 'processor',   'default_price_per_litre' => 42.00, 'payment_terms_days' => 30],
@@ -23,13 +23,14 @@ class MilkBuyerSeeder extends Seeder
             ['name' => 'Calf Feeding',        'buyer_type' => 'calf_feeding','default_price_per_litre' => 0,     'payment_terms_days' => 0],
         ];
 
-        foreach ($buyers as $buyer) {
-            MilkBuyer::firstOrCreate(
-                ['farm_id' => $farm->id, 'name' => $buyer['name']],
-                array_merge($buyer, ['id' => Str::uuid(), 'farm_id' => $farm->id]),
-            );
+        foreach ($farms as $farm) {
+            foreach ($buyers as $buyer) {
+                MilkBuyer::firstOrCreate(
+                    ['farm_id' => $farm->id, 'name' => $buyer['name']],
+                    array_merge($buyer, ['id' => Str::uuid(), 'farm_id' => $farm->id]),
+                );
+            }
         }
-
-        $this->command->info('✓ Default milk buyers seeded');
+        $this->command->info('Default milk buyers seeded for '.$farms->count().' farm(s)');
     }
 }

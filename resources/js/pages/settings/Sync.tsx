@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { router } from '@inertiajs/react';
 import { ArrowLeft, RefreshCw, Wifi, WifiOff, CheckCircle, AlertCircle, Trash2, Download } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -9,10 +9,9 @@ import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { runSync } from '@/lib/sync/SyncService';
 import { db } from '@/lib/db/database';
-import { goBack } from '@/utils/navigation';
 
 export default function SyncSettings() {
-  const { isOnline, connectionType, isSyncing, pendingCount, lastSyncedAt } = useNetworkStatus();
+  const { isOnline, connectionType, isSyncing, lastSyncedAt } = useNetworkStatus();
   const { canInstall, isInstalled, isIOS, install } = usePWAInstall();
   const [queueStats, setQueueStats] = useState({ pending: 0, failed: 0, total: 0 });
   const [storageInfo, setStorageInfo] = useState<{ used: number; quota: number } | null>(null);
@@ -58,13 +57,13 @@ export default function SyncSettings() {
   };
 
   return (
-    <AppLayout title="Sync & Offline" showBottomNav={false}>
+    <AppLayout title="Sync Status" showBottomNav={false}>
       <div className="bg-primary-900 pt-safe-top px-4 pb-4">
         <div className="flex items-center gap-3 pt-3">
           <button onClick={() => router.visit('/more')} className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-white">
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <h1 className="text-white text-lg font-bold">Sync & Offline Settings</h1>
+          <h1 className="text-white text-lg font-bold">Sync Status</h1>
         </div>
       </div>
 
@@ -153,7 +152,7 @@ export default function SyncSettings() {
             </div>
           ) : canInstall ? (
             <>
-              <p className="text-sm text-gray-600 mb-3">Install FarmOps on this device for offline access, faster loading, and home screen shortcut.</p>
+              <p className="text-sm text-gray-600 mb-3">Install FarmOps on this device for faster loading and a home screen shortcut.</p>
               <Button fullWidth onClick={install} leftIcon={<Download className="h-4 w-4" />}>
                 Install FarmOps
               </Button>
@@ -185,7 +184,7 @@ export default function SyncSettings() {
               />
             </div>
             <p className="text-xs text-gray-400 mt-2">
-              FarmOps stores the last 90 days of farm data offline for use without connectivity.
+              FarmOps stores selected synced records locally. Only queued milk entries should be treated as offline-ready in this release.
             </p>
           </Card>
         )}

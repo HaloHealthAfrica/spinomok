@@ -2,9 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\FeedInventory;
 use App\Models\FeedType;
-use App\Models\Farm;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -45,38 +43,6 @@ class FeedReferenceSeeder extends Seeder
             ]);
         }
 
-        // Create demo feed inventory for the demo farm
-        $farm = Farm::first();
-        if ($farm) {
-            $demoStock = [
-                ['name' => 'Napier Grass (Fresh)',   'qty' => 2000, 'reorder' => 200, 'cost' => 3.00],
-                ['name' => 'Dairy Meal (16% CP)',    'qty' => 400,  'reorder' => 50,  'cost' => 52.00],
-                ['name' => 'Rhodes Grass Hay',       'qty' => 500,  'reorder' => 100, 'cost' => 18.00],
-                ['name' => 'Maize Silage',           'qty' => 1500, 'reorder' => 200, 'cost' => 8.00],
-                ['name' => 'Mineral Supplement (Loose)', 'qty' => 50, 'reorder' => 10, 'cost' => 150.00],
-                ['name' => 'Calf Pellets (Starter)', 'qty' => 90,   'reorder' => 20,  'cost' => 45.00],
-            ];
-
-            foreach ($demoStock as $stock) {
-                $feedType = FeedType::where('name', $stock['name'])->first();
-                if (!$feedType) continue;
-
-                FeedInventory::firstOrCreate(
-                    ['farm_id' => $farm->id, 'feed_type_id' => $feedType->id],
-                    [
-                        'id'               => Str::uuid(),
-                        'farm_id'          => $farm->id,
-                        'feed_type_id'     => $feedType->id,
-                        'quantity_kg'      => $stock['qty'],
-                        'reorder_level_kg' => $stock['reorder'],
-                        'avg_cost_per_kg'  => $stock['cost'],
-                        'last_restocked_on'=> now()->subDays(rand(3, 14))->toDateString(),
-                    ]
-                );
-            }
-        }
-
         $this->command->info('✓ Feed types seeded: ' . FeedType::count());
-        $this->command->info('✓ Demo inventory items created: ' . ($farm ? FeedInventory::where('farm_id', $farm->id)->count() : 0));
     }
 }

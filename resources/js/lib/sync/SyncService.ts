@@ -13,7 +13,7 @@
  */
 
 import axios from 'axios';
-import { db } from '@/lib/db/database';
+import { db, type DBAlert, type DBAnimal, type DBMilkRecord } from '@/lib/db/database';
 import { useSyncStore } from '@/stores/syncStore';
 
 const ENTITY_ENDPOINTS: Record<string, string> = {
@@ -185,17 +185,17 @@ async function upsertToIndexedDB(entity: string, records: unknown[]): Promise<vo
   switch (entity) {
     case 'animals':
       await db.animals.bulkPut(
-        records.map((r: unknown) => ({ ...(r as object), syncStatus: 'synced' as const, locallyModifiedAt: null }))
+        records.map((r: unknown) => ({ ...(r as DBAnimal), syncStatus: 'synced' as const, locallyModifiedAt: null }))
       );
       break;
     case 'alerts':
       await db.alerts.bulkPut(
-        records.map((r: unknown) => ({ ...(r as object), syncStatus: 'synced' as const }))
+        records.map((r: unknown) => ({ ...(r as DBAlert), syncStatus: 'synced' as const }))
       );
       break;
     case 'milk_records':
       await db.milkRecords.bulkPut(
-        records.map((r: unknown) => ({ ...(r as object), syncStatus: 'synced' as const, locallyModifiedAt: null }))
+        records.map((r: unknown) => ({ ...(r as DBMilkRecord), syncStatus: 'synced' as const, locallyModifiedAt: null }))
       );
       break;
     default:

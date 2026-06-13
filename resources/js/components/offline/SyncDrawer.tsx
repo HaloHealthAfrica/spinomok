@@ -3,7 +3,7 @@ import { RefreshCw, CheckCircle, AlertCircle, X, Wifi, WifiOff, Clock } from 'lu
 import { useSyncStore } from '@/stores/syncStore';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { runSync, getPendingCount } from '@/lib/sync/SyncService';
-import { db } from '@/lib/db/database';
+import { db, type DBQueuedOperation } from '@/lib/db/database';
 import { clsx } from 'clsx';
 import { formatDate } from '@/utils/format';
 
@@ -14,8 +14,8 @@ interface SyncDrawerProps {
 
 export function SyncDrawer({ open, onClose }: SyncDrawerProps) {
   const { isOnline, connectionType, isSyncing, pendingCount, lastSyncedAt } = useNetworkStatus();
-  const [queueItems, setQueueItems] = useState<Awaited<ReturnType<typeof db.syncQueue.toArray>>>([]);
-  const [failedItems, setFailedItems] = useState<typeof queueItems>([]);
+  const [queueItems, setQueueItems] = useState<DBQueuedOperation[]>([]);
+  const [failedItems, setFailedItems] = useState<DBQueuedOperation[]>([]);
 
   useEffect(() => {
     if (!open) return;

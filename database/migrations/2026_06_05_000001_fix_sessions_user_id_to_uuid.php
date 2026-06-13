@@ -16,13 +16,20 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
         // PostgreSQL ALTER COLUMN requires explicit CAST
-        // We drop the index first, alter, then recreate.
         DB::statement('ALTER TABLE sessions ALTER COLUMN user_id TYPE uuid USING user_id::text::uuid');
     }
 
     public function down(): void
     {
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
         DB::statement('ALTER TABLE sessions ALTER COLUMN user_id TYPE bigint USING NULL');
     }
 };

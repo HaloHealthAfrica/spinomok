@@ -30,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // ── Route middleware aliases ──────────────────────────────────────────
         $middleware->alias([
             'set.farm' => \App\Http\Middleware\SetFarmContext::class,
+            'farm.role' => \App\Http\Middleware\EnsureFarmRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

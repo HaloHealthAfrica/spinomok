@@ -36,7 +36,13 @@ Route::middleware(['auth', 'set.farm'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Animals
-    Route::resource('animals', AnimalController::class);
+    Route::resource('animals', AnimalController::class)->except(['edit', 'update', 'destroy']);
+    Route::middleware('farm.role:farm_owner,farm_manager')->group(function () {
+        Route::get('/animals/{animal}/edit', [AnimalController::class, 'edit'])->name('animals.edit');
+        Route::put('/animals/{animal}', [AnimalController::class, 'update'])->name('animals.update');
+        Route::patch('/animals/{animal}', [AnimalController::class, 'update']);
+        Route::delete('/animals/{animal}', [AnimalController::class, 'destroy'])->name('animals.destroy');
+    });
 
     // ─── Milk Production ─────────────────────────────────────────────────────
     Route::get('/milk-records', [MilkProductionController::class, 'index'])->name('milk.index');
@@ -132,47 +138,53 @@ Route::middleware(['auth', 'set.farm'])->group(function () {
     Route::post('/feed/receive', [FeedController::class, 'receiveStore'])->name('feed.receive.store');
     Route::get('/feed/consume', [FeedController::class, 'consumeCreate'])->name('feed.consume.create');
     Route::post('/feed/consume', [FeedController::class, 'consumeStore'])->name('feed.consume.store');
-    Route::post('/feed/adjust', [FeedController::class, 'adjustStore'])->name('feed.adjust.store');
     Route::get('/feed/{inventoryId}', [FeedController::class, 'show'])->name('feed.show');
-    Route::patch('/feed/{inventoryId}/threshold', [FeedController::class, 'updateThreshold'])->name('feed.threshold');
+    Route::middleware('farm.role:farm_owner,farm_manager')->group(function () {
+        Route::post('/feed/adjust', [FeedController::class, 'adjustStore'])->name('feed.adjust.store');
+        Route::patch('/feed/{inventoryId}/threshold', [FeedController::class, 'updateThreshold'])->name('feed.threshold');
+    });
 
     // ─── Feed Formulation & Ration Planning ──────────────────────────────────
-    Route::get('/formulation', [FormulationController::class, 'index'])->name('formulation.index');
+    Route::middleware('farm.role:farm_owner,farm_manager')->group(function () {
+        Route::get('/formulation', [FormulationController::class, 'index'])->name('formulation.index');
 
-    // Formula builder
-    Route::get('/formulation/formula/new', [FormulationController::class, 'createFormula'])->name('formulation.formula.create');
-    Route::post('/formulation/formula', [FormulationController::class, 'storeFormula'])->name('formulation.formula.store');
-    Route::get('/formulation/formula/{formulaId}/edit', [FormulationController::class, 'editFormula'])->name('formulation.formula.edit');
-    Route::put('/formulation/formula/{formulaId}', [FormulationController::class, 'updateFormula'])->name('formulation.formula.update');
-    Route::delete('/formulation/formula/{formulaId}', [FormulationController::class, 'destroyFormula'])->name('formulation.formula.destroy');
+        // Formula builder
+        Route::get('/formulation/formula/new', [FormulationController::class, 'createFormula'])->name('formulation.formula.create');
+        Route::post('/formulation/formula', [FormulationController::class, 'storeFormula'])->name('formulation.formula.store');
+        Route::get('/formulation/formula/{formulaId}/edit', [FormulationController::class, 'editFormula'])->name('formulation.formula.edit');
+        Route::put('/formulation/formula/{formulaId}', [FormulationController::class, 'updateFormula'])->name('formulation.formula.update');
+        Route::delete('/formulation/formula/{formulaId}', [FormulationController::class, 'destroyFormula'])->name('formulation.formula.destroy');
 
-    // Live calculation API (called by React on ingredient changes)
-    Route::post('/api/formulation/calculate', [FormulationController::class, 'calculate']);
+        // Live calculation API (called by React on ingredient changes)
+        Route::post('/api/formulation/calculate', [FormulationController::class, 'calculate']);
 
-    // Ingredient price management
-    Route::post('/api/formulation/price', [FormulationController::class, 'updatePrice']);
+        // Ingredient price management
+        Route::post('/api/formulation/price', [FormulationController::class, 'updatePrice']);
 
-    // Ration planner
-    Route::get('/formulation/ration/new', [FormulationController::class, 'rationCreate'])->name('formulation.ration.create');
-    Route::post('/api/formulation/ration/calculate', [FormulationController::class, 'calculateRation']);
-    Route::post('/formulation/ration', [FormulationController::class, 'storeRation'])->name('formulation.ration.store');
+        // Ration planner
+        Route::get('/formulation/ration/new', [FormulationController::class, 'rationCreate'])->name('formulation.ration.create');
+        Route::post('/api/formulation/ration/calculate', [FormulationController::class, 'calculateRation']);
+        Route::post('/formulation/ration', [FormulationController::class, 'storeRation'])->name('formulation.ration.store');
+    });
 
     // ─── Finance: Expenses, Revenue, Profitability ───────────────────────────
-    Route::get('/finance', [FinanceController::class, 'index'])->name('finance.index');
+    Route::middleware('farm.role:farm_owner,farm_manager')->group(function () {
+        Route::get('/finance', [FinanceController::class, 'index'])->name('finance.index');
 
-    // Expenses
-    Route::get('/finance/expense/new', [FinanceController::class, 'expenseCreate'])->name('finance.expense.create');
-    Route::post('/finance/expense', [FinanceController::class, 'expenseStore'])->name('finance.expense.store');
-    Route::put('/finance/expense/{expense}', [FinanceController::class, 'expenseUpdate'])->name('finance.expense.update');
-    Route::delete('/finance/expense/{expense}', [FinanceController::class, 'expenseDestroy'])->name('finance.expense.destroy');
+        // Expenses
+        Route::get('/finance/expense/new', [FinanceController::class, 'expenseCreate'])->name('finance.expense.create');
+        Route::post('/finance/expense', [FinanceController::class, 'expenseStore'])->name('finance.expense.store');
+        Route::put('/finance/expense/{expense}', [FinanceController::class, 'expenseUpdate'])->name('finance.expense.update');
+        Route::delete('/finance/expense/{expense}', [FinanceController::class, 'expenseDestroy'])->name('finance.expense.destroy');
 
-    // Revenue
-    Route::get('/finance/revenue/new', [FinanceController::class, 'revenueCreate'])->name('finance.revenue.create');
-    Route::post('/finance/revenue', [FinanceController::class, 'revenueStore'])->name('finance.revenue.store');
-    Route::delete('/finance/revenue/{revenue}', [FinanceController::class, 'revenueDestroy'])->name('finance.revenue.destroy');
+        // Revenue
+        Route::get('/finance/revenue/new', [FinanceController::class, 'revenueCreate'])->name('finance.revenue.create');
+        Route::post('/finance/revenue', [FinanceController::class, 'revenueStore'])->name('finance.revenue.store');
+        Route::delete('/finance/revenue/{revenue}', [FinanceController::class, 'revenueDestroy'])->name('finance.revenue.destroy');
 
-    // Recompute P&L snapshot
-    Route::post('/api/finance/recompute', [FinanceController::class, 'recompute']);
+        // Recompute P&L snapshot
+        Route::post('/api/finance/recompute', [FinanceController::class, 'recompute']);
+    });
 
     // ─── Analytics & Reports ──────────────────────────────────────────────────
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
@@ -202,8 +214,10 @@ Route::middleware(['auth', 'set.farm'])->group(function () {
         ]);
     })->name('alerts.index');
     Route::get('/settings/sync', fn () => inertia('settings/Sync'))->name('settings.sync');
-    Route::get('/settings/farm', fn () => inertia('settings/Farm'))->name('settings.farm');
-    Route::patch('/settings/farm', [SettingsController::class, 'updateFarm'])->name('settings.farm.update');
+    Route::middleware('farm.role:farm_owner,farm_manager')->group(function () {
+        Route::get('/settings/farm', fn () => inertia('settings/Farm'))->name('settings.farm');
+        Route::patch('/settings/farm', [SettingsController::class, 'updateFarm'])->name('settings.farm.update');
+    });
     Route::get('/profile', fn () => inertia('settings/Profile'))->name('profile');
     Route::patch('/profile', [SettingsController::class, 'updateProfile'])->name('profile.update');
 });

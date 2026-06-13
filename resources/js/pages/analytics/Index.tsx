@@ -167,7 +167,7 @@ function ProductionTab({ milkTrend, perCow, herd, herdPieData, period }: {
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="date" tick={{ fontSize: 9 }} tickFormatter={d => d.slice(5)} />
               <YAxis tick={{ fontSize: 9 }} />
-              <Tooltip formatter={(v: number) => [`${v} L`, 'Milk']} labelFormatter={l => `Date: ${l}`} />
+              <Tooltip formatter={(v) => [`${Number(v ?? 0)} L`, 'Milk']} labelFormatter={l => `Date: ${l}`} />
               <Line type="monotone" dataKey="total" stroke="#1B5E20" strokeWidth={2.5} dot={false} name="Total Litres" />
               <Line type="monotone" dataKey="avg" stroke="#43A047" strokeWidth={1.5} dot={false} strokeDasharray="4 4" name="Avg/Cow" />
             </LineChart>
@@ -394,7 +394,7 @@ function FinanceTab({ financial }: { financial: AnalyticsProps['financial'] }) {
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="month" tick={{ fontSize: 9 }} />
               <YAxis tick={{ fontSize: 9 }} tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v: number) => formatKES(v)} />
+              <Tooltip formatter={(v) => formatKES(Number(v ?? 0))} />
               <Bar dataKey="revenue" fill="#16a34a" opacity={0.8} name="Revenue" radius={[2, 2, 0, 0]} />
               <Bar dataKey="expenses" fill="#dc2626" opacity={0.7} name="Expenses" radius={[2, 2, 0, 0]} />
               <Line type="monotone" dataKey="net_profit" stroke="#1B5E20" strokeWidth={2.5} dot={{ r: 3 }} name="Net Profit" />
@@ -440,7 +440,7 @@ function FinanceTab({ financial }: { financial: AnalyticsProps['financial'] }) {
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="month" tick={{ fontSize: 9 }} />
               <YAxis tick={{ fontSize: 9 }} tickFormatter={v => `KES${v}`} />
-              <Tooltip formatter={(v: number) => [`KES ${v}`, 'Cost/L']} />
+              <Tooltip formatter={(v) => [`KES ${Number(v ?? 0)}`, 'Cost/L']} />
               <Line type="monotone" dataKey="cost_per_litre" stroke="#dc2626" strokeWidth={2} dot={{ r: 3 }} />
             </LineChart>
           </ResponsiveContainer>

@@ -3,8 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Farm;
-use App\Models\MealFormula;
-use App\Models\MealFormulaIngredient;
 use App\Models\MealIngredient;
 use App\Models\MealIngredientPrice;
 use Illuminate\Database\Seeder;
@@ -51,7 +49,7 @@ class FormulationSeeder extends Seeder
             ]);
         }
 
-        // Set demo ingredient prices for the farm
+        // Set default ingredient prices for the first farm, if present.
         $farm = Farm::first();
         if ($farm) {
             $prices = [
@@ -83,49 +81,8 @@ class FormulationSeeder extends Seeder
                 );
             }
 
-            // Create a standard demo formula (100 kg batch, 16-18% CP)
-            $formula = MealFormula::firstOrCreate(
-                ['farm_id' => $farm->id, 'name' => 'Standard Dairy Meal (16% CP)'],
-                [
-                    'id'              => Str::uuid(),
-                    'farm_id'         => $farm->id,
-                    'name'            => 'Standard Dairy Meal (16% CP)',
-                    'description'     => 'General purpose dairy meal for lactating cows. 100 kg batch.',
-                    'batch_size_kg'   => 100.0,
-                    'target_cp_percent' => 16.0,
-                    'season'          => 'general',
-                ]
-            );
-
-            // Add ingredients: 40 maize germ + 25 wheat bran + 10 pollard + 15 CSC + 7 sunflower + 1.5 DCP + 1 lime + 0.5 salt + 1 premix = 101 → adjust
-            $ingredientMix = [
-                ['name' => 'Maize Germ',               'pct' => 40.0],
-                ['name' => 'Wheat Bran',               'pct' => 25.0],
-                ['name' => 'Cotton Seed Cake',         'pct' => 15.0],
-                ['name' => 'Sunflower Seed Cake',      'pct' => 12.0],
-                ['name' => 'Di-calcium Phosphate (DCP)','pct' => 2.5],
-                ['name' => 'Ground Limestone (Lime)',  'pct' => 2.0],
-                ['name' => 'Common Salt (NaCl)',       'pct' => 1.5],
-                ['name' => 'Vitamin-Mineral Premix',   'pct' => 2.0],
-            ];
-
-            foreach ($ingredientMix as $mix) {
-                $ingredient = MealIngredient::where('name', $mix['name'])->first();
-                if (!$ingredient) continue;
-                MealFormulaIngredient::firstOrCreate(
-                    ['meal_formula_id' => $formula->id, 'meal_ingredient_id' => $ingredient->id],
-                    [
-                        'id'                 => Str::uuid(),
-                        'meal_formula_id'    => $formula->id,
-                        'meal_ingredient_id' => $ingredient->id,
-                        'inclusion_percent'  => $mix['pct'],
-                        'quantity_kg'        => $mix['pct'],
-                    ]
-                );
-            }
         }
 
         $this->command->info('✓ Meal ingredients seeded: ' . MealIngredient::count());
-        $this->command->info('✓ Demo formula created: Standard Dairy Meal (16% CP)');
     }
 }

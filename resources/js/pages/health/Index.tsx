@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import {
-  Plus, Heart, ShieldCheck, Pill, AlertTriangle,
+  Plus, Heart, ShieldCheck, Pill as PillIcon, AlertTriangle,
   CheckCircle, Clock, ChevronRight, Syringe, Bug,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -176,7 +176,7 @@ function HealthEventCard({ event }: { event: HealthEvent }) {
       </div>
       <div className="flex items-center gap-1 flex-shrink-0">
         {(event.treatments?.length ?? 0) > 0 && (
-          <Pill className="h-4 w-4 text-purple-400" />
+          <PillIcon className="h-4 w-4 text-purple-400" />
         )}
         <ChevronRight className="h-4 w-4 text-gray-300" />
       </div>

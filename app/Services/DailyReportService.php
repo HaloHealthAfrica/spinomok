@@ -3,8 +3,14 @@
 namespace App\Services;
 
 use App\Models\DailyReport;
+use App\Models\AIService;
+use App\Models\CalvingRecord;
+use App\Models\FeedInventoryTransaction;
+use App\Models\HealthEvent;
+use App\Models\HeatEvent;
 use App\Models\MilkProduction;
 use App\Models\MilkSale;
+use App\Models\PregnancyCheck;
 use Illuminate\Support\Str;
 
 class DailyReportService
@@ -65,6 +71,21 @@ class DailyReportService
             ->selectRaw('SUM(quantity_litres) as litres, SUM(total_amount) as revenue')
             ->first();
 
+        $feedCost = FeedInventoryTransaction::where('farm_id', $farmId)
+            ->whereDate('transaction_date', $date)
+            ->where('transaction_type', 'consumption')
+            ->sum('total_cost');
+
+        $healthEventsCount = HealthEvent::where('farm_id', $farmId)
+            ->whereDate('observed_on', $date)
+            ->count();
+
+        $breedingEventsCount =
+            HeatEvent::where('farm_id', $farmId)->whereDate('observed_on', $date)->count()
+            + AIService::where('farm_id', $farmId)->whereDate('service_date', $date)->count()
+            + PregnancyCheck::where('farm_id', $farmId)->whereDate('checked_on', $date)->count()
+            + CalvingRecord::where('farm_id', $farmId)->whereDate('calved_on', $date)->count();
+
         $report->update([
             'status'                => 'submitted',
             'total_milk_litres'     => $milkSummary['total_litres'],
@@ -74,6 +95,9 @@ class DailyReportService
             'cows_milked'           => $milkSummary['cows_milked'],
             'milk_sold_litres'      => $salesTotal->litres ?? 0,
             'milk_revenue'          => $salesTotal->revenue ?? 0,
+            'health_events_count'   => $healthEventsCount,
+            'breeding_events_count' => $breedingEventsCount,
+            'total_feed_cost'       => $feedCost,
             'weather'               => $step5Data['weather'] ?? null,
             'manager_notes'         => $step5Data['manager_notes'] ?? null,
             'general_notes'         => $step5Data['general_notes'] ?? null,

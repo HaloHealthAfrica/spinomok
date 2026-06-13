@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { router } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
-import type { PageProps, Animal } from '@/types';
+import type { PageProps, Animal, AnimalStatus } from '@/types';
 import { goBack } from '@/utils/navigation';
 
 interface EditProps extends PageProps { animal: Animal; }
@@ -50,7 +50,7 @@ export default function AnimalsEdit() {
         <div className="px-4 py-4 space-y-4">
           <Input label="Ear Tag" value={data.tag_number} onChange={(e) => setData('tag_number', e.target.value)} error={errors.tag_number} required />
           <Input label="Name" value={data.name} onChange={(e) => setData('name', e.target.value)} error={errors.name} />
-          <Select label="Status" value={data.status} onChange={(e) => setData('status', e.target.value)}
+          <Select label="Status" value={data.status} onChange={(e) => setData('status', e.target.value as AnimalStatus)}
             options={[
               { value: 'calf', label: 'Calf' }, { value: 'heifer', label: 'Heifer' },
               { value: 'lactating', label: 'Lactating' }, { value: 'dry', label: 'Dry' },

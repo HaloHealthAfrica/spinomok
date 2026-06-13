@@ -1,6 +1,7 @@
 import type { Farm, User } from './domain';
 
 export interface SharedProps {
+  [key: string]: unknown;
   auth: {
     user: User;
     farm: Farm;
