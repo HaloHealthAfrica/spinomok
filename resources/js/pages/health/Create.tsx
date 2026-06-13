@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useForm, usePage, router } from '@inertiajs/react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/Button';
@@ -7,7 +7,6 @@ import { ArrowLeft, Heart, Plus, Trash2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { PageProps, Animal, DiseaseType, MedicationType } from '@/types';
 import { today } from '@/utils/format';
-import { goBack } from '@/utils/navigation';
 
 interface CreateProps extends PageProps {
   animals: Animal[];
@@ -200,6 +199,12 @@ export default function HealthCreate() {
                       className="h-10 w-full rounded-lg border border-purple-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
                       {meds.map(m => <option key={m.id} value={m.id}>{m.name} (WD: {m.withdrawal_period_days}d)</option>)}
                     </select>
+                    <div className="mb-1">
+                      <label className="text-[10px] text-purple-700">Date Treated</label>
+                      <input type="date" value={t.treated_on} max={today()}
+                        onChange={e => updateTreatment(i, 'treated_on', e.target.value)}
+                        className="h-9 w-full rounded-lg border border-purple-300 bg-white px-2 text-xs focus:outline-none" />
+                    </div>
                     <div className="grid grid-cols-3 gap-2">
                       <div>
                         <label className="text-[10px] text-purple-700">Dose</label>
