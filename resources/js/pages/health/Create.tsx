@@ -95,21 +95,36 @@ export default function HealthCreate() {
       <form onSubmit={submit} noValidate>
         <div className="px-4 py-4 space-y-5">
 
+          {Object.keys(errors).length > 0 && (
+            <div className="bg-red-50 border border-red-300 rounded-xl px-4 py-3">
+              <p className="text-sm font-semibold text-red-700 mb-1">Please fix the following:</p>
+              <ul className="list-disc list-inside space-y-0.5">
+                {Object.values(errors).map((msg, i) => (
+                  <li key={i} className="text-xs text-red-600">{msg}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Animal */}
           <div>
             <label className="text-sm font-medium text-gray-700 block mb-1">Animal <span className="text-red-500">*</span></label>
             <select value={data.animal_id} onChange={e => setData('animal_id', e.target.value)} required
-              className="h-12 w-full rounded-xl border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600">
+              className={clsx('h-12 w-full rounded-xl border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600',
+                errors.animal_id ? 'border-red-500 bg-red-50' : 'border-gray-300')}>
               <option value="">Select animal...</option>
               {animals.map(a => <option key={a.id} value={a.id}>{a.name ?? a.tag_number} ({a.tag_number})</option>)}
             </select>
+            {errors.animal_id && <p className="text-xs text-red-600 mt-1">{errors.animal_id}</p>}
           </div>
 
           {/* Date */}
           <div>
             <label className="text-sm font-medium text-gray-700 block mb-1">Date Observed <span className="text-red-500">*</span></label>
             <input type="date" value={data.observed_on} max={today()} onChange={e => setData('observed_on', e.target.value)}
-              className="h-12 w-full rounded-xl border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600" />
+              className={clsx('h-12 w-full rounded-xl border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600',
+                errors.observed_on ? 'border-red-500 bg-red-50' : 'border-gray-300')} />
+            {errors.observed_on && <p className="text-xs text-red-600 mt-1">{errors.observed_on}</p>}
           </div>
 
           {/* Disease type */}
@@ -150,7 +165,9 @@ export default function HealthCreate() {
             <label className="text-sm font-medium text-gray-700 block mb-1">Symptoms Observed</label>
             <textarea value={data.symptoms} onChange={e => setData('symptoms', e.target.value)} rows={3}
               placeholder="Describe what you observed: fever, nasal discharge, off-feed, swollen quarter..."
-              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600 resize-none" />
+              className={clsx('w-full rounded-xl border px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600 resize-none',
+                errors.symptoms ? 'border-red-500 bg-red-50' : 'border-gray-300')} />
+            {errors.symptoms && <p className="text-xs text-red-600 mt-1">{errors.symptoms}</p>}
           </div>
 
           {/* Vet */}
@@ -164,9 +181,15 @@ export default function HealthCreate() {
 
           {data.vet_consulted && (
             <div className="grid grid-cols-2 gap-3">
-              <Input label="Vet Name" placeholder="Dr. Otieno" value={data.vet_name} onChange={e => setData('vet_name', e.target.value)} />
-              <Input label="Consultation Cost" type="number" min="0" inputMode="decimal" placeholder="500" unit="KES"
-                value={data.consultation_cost} onChange={e => setData('consultation_cost', e.target.value)} />
+              <div>
+                <Input label="Vet Name" placeholder="Dr. Otieno" value={data.vet_name} onChange={e => setData('vet_name', e.target.value)} />
+                {errors.vet_name && <p className="text-xs text-red-600 mt-1">{errors.vet_name}</p>}
+              </div>
+              <div>
+                <Input label="Consultation Cost" type="number" min="0" inputMode="decimal" placeholder="500" unit="KES"
+                  value={data.consultation_cost} onChange={e => setData('consultation_cost', e.target.value)} />
+                {errors.consultation_cost && <p className="text-xs text-red-600 mt-1">{errors.consultation_cost}</p>}
+              </div>
             </div>
           )}
 
