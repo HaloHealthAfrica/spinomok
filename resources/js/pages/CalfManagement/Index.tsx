@@ -26,12 +26,20 @@ interface CalfSummary {
   alerts: { severity: string; message: string }[];
 }
 
+interface AvailableAnimal {
+  id: string;
+  label: string;
+  sex: string;
+  breed: string;
+}
+
 interface Props extends PageProps {
   calves: CalfSummary[];
   total_calves: number;
   pre_weaning_count: number;
   alert_count: number;
   critical_alerts: { severity: string; message: string }[];
+  available_animals: AvailableAnimal[];
 }
 
 const PHASE_STYLES: Record<string, { label: string; bg: string; text: string }> = {
@@ -43,7 +51,7 @@ const PHASE_STYLES: Record<string, { label: string; bg: string; text: string }> 
 };
 
 export default function CalfManagementIndex() {
-  const { calves, total_calves, pre_weaning_count, alert_count, critical_alerts } =
+  const { calves, total_calves, pre_weaning_count, alert_count, critical_alerts, available_animals } =
     usePage<Props>().props;
 
   const [showRegister, setShowRegister] = React.useState(false);
@@ -147,14 +155,14 @@ export default function CalfManagementIndex() {
       </div>
 
       {/* Register modal */}
-      {showRegister && <RegisterCalfModal onClose={() => setShowRegister(false)} />}
+      {showRegister && <RegisterCalfModal animals={available_animals} onClose={() => setShowRegister(false)} />}
     </AppLayout>
   );
 }
 
 // ── Register Calf Modal ────────────────────────────────────────────────────────
 
-function RegisterCalfModal({ onClose }: { onClose: () => void }) {
+function RegisterCalfModal({ animals, onClose }: { animals: AvailableAnimal[]; onClose: () => void }) {
   const { data, setData, post, processing, errors } = useForm({
     animal_id: '',
     dob: '',
@@ -164,10 +172,17 @@ function RegisterCalfModal({ onClose }: { onClose: () => void }) {
     housing_notes: '',
   });
 
+  const handleAnimalChange = (id: string) => {
+    const animal = animals.find(a => a.id === id);
+    setData(d => ({ ...d, animal_id: id, sex: animal?.sex ?? d.sex }));
+  };
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     post('/calf-management', { onSuccess: onClose });
   };
+
+  const inputCls = 'h-11 w-full rounded-xl border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E7D32] bg-white';
 
   return (
     <>
@@ -179,65 +194,87 @@ function RegisterCalfModal({ onClose }: { onClose: () => void }) {
             <X className="h-4 w-4 text-gray-500" />
           </button>
         </div>
-        <form onSubmit={submit} className="space-y-4">
-          <Field label="Animal ID (UUID)" error={errors.animal_id}>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="Paste animal UUID or select below"
-              value={data.animal_id}
-              onChange={e => setData('animal_id', e.target.value)}
-            />
-          </Field>
-          <Field label="Date of Birth" error={errors.dob}>
-            <input
-              type="date"
-              className="form-input"
-              value={data.dob}
-              onChange={e => setData('dob', e.target.value)}
-            />
-          </Field>
-          <Field label="Birth Weight (kg)" error={errors.birth_weight_kg}>
-            <input
-              type="number"
-              step="0.1"
-              className="form-input"
-              placeholder="e.g. 32.5"
-              value={data.birth_weight_kg}
-              onChange={e => setData('birth_weight_kg', e.target.value)}
-            />
-          </Field>
-          <Field label="Dam (tag/name)" error={errors.dam_animal_id}>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="e.g. Daisy or KE001"
-              value={data.dam_animal_id}
-              onChange={e => setData('dam_animal_id', e.target.value)}
-            />
-          </Field>
-          <Field label="Sex" error={errors.sex}>
-            <select className="form-input" value={data.sex} onChange={e => setData('sex', e.target.value)}>
-              <option value="Female">Female</option>
-              <option value="Male">Male</option>
-            </select>
-          </Field>
-          <Field label="Housing Notes" error={errors.housing_notes}>
-            <textarea
-              className="form-input min-h-[80px]"
-              placeholder="Pen number, bedding notes..."
-              value={data.housing_notes}
-              onChange={e => setData('housing_notes', e.target.value)}
-            />
-          </Field>
-          <button
-            type="submit"
-            disabled={processing}
-            className="w-full h-[52px] rounded-[14px] bg-[#2E7D32] text-white text-[17px] font-semibold disabled:opacity-50"
-          >
-            {processing ? 'Registering…' : 'Register Calf'}
-          </button>
-        </form>
+
+        {animals.length === 0 ? (
+          <div className="text-center py-8 pb-12">
+            <p className="text-[15px] font-semibold text-gray-900">No unregistered animals found</p>
+            <p className="text-[13px] text-gray-500 mt-1 px-4">
+              Add the calf to your animal list first, then come back here to register it.
+            </p>
+            <button
+              onClick={() => { onClose(); window.location.href = '/animals/create'; }}
+              className="mt-4 h-11 px-6 rounded-xl bg-[#2E7D32] text-white text-[15px] font-semibold"
+            >
+              Add Animal
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={submit} className="space-y-4 pb-4">
+            <Field label="Select Animal" error={errors.animal_id}>
+              <select
+                className={inputCls}
+                value={data.animal_id}
+                onChange={e => handleAnimalChange(e.target.value)}
+                required
+              >
+                <option value="">— choose an animal —</option>
+                {animals.map(a => (
+                  <option key={a.id} value={a.id}>{a.label}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Date of Birth" error={errors.dob}>
+              <input
+                type="date"
+                className={inputCls}
+                value={data.dob}
+                onChange={e => setData('dob', e.target.value)}
+                required
+              />
+            </Field>
+            <Field label="Birth Weight (kg)" error={errors.birth_weight_kg}>
+              <input
+                type="number"
+                step="0.1"
+                inputMode="decimal"
+                className={inputCls}
+                placeholder="e.g. 32.5"
+                value={data.birth_weight_kg}
+                onChange={e => setData('birth_weight_kg', e.target.value)}
+              />
+            </Field>
+            <Field label="Dam (mother tag/name)" error={errors.dam_animal_id}>
+              <input
+                type="text"
+                className={inputCls}
+                placeholder="e.g. Daisy or KE001"
+                value={data.dam_animal_id}
+                onChange={e => setData('dam_animal_id', e.target.value)}
+              />
+            </Field>
+            <Field label="Sex" error={errors.sex}>
+              <select className={inputCls} value={data.sex} onChange={e => setData('sex', e.target.value)}>
+                <option value="Female">Female</option>
+                <option value="Male">Male</option>
+              </select>
+            </Field>
+            <Field label="Housing Notes" error={errors.housing_notes}>
+              <textarea
+                className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E7D32] min-h-[72px]"
+                placeholder="Pen number, bedding type..."
+                value={data.housing_notes}
+                onChange={e => setData('housing_notes', e.target.value)}
+              />
+            </Field>
+            <button
+              type="submit"
+              disabled={processing || !data.animal_id}
+              className="w-full h-[52px] rounded-[14px] bg-[#2E7D32] text-white text-[17px] font-semibold disabled:opacity-50"
+            >
+              {processing ? 'Registering…' : 'Register Calf'}
+            </button>
+          </form>
+        )}
       </div>
     </>
   );

@@ -41,12 +41,26 @@ class CalfManagementController extends Controller
             ->filter(fn ($a) => $a['severity'] === 'critical')
             ->values();
 
+        $registeredAnimalIds = CalfRecord::where('farm_id', $farmId)->pluck('animal_id');
+
+        $availableAnimals = Animal::where('farm_id', $farmId)
+            ->whereNotIn('id', $registeredAnimalIds)
+            ->orderBy('name')
+            ->get(['id', 'name', 'tag_number', 'breed', 'sex'])
+            ->map(fn ($a) => [
+                'id'         => $a->id,
+                'label'      => trim(($a->name ?? '') . ' (' . $a->tag_number . ')'),
+                'sex'        => $a->sex ?? 'Female',
+                'breed'      => $a->breed ?? '',
+            ]);
+
         return Inertia::render('CalfManagement/Index', [
-            'calves'          => $calves,
-            'total_calves'    => $totalCalves,
+            'calves'            => $calves,
+            'total_calves'      => $totalCalves,
             'pre_weaning_count' => $preWeaningCount,
-            'alert_count'     => $alertCount,
-            'critical_alerts' => $criticalAlerts,
+            'alert_count'       => $alertCount,
+            'critical_alerts'   => $criticalAlerts,
+            'available_animals' => $availableAnimals,
         ]);
     }
 
