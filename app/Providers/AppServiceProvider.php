@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\CalfRecord;
+use App\Observers\CalfRecordObserver;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
@@ -14,6 +16,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        CalfRecord::observe(CalfRecordObserver::class);
+
         Event::listen('eloquent.creating: *', function (string $eventName, array $data): void {
             $model = $data[0] ?? null;
 

@@ -4,6 +4,7 @@ import {
   ChevronRight, Bell, Milk, TrendingUp, TrendingDown,
   AlertTriangle, ClipboardList, Heart, Calendar, Wheat, DollarSign,
 } from 'lucide-react';
+import { CalfIcon } from '@/components/icons/CalfIcon';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardGroup, CardRow } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -21,13 +22,25 @@ interface DashboardProps extends PageProps {
   milk_trend?: { date: string; total: number }[];
 }
 
-const QUICK_ACTIONS = [
-  { label: 'Daily Report', icon: ClipboardList, href: '/reports/daily/new', color: '#1B5E20', bg: 'rgba(27,94,32,0.10)' },
-  { label: 'Record Milk',  icon: Milk,           href: '/milk-records/create', color: '#007AFF', bg: 'rgba(0,122,255,0.10)' },
-  { label: 'Health Event', icon: Heart,           href: '/health/create',       color: '#FF3B30', bg: 'rgba(255,59,48,0.10)' },
-  { label: 'Breeding',     icon: Calendar,        href: '/breeding',            color: '#AF52DE', bg: 'rgba(175,82,222,0.10)' },
-  { label: 'Feed',         icon: Wheat,           href: '/feed',                color: '#FF9500', bg: 'rgba(255,149,0,0.10)' },
-  { label: 'Finance',      icon: DollarSign,      href: '/finance',             color: '#34C759', bg: 'rgba(52,199,89,0.10)' },
+interface QuickAction {
+  label: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  icon: React.ComponentType<any>;
+  href: string;
+  color: string;
+  bg: string;
+  badgeKey: keyof DashboardKPIs | null;
+  managerOnly?: boolean;
+}
+
+const QUICK_ACTIONS: QuickAction[] = [
+  { label: 'Daily Report',    icon: ClipboardList, href: '/reports/daily/new',   color: '#1B5E20', bg: 'rgba(27,94,32,0.10)',   badgeKey: null },
+  { label: 'Record Milk',     icon: Milk,          href: '/milk-records/create', color: '#007AFF', bg: 'rgba(0,122,255,0.10)',  badgeKey: null },
+  { label: 'Health Event',    icon: Heart,         href: '/health/create',       color: '#FF3B30', bg: 'rgba(255,59,48,0.10)',  badgeKey: null },
+  { label: 'Breeding',        icon: Calendar,      href: '/breeding',            color: '#AF52DE', bg: 'rgba(175,82,222,0.10)', badgeKey: null },
+  { label: 'Feed',            icon: Wheat,         href: '/feed',                color: '#FF9500', bg: 'rgba(255,149,0,0.10)',  badgeKey: null },
+  { label: 'Finance',         icon: DollarSign,    href: '/finance',             color: '#34C759', bg: 'rgba(52,199,89,0.10)',  badgeKey: null, managerOnly: true },
+  { label: 'Calf Management', icon: CalfIcon,      href: '/calf-management',     color: '#F9A825', bg: '#FFF9C4',              badgeKey: 'calves' },
 ];
 
 export default function Dashboard() {
@@ -41,7 +54,7 @@ export default function Dashboard() {
   const milkToday = kpis?.milk_today_litres  ?? 0;
   const milkDelta = kpis?.milk_delta_percent ?? 0;
   const isPositive = milkDelta >= 0;
-  const quickActions = QUICK_ACTIONS.filter(action => action.href !== '/finance' || isManager);
+  const quickActions = QUICK_ACTIONS.filter(action => !action.managerOnly || isManager);
 
   // Guard: if kpis is missing don't crash
   if (!kpis) return <AppLayout title="Dashboard"><div className="p-8 text-center text-gray-500">Loading dashboard…</div></AppLayout>;
@@ -176,6 +189,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-2 gap-3">
             {quickActions.map(action => {
               const Icon = action.icon;
+              const badge = action.badgeKey ? (kpis[action.badgeKey] as number) : null;
               return (
                 <a
                   key={action.href}
@@ -191,9 +205,16 @@ export default function Dashboard() {
                     minHeight: '88px',
                   }}
                 >
-                  <div className="h-12 w-12 rounded-full flex items-center justify-center"
+                  <div className="relative h-12 w-12 rounded-full flex items-center justify-center"
                     style={{ background: action.bg, border: `1.5px solid ${action.color}30` }}>
                     <Icon className="h-7 w-7" style={{ color: action.color }} strokeWidth={1.8} />
+                    {badge != null && badge > 0 && (
+                      <span
+                        className="absolute -top-1 -right-1 h-5 min-w-[20px] px-1 rounded-full bg-[#F9A825] text-white text-[11px] font-bold flex items-center justify-center"
+                      >
+                        {badge}
+                      </span>
+                    )}
                   </div>
                   <span className="text-[14px] font-semibold text-center leading-tight px-2" style={{ color: action.color }}>
                     {action.label}

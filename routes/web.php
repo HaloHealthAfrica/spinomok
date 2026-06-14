@@ -16,6 +16,7 @@ use App\Http\Controllers\FormulationController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\SyncController;
+use App\Http\Controllers\CalfManagementController;
 use App\Http\Controllers\SettingsController;
 use App\Models\Alert;
 use Illuminate\Support\Facades\Route;
@@ -129,6 +130,17 @@ Route::middleware(['auth', 'set.farm'])->group(function () {
     // Wildcard LAST — must come after all specific /health/* routes
     Route::get('/health/{healthEvent}', [HealthController::class, 'show'])->name('health.show');
     Route::patch('/health/{healthEvent}/close', [HealthController::class, 'close'])->name('health.close');
+
+    // ─── Calf Management (CalfRecord-based full module) ──────────────────────
+    Route::get('/calf-management', [CalfManagementController::class, 'index'])->name('calf-management.index');
+    Route::post('/calf-management', [CalfManagementController::class, 'store'])->name('calf-management.store');
+    Route::get('/calf-management/{calf}', [CalfManagementController::class, 'show'])->name('calf-management.show');
+    Route::post('/calf-management/{calf}/feed-logs', [CalfManagementController::class, 'storeFeedLog'])->name('calf-management.feed-logs.store');
+    Route::post('/calf-management/{calf}/weight-logs', [CalfManagementController::class, 'storeWeightLog'])->name('calf-management.weight-logs.store');
+    Route::patch('/calf-management/{calf}/vaccinations/{vaccination}', [CalfManagementController::class, 'markVaccinationDone'])->name('calf-management.vaccinations.done');
+    Route::post('/calf-management/{calf}/health-events', [CalfManagementController::class, 'storeHealthEvent'])->name('calf-management.health-events.store');
+    Route::patch('/calf-management/{calf}/practices/{practice}', [CalfManagementController::class, 'markPracticeDone'])->name('calf-management.practices.done');
+    Route::patch('/calf-management/{calf}/housing', [CalfManagementController::class, 'updateHousing'])->name('calf-management.housing.update');
 
     // ─── Calf Growth & Weight Tracking ───────────────────────────────────────
     Route::get('/calves', [CalfController::class, 'index'])->name('calves.index');
