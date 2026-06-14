@@ -10,7 +10,6 @@ use App\Models\CalfPractice;
 use App\Models\CalfRecord;
 use App\Models\CalfVaccination;
 use App\Models\CalfWeightLog;
-use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -222,7 +221,7 @@ class CalfManagementController extends Controller
 
         // Push critical alert for severe events
         if ($request->severity === 'severe') {
-            $animalName = $record->animal->name ?? $record->animal->tag_number;
+            $animalName = $record->animal?->name ?? $record->animal?->tag_number ?? $record->animal_id;
             Alert::withoutGlobalScopes()->create([
                 'farm_id'         => $farmId,
                 'alert_type'      => 'calf_health',
@@ -287,13 +286,14 @@ class CalfManagementController extends Controller
     private function summariseCalf(CalfRecord $calf): array
     {
         $alerts  = $this->buildAlerts($calf);
+        $animal  = $calf->animal;
 
         return [
             'id'          => $calf->id,
             'animal_id'   => $calf->animal_id,
-            'name'        => $calf->animal->name ?? $calf->animal->tag_number,
-            'tag_number'  => $calf->animal->tag_number,
-            'breed'       => $calf->animal->breed,
+            'name'        => $animal?->name ?? $animal?->tag_number ?? $calf->animal_id,
+            'tag_number'  => $animal?->tag_number ?? '—',
+            'breed'       => $animal?->breed ?? '—',
             'sex'         => $calf->sex,
             'dam'         => $calf->dam_animal_id,
             'dob'         => $calf->dob->toDateString(),
@@ -309,6 +309,7 @@ class CalfManagementController extends Controller
     private function formatCalfDetail(CalfRecord $calf): array
     {
         $summary = $this->summariseCalf($calf);
+        $animal  = $calf->animal;
 
         $weightLogs = $calf->weightLogs->map(fn ($w) => [
             'id'           => $w->id,

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import type { PageProps, MilkBuyer, MilkSale } from '@/types';
-import { formatDate, formatKES } from '@/utils/format';
+import { formatDate, formatKES, today } from '@/utils/format';
 
 interface SalesProps extends PageProps {
   date: string;
@@ -23,7 +23,7 @@ export default function MilkSales() {
 
   const { data, setData, post, processing, errors, reset } = useForm({
     milk_buyer_id: buyers[0]?.id ?? '',
-    sale_date: date,
+    sale_date: today(),
     quantity_litres: '',
     price_per_litre: buyers[0]?.default_price_per_litre?.toString() ?? '',
     payment_method: 'cash',
@@ -49,7 +49,7 @@ export default function MilkSales() {
   const navigateDate = (direction: -1 | 1) => {
     const d = new Date(date);
     d.setDate(d.getDate() + direction);
-    router.get('/milk-sales', { date: d.toISOString().split('T')[0] }, { preserveState: true });
+    router.get('/milk-sales', { date: d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') }, { preserveState: true });
   };
 
   const totalDailyRevenue = daily_sales.reduce((sum, s) => sum + s.total_amount, 0);
@@ -76,7 +76,7 @@ export default function MilkSales() {
           <p className="text-white font-semibold text-sm">{formatDate(date)}</p>
           <button
             onClick={() => navigateDate(1)}
-            disabled={date >= new Date().toISOString().split('T')[0]}
+            disabled={date >= today()}
             className="h-8 w-8 flex items-center justify-center text-white/70 disabled:opacity-30"
           >
             <ChevronRight className="h-5 w-5" />

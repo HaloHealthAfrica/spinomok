@@ -34,9 +34,10 @@ export function formatDateLong(dateStr: string): string {
   });
 }
 
-/** Return today's date as YYYY-MM-DD */
+/** Return today's date as YYYY-MM-DD (local timezone) */
 export function today(): string {
-  return new Date().toISOString().split('T')[0];
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 /** Compute delta percentage */

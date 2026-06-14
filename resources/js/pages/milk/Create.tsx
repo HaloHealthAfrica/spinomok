@@ -21,10 +21,10 @@ interface MilkCreateProps extends PageProps {
 type SessionKey = 'morning' | 'midday' | 'evening';
 type EntryMap = Record<string, Record<SessionKey, string>>;
 
-const SESSIONS: { key: SessionKey; label: string; emoji: string }[] = [
-  { key: 'morning', label: 'AM', emoji: 'ðŸŒ…' },
-  { key: 'midday',  label: 'MD', emoji: 'â˜€ï¸' },
-  { key: 'evening', label: 'PM', emoji: 'ðŸŒ†' },
+const SESSIONS: { key: SessionKey; label: string }[] = [
+  { key: 'morning', label: 'AM' },
+  { key: 'midday',  label: 'MD' },
+  { key: 'evening', label: 'PM' },
 ];
 
 export default function MilkCreate() {
@@ -150,8 +150,8 @@ export default function MilkCreate() {
       {saved && (
         <div className="mx-4 mt-4 space-y-2">
           <div className="p-3 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2 text-green-700 text-sm">
-            <span>âœ“</span>
-            <span>Saved {todayTotal.toFixed(1)} L{!isOnline ? ' locally â€” will sync when connected' : ''}.</span>
+            <span></span>
+            <span>Saved {todayTotal.toFixed(1)} L{!isOnline ? ' locally — will sync when connected' : ''}.</span>
           </div>
           <a
             href="/reports/daily/new"
@@ -191,7 +191,7 @@ export default function MilkCreate() {
           <div className="text-xs font-medium text-gray-500 uppercase">Cow</div>
           {SESSIONS.map(s => (
             <div key={s.key} className="text-center text-xs font-medium text-gray-500 uppercase">
-              {s.emoji} {s.label}
+              {s.label}
             </div>
           ))}
         </div>
