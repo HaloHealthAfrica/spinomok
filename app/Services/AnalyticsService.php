@@ -11,6 +11,7 @@ use App\Models\Expense;
 use App\Models\FeedInventoryTransaction;
 use App\Models\HealthEvent;
 use App\Models\MilkProduction;
+use App\Models\MilkBuyer;
 use App\Models\MilkSale;
 use App\Models\ProfitabilitySnapshot;
 use App\Models\Revenue;
@@ -399,6 +400,14 @@ class AnalyticsService
             ->values()
             ->all();
 
+        // All registered milk channels for this farm
+        $allChannels = MilkBuyer::withoutGlobalScopes()
+            ->where('farm_id', $farmId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->pluck('name')
+            ->all();
+
         $healthDetails = HealthEvent::withoutGlobalScopes()
             ->where('farm_id', $farmId)
             ->whereDate('observed_on', $date)
@@ -479,6 +488,7 @@ class AnalyticsService
             'milk_revenue' => round($milkRevenue, 2),
             'milk_by_cow' => $milkByCow,
             'sales' => $sales,
+            'all_channels' => $allChannels,
             'health_events' => count($healthDetails),
             'health_details' => $healthDetails,
             'feed_transactions' => $feedTransactions,
@@ -515,7 +525,28 @@ class AnalyticsService
         $lines[] = "";
         $lines[] = "*MILK SALES*";
         $lines[] = "Total Revenue: KES ".number_format((float) $data['milk_revenue'], 0);
-        if (!empty($data['sales'])) {
+
+        // Build a lookup of today's sales keyed by buyer name
+        $salesByBuyer = collect($data['sales'] ?? [])->keyBy('buyer');
+
+        // Show all registered channels; mark those without a sale today
+        $allChannels = $data['all_channels'] ?? [];
+        if (!empty($allChannels)) {
+            foreach ($allChannels as $channelName) {
+                if (isset($salesByBuyer[$channelName])) {
+                    $sale = $salesByBuyer[$channelName];
+                    $lines[] = "- {$channelName}: {$sale['litres']} L x KES ".number_format((float) $sale['price'], 0)." = KES ".number_format((float) $sale['amount'], 0);
+                } else {
+                    $lines[] = "- {$channelName}: no sale today";
+                }
+            }
+            // Include any ad-hoc sales to unknown/unlisted buyers
+            foreach ($salesByBuyer as $buyerName => $sale) {
+                if (!in_array($buyerName, $allChannels)) {
+                    $lines[] = "- {$buyerName}: {$sale['litres']} L x KES ".number_format((float) $sale['price'], 0)." = KES ".number_format((float) $sale['amount'], 0);
+                }
+            }
+        } elseif (!empty($data['sales'])) {
             foreach ($data['sales'] as $sale) {
                 $lines[] = "- {$sale['buyer']}: {$sale['litres']} L x KES ".number_format((float) $sale['price'], 0)." = KES ".number_format((float) $sale['amount'], 0);
             }
