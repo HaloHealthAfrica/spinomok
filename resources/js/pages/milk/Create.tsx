@@ -27,9 +27,17 @@ const SESSIONS: { key: SessionKey; label: string }[] = [
   { key: 'evening', label: 'PM' },
 ];
 
+function localToday(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export default function MilkCreate() {
-  const { date, animal_records } = usePage<MilkCreateProps>().props;
+  const { date: serverDate, animal_records } = usePage<MilkCreateProps>().props;
   const isOnline = useOnlineStatus();
+
+  // Default to local today — overrides server UTC date if they differ
+  const [selectedDate, setSelectedDate] = useState<string>(localToday());
 
   // Initialize entries from existing records
   const initialEntries = animal_records.reduce<EntryMap>((acc, ar) => {
@@ -89,7 +97,7 @@ export default function MilkCreate() {
           id: recordId,
           farm_id: '',
           animal_id: entry.animal_id,
-          milked_on: date,
+          milked_on: selectedDate,
           session: entry.session,
           quantity_litres: entry.litres,
           fat_percentage: null,
@@ -100,7 +108,7 @@ export default function MilkCreate() {
           syncStatus: 'pending',
           locallyModifiedAt: new Date().toISOString(),
         });
-        await enqueueOperation('milk_records', recordId, 'CREATE', { ...entry, date });
+        await enqueueOperation('milk_records', recordId, 'CREATE', { ...entry, date: selectedDate });
       }
     };
 
@@ -112,7 +120,7 @@ export default function MilkCreate() {
     }
 
     try {
-      await axios.post('/milk-records', { date, entries: payload });
+      await axios.post('/milk-records', { date: selectedDate, entries: payload });
       setSaved(true);
     } catch (err: unknown) {
       await queueEntries();
@@ -136,11 +144,18 @@ export default function MilkCreate() {
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <div>
+          <div className="flex-1 min-w-0">
             <h1 className="text-white text-lg font-bold">Record Milk</h1>
-            <p className="text-primary-300 text-xs">{formatDate(date)}</p>
+            <input
+              type="date"
+              value={selectedDate}
+              max={localToday()}
+              onChange={e => setSelectedDate(e.target.value)}
+              className="mt-0.5 text-primary-200 text-xs bg-transparent border-0 p-0 focus:outline-none focus:ring-0 cursor-pointer"
+              style={{ colorScheme: 'dark' }}
+            />
           </div>
-          <div className="ml-auto text-right">
+          <div className="ml-auto text-right shrink-0">
             <p className="text-primary-200 text-xs">Running total</p>
             <p className="text-white text-lg font-bold">{todayTotal.toFixed(1)} L</p>
           </div>
@@ -159,8 +174,7 @@ export default function MilkCreate() {
             className="w-full p-3.5 bg-primary-900 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
             style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', display: 'flex' }}
           >
-            ðŸ“‹ Continue to Daily Report â†’
-          </a>
+            Continue to Daily Report</a>
           <a
             href="/dashboard"
             onClick={(e) => { e.preventDefault(); router.visit('/dashboard'); }}
