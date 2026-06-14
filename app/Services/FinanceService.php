@@ -142,7 +142,7 @@ class FinanceService
             ->where('farm_id', $farmId)
             ->whereYear('sale_date', $year)
             ->whereMonth('sale_date', $mon)
-            ->select('milk_buyer_id', DB::raw('SUM(quantity_litres) as litres'), DB::raw('SUM(total_amount) as revenue'))
+            ->select('milk_buyer_id', DB::raw('SUM(quantity_litres) as quantity_litres'), DB::raw('SUM(total_amount) as total_amount'))
             ->groupBy('milk_buyer_id')
             ->with('buyer:id,name,buyer_type')
             ->get();
@@ -283,7 +283,7 @@ class FinanceService
             'total_revenue'     => (float) ($snapshot->total_revenue ?? 0),
             'total_expenses'    => (float) ($snapshot->total_expenses ?? 0),
             'net_profit'        => $netProfit,
-            'cost_per_litre'    => $snapshot->cost_per_litre ? (float) $snapshot->cost_per_litre : null,
+            'cost_per_litre'    => $snapshot->cost_per_litre !== null ? (float) $snapshot->cost_per_litre : null,
             'revenue_per_litre' => $snapshot->revenue_per_litre ? (float) $snapshot->revenue_per_litre : null,
             'margin_percent'    => $totalRevenue > 0
                 ? round(($netProfit / $totalRevenue) * 100, 1)

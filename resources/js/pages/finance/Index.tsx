@@ -62,14 +62,18 @@ export default function FinanceIndex() {
           <h1 className="text-white text-xl font-bold">Finance</h1>
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={() => router.visit('/finance/expense/new')}
-              className="bg-red-500 text-white px-3 py-1.5 rounded-full text-xs font-semibold active:opacity-80"
+              style={{ touchAction: 'manipulation' }}
+              className="bg-red-500 text-white px-3 py-2 rounded-full text-xs font-semibold active:opacity-80 min-h-[36px]"
             >
               + Expense
             </button>
             <button
+              type="button"
               onClick={() => router.visit('/finance/revenue/new')}
-              className="bg-green-500 text-white px-3 py-1.5 rounded-full text-xs font-semibold active:opacity-80"
+              style={{ touchAction: 'manipulation' }}
+              className="bg-green-500 text-white px-3 py-2 rounded-full text-xs font-semibold active:opacity-80 min-h-[36px]"
             >
               + Revenue
             </button>
@@ -236,8 +240,10 @@ function ExpensesTab({ expenses }: { expenses: Expense[] }) {
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-gray-800">Total: {formatKES(total)}</p>
         <button
+          type="button"
           onClick={() => router.visit('/finance/expense/new')}
-          className="flex items-center gap-1.5 bg-red-600 text-white px-3 py-2 rounded-full text-xs font-semibold active:opacity-80"
+          style={{ touchAction: 'manipulation' }}
+          className="flex items-center gap-1.5 bg-red-600 text-white px-3 py-2 rounded-full text-xs font-semibold active:opacity-80 min-h-[36px]"
         >
           <Plus className="h-3.5 w-3.5" /> Add Expense
         </button>
@@ -320,8 +326,10 @@ function RevenueTab({
           {revenues.length > 0 ? `Other Revenue: ${formatKES(otherTotal)}` : 'No other revenue'}
         </p>
         <button
+          type="button"
           onClick={() => router.visit('/finance/revenue/new')}
-          className="flex items-center gap-1.5 bg-green-600 text-white px-3 py-2 rounded-full text-xs font-semibold active:opacity-80"
+          style={{ touchAction: 'manipulation' }}
+          className="flex items-center gap-1.5 bg-green-600 text-white px-3 py-2 rounded-full text-xs font-semibold active:opacity-80 min-h-[36px]"
         >
           <Plus className="h-3.5 w-3.5" /> Add Revenue
         </button>
