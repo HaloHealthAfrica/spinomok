@@ -14,12 +14,23 @@ import { formatDate, formatKES, formatLitres } from '@/utils/format';
 
 // ──── Types ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
+interface MilkSaleToday {
+  id: string;
+  milk_buyer_id: string;
+  quantity_litres: number;
+  price_per_litre: number;
+  total_amount: number;
+  payment_method: string;
+  buyer?: { id: string; name: string; buyer_type: string };
+}
+
 interface WizardProps extends PageProps {
   report: DailyReport;
   date: string;
   animal_records: AnimalMilkRecord[];
   milk_summary: { total_litres: number; morning_litres: number; midday_litres: number; evening_litres: number; cows_milked: number };
   buyers: MilkBuyer[];
+  milk_sales_today: MilkSaleToday[];
   current_step: number;
 }
 
@@ -34,7 +45,7 @@ const STEPS = [
 // ──── Main Wizard Component ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 export default function DailyReportCreate() {
-  const { report, date, animal_records, milk_summary, buyers, current_step } = usePage<WizardProps>().props;
+  const { report, date, animal_records, milk_summary, buyers, milk_sales_today, current_step } = usePage<WizardProps>().props;
 
   const [step, setStep] = useState(current_step ?? 1);
   const [saving, setSaving] = useState(false);
@@ -106,6 +117,8 @@ export default function DailyReportCreate() {
           <Step2Sales
             buyers={buyers}
             milkTotal={milk_summary.total_litres}
+            date={date}
+            salesToday={milk_sales_today}
             initialData={stepData[2] as Step2Data | undefined}
             onNext={(data) => goNext(data)}
             onBack={goPrev}
@@ -428,56 +441,199 @@ void Step2SalesDraft;
 // ──── Step 3: Health Events ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 function Step2Sales({
-  buyers, milkTotal, initialData, onNext, onBack, saving,
+  buyers, milkTotal, date, salesToday, initialData, onNext, onBack, saving,
 }: {
   buyers: MilkBuyer[];
   milkTotal: number;
+  date: string;
+  salesToday: MilkSaleToday[];
   initialData?: Step2Data;
   onNext: (data: Step2Data) => void;
   onBack: () => void;
   saving: boolean;
 }) {
   const [notes, setNotes] = useState(initialData?.notes ?? '');
+  const [sales, setSales] = useState<MilkSaleToday[]>(salesToday);
+  const [showForm, setShowForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  const defaultBuyer = buyers[0];
+  const [newBuyerId, setNewBuyerId] = useState(defaultBuyer?.id ?? '');
+  const [newLitres, setNewLitres] = useState('');
+  const [newPrice, setNewPrice] = useState(
+    defaultBuyer?.default_price_per_litre?.toString() ?? '42'
+  );
+  const [newPayment, setNewPayment] = useState('cash');
+
+  const totalSold = sales.reduce((s, r) => s + Number(r.quantity_litres), 0);
+  const totalRevenue = sales.reduce((s, r) => s + Number(r.total_amount), 0);
+
+  const selectBuyer = (id: string) => {
+    setNewBuyerId(id);
+    const b = buyers.find(b => b.id === id);
+    if (b?.default_price_per_litre) setNewPrice(b.default_price_per_litre.toString());
+  };
+
+  const submitSale = async () => {
+    if (!newBuyerId || !newLitres || parseFloat(newLitres) <= 0) {
+      setFormError('Enter litres sold and select a buyer.');
+      return;
+    }
+    setFormError('');
+    setSubmitting(true);
+    try {
+      const res = await axios.post('/milk-sales', {
+        milk_buyer_id: newBuyerId,
+        sale_date: date,
+        quantity_litres: parseFloat(newLitres),
+        price_per_litre: parseFloat(newPrice) || 0,
+        payment_method: newPayment,
+      });
+      const sale = res.data.sale as MilkSaleToday;
+      setSales(prev => [...prev, sale]);
+      setNewLitres('');
+      setShowForm(false);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setFormError(msg ?? 'Failed to save sale. Try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="px-4 py-4 space-y-4">
       <div>
-        <h2 className="text-lg font-bold text-gray-900">Milk Sales</h2>
-        <p className="text-sm text-gray-500">Confirm saved sales records for this report date.</p>
+        <h2 className="text-lg font-bold text-gray-900">🛒 Milk Sales</h2>
+        <p className="text-sm text-gray-500">Record sales for {formatDate(date)}</p>
       </div>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center justify-between gap-3">
-        <span className="text-sm text-blue-700">Milk produced today</span>
-        <strong className="text-blue-900">{formatLitres(milkTotal)}</strong>
+      {/* Summary strip */}
+      <div className="bg-green-50 border border-green-200 rounded-xl p-3 grid grid-cols-3 gap-2 text-center">
+        <div>
+          <p className="text-xs text-green-600">Produced</p>
+          <p className="text-sm font-bold text-green-900">{milkTotal.toFixed(1)} L</p>
+        </div>
+        <div>
+          <p className="text-xs text-green-600">Sold</p>
+          <p className="text-sm font-bold text-green-900">{totalSold.toFixed(1)} L</p>
+        </div>
+        <div>
+          <p className="text-xs text-green-600">Revenue</p>
+          <p className="text-sm font-bold text-green-900">{formatKES(totalRevenue)}</p>
+        </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
-        <p className="text-sm text-gray-700">
-          Sales totals in the submitted daily report are calculated from saved milk sale records, not from draft notes in this wizard.
-        </p>
-        <button
-          type="button"
-          onClick={() => router.visit('/milk-sales')}
-          className="w-full py-3 rounded-xl bg-primary-900 text-white text-sm font-semibold active:opacity-80"
-        >
-          Open Milk Sales
+      {/* Existing sales */}
+      {sales.length === 0 ? (
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center text-sm text-gray-500">
+          No sales recorded yet for today
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {sales.map((s, i) => (
+            <div key={s.id ?? i} className="flex items-center justify-between bg-white border border-gray-100 rounded-xl px-4 py-3">
+              <div>
+                <p className="text-sm font-medium text-gray-900">{s.buyer?.name ?? 'Buyer'}</p>
+                <p className="text-xs text-gray-500">{Number(s.quantity_litres).toFixed(1)} L @ KES {Number(s.price_per_litre).toFixed(0)}/L · {s.payment_method}</p>
+              </div>
+              <p className="text-sm font-bold text-green-700">{formatKES(Number(s.total_amount))}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add sale form */}
+      {showForm ? (
+        <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+          <p className="text-sm font-semibold text-gray-700">New Sale</p>
+
+          {/* Buyer selection */}
+          {buyers.length > 0 ? (
+            <div>
+              <label className="text-xs font-medium text-gray-600 block mb-1">Buyer</label>
+              <div className="flex flex-wrap gap-2">
+                {buyers.map(b => (
+                  <button key={b.id} type="button"
+                    onClick={() => selectBuyer(b.id)}
+                    style={{ touchAction: 'manipulation' }}
+                    className={clsx(
+                      'px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
+                      newBuyerId === b.id
+                        ? 'bg-primary-900 text-white border-primary-900'
+                        : 'bg-white text-gray-600 border-gray-300',
+                    )}>
+                    {b.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              No buyers configured. Ask a manager to add milk buyers first.
+            </p>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="Litres Sold" type="number" min="0.1" step="0.1" inputMode="decimal"
+              placeholder="0.0" unit="L"
+              value={newLitres} onChange={e => setNewLitres(e.target.value)} />
+            <Input label="Price / Litre" type="number" min="0" step="1" inputMode="decimal"
+              placeholder="42" unit="KES"
+              value={newPrice} onChange={e => setNewPrice(e.target.value)} />
+          </div>
+
+          {newLitres && newPrice && (
+            <p className="text-xs text-green-700 font-medium">
+              Total: {formatKES((parseFloat(newLitres) || 0) * (parseFloat(newPrice) || 0))}
+            </p>
+          )}
+
+          <div>
+            <label className="text-xs font-medium text-gray-600 block mb-1">Payment</label>
+            <div className="flex gap-2">
+              {['cash', 'mpesa', 'bank', 'credit'].map(m => (
+                <button key={m} type="button" onClick={() => setNewPayment(m)}
+                  style={{ touchAction: 'manipulation' }}
+                  className={clsx(
+                    'flex-1 py-2 rounded-xl border text-xs font-medium capitalize',
+                    newPayment === m ? 'bg-primary-900 text-white border-primary-900' : 'bg-white text-gray-600 border-gray-200',
+                  )}>
+                  {m}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {formError && <p className="text-xs text-red-600">{formError}</p>}
+
+          <div className="flex gap-2">
+            <button type="button" onClick={() => { setShowForm(false); setFormError(''); }}
+              style={{ touchAction: 'manipulation' }}
+              className="flex-1 py-3 rounded-xl border border-gray-300 text-sm text-gray-600">
+              Cancel
+            </button>
+            <button type="button" onClick={submitSale} disabled={submitting || !newLitres || !newBuyerId}
+              style={{ touchAction: 'manipulation' }}
+              className="flex-1 py-3 rounded-xl bg-primary-900 text-white text-sm font-semibold disabled:opacity-50">
+              {submitting ? 'Saving…' : 'Save Sale'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" onClick={() => setShowForm(true)}
+          style={{ touchAction: 'manipulation' }}
+          className="w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-sm text-gray-500 active:border-primary-400 active:text-primary-600">
+          + Add Milk Sale
         </button>
-        {buyers.length === 0 && (
-          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-            No milk buyers are configured yet. Ask a manager to seed or add the default buyers before recording sales.
-          </p>
-        )}
-      </div>
+      )}
 
       <div className="flex flex-col gap-1">
         <label className="text-sm font-medium text-gray-700">Sales Notes (optional)</label>
-        <textarea
-          value={notes}
-          onChange={e => setNotes(e.target.value)}
-          rows={2}
+        <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
           placeholder="Unpaid buyer, unsold milk, payment follow-up..."
-          className="rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600 resize-none"
-        />
+          className="rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600 resize-none" />
       </div>
 
       <WizardFooter

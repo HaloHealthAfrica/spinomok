@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\DailyReport;
 use App\Models\MilkBuyer;
+use App\Models\MilkSale;
 use App\Services\DailyReportService;
 use App\Services\MilkProductionService;
 use Illuminate\Http\RedirectResponse;
@@ -55,13 +56,20 @@ class DailyReportController extends Controller
 
         $milkSummary   = $this->milkService->getDailySummary($farmId, $date);
 
+        $milkSalesToday = MilkSale::where('farm_id', $farmId)
+            ->whereDate('sale_date', $date)
+            ->with('buyer:id,name,buyer_type')
+            ->orderBy('created_at')
+            ->get(['id', 'milk_buyer_id', 'quantity_litres', 'price_per_litre', 'total_amount', 'payment_method']);
+
         return Inertia::render('reports/daily/Create', [
-            'report'        => $report,
-            'date'          => $date,
-            'animal_records'=> $animalRecords,
-            'milk_summary'  => $milkSummary,
-            'buyers'        => $buyers,
-            'current_step'  => $report->draft_step ?? 1,
+            'report'          => $report,
+            'date'            => $date,
+            'animal_records'  => $animalRecords,
+            'milk_summary'    => $milkSummary,
+            'buyers'          => $buyers,
+            'milk_sales_today'=> $milkSalesToday,
+            'current_step'    => $report->draft_step ?? 1,
         ]);
     }
 
