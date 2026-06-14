@@ -841,14 +841,16 @@ function Step4Feed({
           <button
             type="button"
             onClick={() => router.visit('/feed/consume')}
-            className="py-3 rounded-xl bg-primary-900 text-white text-sm font-semibold active:opacity-80"
+            style={{ touchAction: 'manipulation' }}
+            className="py-3 rounded-xl bg-primary-900 text-white text-sm font-semibold active:opacity-80 min-h-[48px]"
           >
             Record Usage
           </button>
           <button
             type="button"
             onClick={() => router.visit('/feed/receive')}
-            className="py-3 rounded-xl border border-primary-900 text-primary-900 text-sm font-semibold active:bg-primary-50"
+            style={{ touchAction: 'manipulation' }}
+            className="py-3 rounded-xl border border-primary-900 text-primary-900 text-sm font-semibold active:bg-primary-50 min-h-[48px]"
           >
             Record Stock
           </button>
