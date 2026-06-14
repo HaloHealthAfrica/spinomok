@@ -94,6 +94,36 @@
     outline: 2px solid #34C759;
     outline-offset: 2px;
   }
+
+  /* Eliminate 300ms tap delay on all interactive elements explicitly */
+  button,
+  a,
+  [role="button"],
+  [role="tab"],
+  [role="option"],
+  select,
+  label[for],
+  summary {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+  }
+
+  /* Prevent tap callout on long-press for interactive elements */
+  button, a, [role="button"] {
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+
+  /* Minimum tap target size per Google/Apple HIG */
+  button, [role="button"], [role="tab"] {
+    min-height: 44px;
+  }
+
+  /* Prevent iOS input zoom — all form controls must be >= 16px */
+  input, textarea, select {
+    font-size: max(16px, 1rem);
+  }
 }
 
 /* ─── Utilities ───────────────────────────────────────────────────────────── */
