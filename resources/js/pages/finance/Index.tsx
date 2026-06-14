@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { router, usePage } from '@inertiajs/react';
-import { Plus, TrendingUp, TrendingDown, CheckCircle, AlertTriangle } from 'lucide-react';
+import { router, useForm, usePage } from '@inertiajs/react';
+import { Plus, TrendingUp, TrendingDown, CheckCircle, AlertTriangle, X } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/Card';
 import { clsx } from 'clsx';
 import type { PageProps, FinanceKPIs, ProfitabilitySnapshot, Expense, Revenue, BreakEven, FinanceTrendPoint, MilkSale } from '@/types';
-import { formatKES, formatDate } from '@/utils/format';
+import { formatKES, formatDate, today } from '@/utils/format';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -36,11 +36,314 @@ const REVENUE_ICONS: Record<string, string> = {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
+// ─── Expense Modal ────────────────────────────────────────────────────────────
+
+const EXPENSE_CATS = [
+  { value: 'feed',      label: '🌾 Feed' },
+  { value: 'vet',       label: '🏥 Vet' },
+  { value: 'labour',    label: '👷 Labour' },
+  { value: 'equipment', label: '🔧 Equipment' },
+  { value: 'utilities', label: '💡 Utilities' },
+  { value: 'transport', label: '🚛 Transport' },
+  { value: 'breeding',  label: '🐂 Breeding' },
+  { value: 'other',     label: '📦 Other' },
+];
+
+const REVENUE_CATS = [
+  { value: 'animal_sales', label: '🐄 Animal Sales' },
+  { value: 'manure_sales', label: '♻️ Manure' },
+  { value: 'crop_sales',   label: '🌿 Crop/Fodder' },
+  { value: 'subsidy',      label: '🏛️ Subsidy' },
+  { value: 'other',        label: '💰 Other' },
+];
+
+function ExpenseModal({ onClose }: { onClose: () => void }) {
+  const { data, setData, post, processing, errors } = useForm({
+    category: 'feed',
+    expense_date: today(),
+    description: '',
+    amount: '',
+    payment_method: 'cash',
+    notes: '',
+  });
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    post('/finance/expense', {
+      onSuccess: onClose,
+    });
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999 }}>
+      <div
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)' }}
+        onClick={onClose}
+      />
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0,
+        background: '#fff', borderRadius: '16px 16px 0 0',
+        maxHeight: '90vh', overflowY: 'auto',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}>
+        {/* Handle */}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: '#D1D5DB' }} />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px 12px' }}>
+          <span style={{ fontSize: 17, fontWeight: 700, color: '#111' }}>Record Expense</span>
+          <button type="button" onClick={onClose} style={{ padding: 8, touchAction: 'manipulation' }}>
+            <X size={20} color="#6B7280" />
+          </button>
+        </div>
+
+        <form onSubmit={submit} noValidate style={{ padding: '0 16px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Category */}
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 8 }}>Category</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {EXPENSE_CATS.map(c => (
+                <button key={c.value} type="button"
+                  onClick={() => setData('category', c.value)}
+                  style={{
+                    padding: '10px 12px', borderRadius: 10, border: '1.5px solid',
+                    borderColor: data.category === c.value ? '#DC2626' : '#E5E7EB',
+                    background: data.category === c.value ? '#DC2626' : '#fff',
+                    color: data.category === c.value ? '#fff' : '#374151',
+                    fontSize: 13, fontWeight: 500, textAlign: 'left',
+                    touchAction: 'manipulation',
+                  }}>
+                  {c.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Date */}
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 500, color: '#374151', display: 'block', marginBottom: 6 }}>Date</label>
+            <input type="date" value={data.expense_date} max={today()}
+              onChange={e => setData('expense_date', e.target.value)}
+              style={{ height: 48, width: '100%', borderRadius: 10, border: '1.5px solid #E5E7EB', padding: '0 12px', fontSize: 16, boxSizing: 'border-box' }} />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 500, color: '#374151', display: 'block', marginBottom: 6 }}>
+              Description <span style={{ color: '#EF4444' }}>*</span>
+            </label>
+            <input type="text" value={data.description} placeholder="e.g. Dairy meal 50 kg"
+              onChange={e => setData('description', e.target.value)}
+              style={{ height: 48, width: '100%', borderRadius: 10, border: `1.5px solid ${errors.description ? '#EF4444' : '#E5E7EB'}`, padding: '0 12px', fontSize: 16, boxSizing: 'border-box' }} />
+            {errors.description && <p style={{ color: '#EF4444', fontSize: 12, marginTop: 4 }}>{errors.description}</p>}
+          </div>
+
+          {/* Amount */}
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 500, color: '#374151', display: 'block', marginBottom: 6 }}>
+              Amount (KES) <span style={{ color: '#EF4444' }}>*</span>
+            </label>
+            <input type="number" inputMode="decimal" min="1" step="1" value={data.amount} placeholder="0"
+              onChange={e => setData('amount', e.target.value)}
+              style={{ height: 48, width: '100%', borderRadius: 10, border: `1.5px solid ${errors.amount ? '#EF4444' : '#E5E7EB'}`, padding: '0 12px', fontSize: 16, boxSizing: 'border-box' }} />
+            {errors.amount && <p style={{ color: '#EF4444', fontSize: 12, marginTop: 4 }}>{errors.amount}</p>}
+          </div>
+
+          {/* Payment */}
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 500, color: '#374151', display: 'block', marginBottom: 6 }}>Payment Method</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {['cash', 'mpesa', 'bank', 'credit'].map(m => (
+                <button key={m} type="button" onClick={() => setData('payment_method', m)}
+                  style={{
+                    flex: 1, padding: '10px 0', borderRadius: 10, border: '1.5px solid',
+                    borderColor: data.payment_method === m ? '#1B5E20' : '#E5E7EB',
+                    background: data.payment_method === m ? '#1B5E20' : '#fff',
+                    color: data.payment_method === m ? '#fff' : '#6B7280',
+                    fontSize: 12, fontWeight: 500, textTransform: 'capitalize',
+                    touchAction: 'manipulation',
+                  }}>
+                  {m}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 500, color: '#374151', display: 'block', marginBottom: 6 }}>Notes (optional)</label>
+            <textarea value={data.notes} onChange={e => setData('notes', e.target.value)} rows={2}
+              placeholder="Additional details..."
+              style={{ width: '100%', borderRadius: 10, border: '1.5px solid #E5E7EB', padding: '10px 12px', fontSize: 16, resize: 'none', boxSizing: 'border-box' }} />
+          </div>
+
+          <button type="submit" disabled={processing || !data.description || !data.amount}
+            style={{
+              height: 52, width: '100%', borderRadius: 12, border: 'none',
+              background: processing || !data.description || !data.amount ? '#9CA3AF' : '#DC2626',
+              color: '#fff', fontSize: 16, fontWeight: 700,
+              touchAction: 'manipulation', cursor: processing ? 'wait' : 'pointer',
+            }}>
+            {processing ? 'Saving…' : `Record Expense${data.amount ? ` — KES ${Number(data.amount).toLocaleString()}` : ''}`}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function RevenueModal({ onClose }: { onClose: () => void }) {
+  const { data, setData, post, processing, errors } = useForm({
+    category: 'animal_sales',
+    revenue_date: today(),
+    description: '',
+    amount: '',
+    buyer_name: '',
+    payment_method: 'cash',
+    notes: '',
+  });
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    post('/finance/revenue', {
+      onSuccess: onClose,
+    });
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999 }}>
+      <div
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)' }}
+        onClick={onClose}
+      />
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0,
+        background: '#fff', borderRadius: '16px 16px 0 0',
+        maxHeight: '90vh', overflowY: 'auto',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: '#D1D5DB' }} />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px 12px' }}>
+          <span style={{ fontSize: 17, fontWeight: 700, color: '#111' }}>Record Revenue</span>
+          <button type="button" onClick={onClose} style={{ padding: 8, touchAction: 'manipulation' }}>
+            <X size={20} color="#6B7280" />
+          </button>
+        </div>
+
+        <form onSubmit={submit} noValidate style={{ padding: '0 16px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Category */}
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 8 }}>Revenue Type</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {REVENUE_CATS.map(c => (
+                <button key={c.value} type="button"
+                  onClick={() => setData('category', c.value)}
+                  style={{
+                    padding: '10px 12px', borderRadius: 10, border: '1.5px solid',
+                    borderColor: data.category === c.value ? '#16A34A' : '#E5E7EB',
+                    background: data.category === c.value ? '#16A34A' : '#fff',
+                    color: data.category === c.value ? '#fff' : '#374151',
+                    fontSize: 13, fontWeight: 500, textAlign: 'left',
+                    touchAction: 'manipulation',
+                  }}>
+                  {c.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Date */}
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 500, color: '#374151', display: 'block', marginBottom: 6 }}>Date</label>
+            <input type="date" value={data.revenue_date} max={today()}
+              onChange={e => setData('revenue_date', e.target.value)}
+              style={{ height: 48, width: '100%', borderRadius: 10, border: '1.5px solid #E5E7EB', padding: '0 12px', fontSize: 16, boxSizing: 'border-box' }} />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 500, color: '#374151', display: 'block', marginBottom: 6 }}>
+              Description <span style={{ color: '#EF4444' }}>*</span>
+            </label>
+            <input type="text" value={data.description} placeholder="e.g. Bull calf sold"
+              onChange={e => setData('description', e.target.value)}
+              style={{ height: 48, width: '100%', borderRadius: 10, border: `1.5px solid ${errors.description ? '#EF4444' : '#E5E7EB'}`, padding: '0 12px', fontSize: 16, boxSizing: 'border-box' }} />
+            {errors.description && <p style={{ color: '#EF4444', fontSize: 12, marginTop: 4 }}>{errors.description}</p>}
+          </div>
+
+          {/* Amount */}
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 500, color: '#374151', display: 'block', marginBottom: 6 }}>
+              Amount (KES) <span style={{ color: '#EF4444' }}>*</span>
+            </label>
+            <input type="number" inputMode="decimal" min="1" step="1" value={data.amount} placeholder="0"
+              onChange={e => setData('amount', e.target.value)}
+              style={{ height: 48, width: '100%', borderRadius: 10, border: `1.5px solid ${errors.amount ? '#EF4444' : '#E5E7EB'}`, padding: '0 12px', fontSize: 16, boxSizing: 'border-box' }} />
+            {errors.amount && <p style={{ color: '#EF4444', fontSize: 12, marginTop: 4 }}>{errors.amount}</p>}
+          </div>
+
+          {/* Buyer */}
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 500, color: '#374151', display: 'block', marginBottom: 6 }}>Buyer Name (optional)</label>
+            <input type="text" value={data.buyer_name} placeholder="e.g. Nakuru Market"
+              onChange={e => setData('buyer_name', e.target.value)}
+              style={{ height: 48, width: '100%', borderRadius: 10, border: '1.5px solid #E5E7EB', padding: '0 12px', fontSize: 16, boxSizing: 'border-box' }} />
+          </div>
+
+          {/* Payment */}
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 500, color: '#374151', display: 'block', marginBottom: 6 }}>Payment Method</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {['cash', 'mpesa', 'bank', 'credit'].map(m => (
+                <button key={m} type="button" onClick={() => setData('payment_method', m)}
+                  style={{
+                    flex: 1, padding: '10px 0', borderRadius: 10, border: '1.5px solid',
+                    borderColor: data.payment_method === m ? '#1B5E20' : '#E5E7EB',
+                    background: data.payment_method === m ? '#1B5E20' : '#fff',
+                    color: data.payment_method === m ? '#fff' : '#6B7280',
+                    fontSize: 12, fontWeight: 500, textTransform: 'capitalize',
+                    touchAction: 'manipulation',
+                  }}>
+                  {m}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 500, color: '#374151', display: 'block', marginBottom: 6 }}>Notes (optional)</label>
+            <textarea value={data.notes} onChange={e => setData('notes', e.target.value)} rows={2}
+              placeholder="Additional details..."
+              style={{ width: '100%', borderRadius: 10, border: '1.5px solid #E5E7EB', padding: '10px 12px', fontSize: 16, resize: 'none', boxSizing: 'border-box' }} />
+          </div>
+
+          <button type="submit" disabled={processing || !data.description || !data.amount}
+            style={{
+              height: 52, width: '100%', borderRadius: 12, border: 'none',
+              background: processing || !data.description || !data.amount ? '#9CA3AF' : '#16A34A',
+              color: '#fff', fontSize: 16, fontWeight: 700,
+              touchAction: 'manipulation', cursor: processing ? 'wait' : 'pointer',
+            }}>
+            {processing ? 'Saving…' : `Record Revenue${data.amount ? ` — KES ${Number(data.amount).toLocaleString()}` : ''}`}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 export default function FinanceIndex() {
   const { kpis, snapshot, expenses, revenues, milk_sales_breakdown, break_even, month } =
     usePage<FinanceIndexProps>().props;
 
   const [tab, setTab] = useState<Tab>('Expenses');
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [showRevenueModal, setShowRevenueModal] = useState(false);
 
   const navigateMonth = (dir: -1 | 1) => {
     const [y, m] = month.split('-').map(Number);
@@ -63,7 +366,7 @@ export default function FinanceIndex() {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => router.visit('/finance/expense/new')}
+              onClick={() => setShowExpenseModal(true)}
               style={{ touchAction: 'manipulation' }}
               className="bg-red-500 text-white px-3 py-2 rounded-full text-xs font-semibold active:opacity-80 min-h-[36px]"
             >
@@ -71,7 +374,7 @@ export default function FinanceIndex() {
             </button>
             <button
               type="button"
-              onClick={() => router.visit('/finance/revenue/new')}
+              onClick={() => setShowRevenueModal(true)}
               style={{ touchAction: 'manipulation' }}
               className="bg-green-500 text-white px-3 py-2 rounded-full text-xs font-semibold active:opacity-80 min-h-[36px]"
             >
@@ -146,10 +449,13 @@ export default function FinanceIndex() {
       {/* ── Tab content ── */}
       <div className="px-4 py-4 space-y-4 pb-24">
         {tab === 'P&L'        && <PLTab snapshot={snapshot} milkBreakdown={milk_sales_breakdown} />}
-        {tab === 'Expenses'   && <ExpensesTab expenses={expenses} />}
-        {tab === 'Revenue'    && <RevenueTab revenues={revenues} milkBreakdown={milk_sales_breakdown} />}
+        {tab === 'Expenses'   && <ExpensesTab expenses={expenses} onAdd={() => setShowExpenseModal(true)} />}
+        {tab === 'Revenue'    && <RevenueTab revenues={revenues} milkBreakdown={milk_sales_breakdown} onAdd={() => setShowRevenueModal(true)} />}
         {tab === 'Break-Even' && <BreakEvenTab be={break_even} />}
       </div>
+
+      {showExpenseModal && <ExpenseModal onClose={() => setShowExpenseModal(false)} />}
+      {showRevenueModal && <RevenueModal onClose={() => setShowRevenueModal(false)} />}
     </AppLayout>
   );
 }
@@ -226,7 +532,7 @@ function PLTab({
 
 // ─── Expenses Tab ─────────────────────────────────────────────────────────────
 
-function ExpensesTab({ expenses }: { expenses: Expense[] }) {
+function ExpensesTab({ expenses, onAdd }: { expenses: Expense[]; onAdd: () => void }) {
   const total = expenses.reduce((s, e) => s + Number(e.amount), 0);
 
   const byCategory = expenses.reduce<Record<string, number>>((acc, e) => {
@@ -241,7 +547,7 @@ function ExpensesTab({ expenses }: { expenses: Expense[] }) {
         <p className="text-sm font-semibold text-gray-800">Total: {formatKES(total)}</p>
         <button
           type="button"
-          onClick={() => router.visit('/finance/expense/new')}
+          onClick={onAdd}
           style={{ touchAction: 'manipulation' }}
           className="flex items-center gap-1.5 bg-red-600 text-white px-3 py-2 rounded-full text-xs font-semibold active:opacity-80 min-h-[36px]"
         >
@@ -311,9 +617,11 @@ function ExpensesTab({ expenses }: { expenses: Expense[] }) {
 function RevenueTab({
   revenues,
   milkBreakdown,
+  onAdd,
 }: {
   revenues: Revenue[];
   milkBreakdown: FinanceIndexProps['milk_sales_breakdown'];
+  onAdd: () => void;
 }) {
   const milkTotal = milkBreakdown.reduce((s, r) => s + Number(r.total_amount), 0);
   const otherTotal = revenues.reduce((s, r) => s + Number(r.amount), 0);
@@ -327,7 +635,7 @@ function RevenueTab({
         </p>
         <button
           type="button"
-          onClick={() => router.visit('/finance/revenue/new')}
+          onClick={onAdd}
           style={{ touchAction: 'manipulation' }}
           className="flex items-center gap-1.5 bg-green-600 text-white px-3 py-2 rounded-full text-xs font-semibold active:opacity-80 min-h-[36px]"
         >
