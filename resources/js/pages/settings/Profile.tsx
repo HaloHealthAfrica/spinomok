@@ -19,7 +19,7 @@ export default function ProfileSettings() {
   };
 
   return (
-    <AppLayout title="My Profile" showBottomNav={false}>
+    <AppLayout title="My Profile">
       <div className="bg-primary-900 pt-safe-top px-4 pb-4">
         <div className="flex items-center gap-3 pt-3">
           <button onClick={() => router.visit('/more')} className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-white">

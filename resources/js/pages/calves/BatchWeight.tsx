@@ -69,7 +69,7 @@ export default function BatchWeight() {
   };
 
   return (
-    <AppLayout title="Batch Weighing" showBottomNav={false}>
+    <AppLayout title="Batch Weighing">
       <div className="bg-primary-900 pt-safe-top px-4 pb-4">
         <div className="flex items-center gap-3 pt-3 mb-4">
           <button

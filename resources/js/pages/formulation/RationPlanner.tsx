@@ -81,7 +81,7 @@ export default function RationPlanner() {
   const selectedGroup = GROUP_OPTIONS.find(g => g.value === animalGroup);
 
   return (
-    <AppLayout title="Ration Planner" showBottomNav={false}>
+    <AppLayout title="Ration Planner">
       <div className="bg-primary-900 pt-safe-top px-4 pb-4">
         <div className="flex items-center gap-3 pt-3 mb-3">
           <button

@@ -46,7 +46,7 @@ export default function ExpenseForm() {
   };
 
   return (
-    <AppLayout title="Record Expense" showBottomNav={false}>
+    <AppLayout title="Record Expense">
       <div className="bg-primary-900 pt-safe-top px-4 pb-4">
         <div className="flex items-center gap-3 pt-3">
           <button onClick={() => router.visit('/finance')} className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-white">

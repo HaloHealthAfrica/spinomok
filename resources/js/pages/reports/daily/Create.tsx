@@ -82,7 +82,7 @@ export default function DailyReportCreate() {
   };
 
   return (
-    <AppLayout title="Daily Report" showBottomNav={false}>
+    <AppLayout title="Daily Report">
       {/* Top bar */}
       <div className="bg-primary-900 pt-safe-top px-4 pb-4">
         <div className="flex items-center gap-3 pt-3 mb-4">

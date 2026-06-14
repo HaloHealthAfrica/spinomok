@@ -27,7 +27,7 @@ export default function CalfShow() {
     : 'Age unknown';
 
   return (
-    <AppLayout title={animal.name ?? animal.tag_number} showBottomNav={false}>
+    <AppLayout title={animal.name ?? animal.tag_number}>
       <div className="bg-primary-900 pt-safe-top px-4 pb-4">
         <div className="flex items-center justify-between pt-3 mb-3">
           <div className="flex items-center gap-3">

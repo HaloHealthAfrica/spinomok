@@ -101,7 +101,7 @@ export default function ConsumeForm() {
   };
 
   return (
-    <AppLayout title="Record Consumption" showBottomNav={false}>
+    <AppLayout title="Record Consumption">
       <div className="bg-primary-900 pt-safe-top px-4 pb-4">
         <div className="flex items-center gap-3 pt-3">
           <button

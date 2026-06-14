@@ -18,7 +18,7 @@ export default function VaccinationSchedule() {
   const { upcoming, overdue, recent } = usePage<ScheduleProps>().props;
 
   return (
-    <AppLayout title="Vaccination Schedule" showBottomNav={false}>
+    <AppLayout title="Vaccination Schedule">
       <div className="bg-primary-900 pt-safe-top px-4 pb-4">
         <div className="flex items-center justify-between pt-3">
           <div className="flex items-center gap-3">

@@ -56,7 +56,7 @@ export default function AIServiceForm() {
   };
 
   return (
-    <AppLayout title="Record AI Service" showBottomNav={false}>
+    <AppLayout title="Record AI Service">
       <div className="bg-primary-900 pt-safe-top px-4 pb-4">
         <div className="flex items-center gap-3 pt-3">
           <button

@@ -41,7 +41,7 @@ export default function PDForm() {
   };
 
   return (
-    <AppLayout title="Pregnancy Check" showBottomNav={false}>
+    <AppLayout title="Pregnancy Check">
       <div className="bg-primary-900 pt-safe-top px-4 pb-4">
         <div className="flex items-center gap-3 pt-3">
           <button

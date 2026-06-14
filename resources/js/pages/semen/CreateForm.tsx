@@ -24,7 +24,7 @@ export default function SemenCreateForm() {
   };
 
   return (
-    <AppLayout title="Add Semen" showBottomNav={false}>
+    <AppLayout title="Add Semen">
       <div className="bg-primary-900 pt-safe-top px-4 pb-4">
         <div className="flex items-center gap-3 pt-3">
           <button

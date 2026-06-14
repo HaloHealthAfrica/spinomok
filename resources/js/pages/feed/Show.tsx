@@ -46,7 +46,7 @@ export default function FeedShow() {
   const purchaseCost = purchases.reduce((s, t) => s + Number(t.total_cost ?? 0), 0);
 
   return (
-    <AppLayout title={feed_type.name} showBottomNav={false}>
+    <AppLayout title={feed_type.name}>
       <div className="bg-primary-900 pt-safe-top px-4 pb-4">
         <div className="flex items-center justify-between pt-3">
           <div className="flex items-center gap-3">

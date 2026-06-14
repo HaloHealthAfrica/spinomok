@@ -12,7 +12,7 @@ export default function FarmSettings() {
   // Guard: farm context not yet loaded
   if (!farm) {
     return (
-      <AppLayout title="Farm Settings" showBottomNav={false}>
+      <AppLayout title="Farm Settings">
         <div className="p-8 text-center text-gray-500">Loading farm settingsâ€¦</div>
       </AppLayout>
     );
@@ -36,7 +36,7 @@ export default function FarmSettings() {
   };
 
   return (
-    <AppLayout title="Farm Settings" showBottomNav={false}>
+    <AppLayout title="Farm Settings">
       <div className="bg-primary-900 pt-safe-top px-4 pb-4">
         <div className="flex items-center gap-3 pt-3">
           <button onClick={() => router.visit('/more')} className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-white">

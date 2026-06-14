@@ -43,7 +43,7 @@ export default function ReceiveForm() {
   };
 
   return (
-    <AppLayout title="Receive Feed Stock" showBottomNav={false}>
+    <AppLayout title="Receive Feed Stock">
       <div className="bg-primary-900 pt-safe-top px-4 pb-4">
         <div className="flex items-center gap-3 pt-3">
           <button

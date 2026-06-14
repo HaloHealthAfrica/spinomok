@@ -127,25 +127,6 @@ export interface DailyMilkSummary {
   vs_yesterday_percent: number;
 }
 
-// ─── Health ───────────────────────────────────────────────────────────────────
-
-export interface HealthEvent {
-  id: string;
-  farm_id: string;
-  animal_id: string;
-  disease_type_id: string | null;
-  observed_on: string;
-  severity: 'mild' | 'moderate' | 'severe';
-  symptoms: string | null;
-  is_recovered: boolean;
-  recovery_date: string | null;
-  outcome: string | null;
-  vet_name: string | null;
-  consultation_cost: number | null;
-  notes: string | null;
-  created_at: string;
-}
-
 // ─── Alerts ───────────────────────────────────────────────────────────────────
 
 export interface Alert {

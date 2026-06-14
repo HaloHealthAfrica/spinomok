@@ -169,7 +169,7 @@ export default function HealthCreate() {
   };
 
   return (
-    <AppLayout title="Report Health Event" showBottomNav={false}>
+    <AppLayout title="Report Health Event">
       <div className="bg-primary-900 pt-safe-top px-4 pb-4">
         <div className="flex items-center gap-3 pt-3">
           <button onClick={() => router.visit('/health')} className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-white">
