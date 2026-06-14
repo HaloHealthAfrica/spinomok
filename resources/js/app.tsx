@@ -14,19 +14,39 @@ const pages = import.meta.glob('./pages/**/*.tsx', { eager: true }) as Record<
 
 class ErrorBoundary extends Component<
   { children: ReactNode },
-  { hasError: boolean; message: string }
+  { hasError: boolean; message: string; stack: string; componentStack: string }
 > {
-  state = { hasError: false, message: '' };
+  state = { hasError: false, message: '', stack: '', componentStack: '' };
   static getDerivedStateFromError(e: Error) {
-    return { hasError: true, message: e.message };
+    return { hasError: true, message: e.message, stack: e.stack ?? '' };
+  }
+  componentDidCatch(error: Error, info: { componentStack: string }) {
+    console.error('[FarmOps Error]', error, info);
+    this.setState({ componentStack: info.componentStack ?? '' });
   }
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: 40, fontFamily: 'system-ui' }}>
-          <h1 style={{ color: '#1B5E20' }}>🐄 SpinoMok FarmOps</h1>
-          <p style={{ color: '#666' }}>Something went wrong — please refresh.</p>
-          <pre style={{ color: '#999', fontSize: 12, marginTop: 16 }}>{this.state.message}</pre>
+        <div style={{ padding: 20, fontFamily: 'system-ui', background: '#fff', minHeight: '100dvh' }}>
+          <h1 style={{ color: '#1B5E20', fontSize: 18, marginBottom: 8 }}>FarmOps — App Error</h1>
+          <p style={{ color: '#333', marginBottom: 12 }}>
+            Something went wrong. Screenshot this page and send to support, then tap Refresh.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            style={{ background: '#1B5E20', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 14, marginBottom: 16, cursor: 'pointer' }}
+          >
+            Refresh App
+          </button>
+          <details open style={{ marginTop: 8 }}>
+            <summary style={{ color: '#666', fontSize: 12, cursor: 'pointer', marginBottom: 8 }}>Error details</summary>
+            <pre style={{ color: '#c00', fontSize: 11, whiteSpace: 'pre-wrap', wordBreak: 'break-all', background: '#fff5f5', padding: 12, borderRadius: 6, border: '1px solid #fcc' }}>
+              {this.state.message}{'\n\n'}{this.state.stack}
+            </pre>
+            <pre style={{ color: '#555', fontSize: 10, whiteSpace: 'pre-wrap', wordBreak: 'break-all', background: '#f5f5f5', padding: 12, borderRadius: 6, border: '1px solid #ddd', marginTop: 8 }}>
+              Component stack:{'\n'}{this.state.componentStack}
+            </pre>
+          </details>
         </div>
       );
     }

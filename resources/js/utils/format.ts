@@ -13,12 +13,15 @@ export function formatLitres(litres: number | string | null | undefined, decimal
 }
 
 /** Format a date string to DD MMM YYYY — e.g. "31 May 2026" */
-export function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('en-KE', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
+export function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '—';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return String(dateStr);
+    return d.toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch {
+    return String(dateStr);
+  }
 }
 
 /** Format a date string to "Mon, 31 May 2026" */
