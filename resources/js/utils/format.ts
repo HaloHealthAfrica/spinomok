@@ -1,14 +1,15 @@
 /** Format KES currency — e.g. "KES 12,450" */
-export function formatKES(amount: number, decimals = 0): string {
-  return `KES ${amount.toLocaleString('en-KE', {
+export function formatKES(amount: number | string | null | undefined, decimals = 0): string {
+  const n = Number(amount ?? 0);
+  return `KES ${n.toLocaleString('en-KE', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   })}`;
 }
 
 /** Format litres — e.g. "142.5 L" */
-export function formatLitres(litres: number, decimals = 1): string {
-  return `${litres.toFixed(decimals)} L`;
+export function formatLitres(litres: number | string | null | undefined, decimals = 1): string {
+  return `${Number(litres ?? 0).toFixed(decimals)} L`;
 }
 
 /** Format a date string to DD MMM YYYY — e.g. "31 May 2026" */

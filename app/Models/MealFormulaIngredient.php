@@ -17,9 +17,9 @@ class MealFormulaIngredient extends Model
     ];
 
     protected $casts = [
-        'inclusion_percent' => 'decimal:3',
-        'quantity_kg'       => 'decimal:3',
-        'cost'              => 'decimal:3',
+        'inclusion_percent' => 'float',
+        'quantity_kg'       => 'float',
+        'cost'              => 'float',
     ];
 
     public function formula(): BelongsTo    { return $this->belongsTo(MealFormula::class, 'meal_formula_id'); }

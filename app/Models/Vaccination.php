@@ -26,8 +26,8 @@ class Vaccination extends Model
     protected $casts = [
         'vaccinated_on'   => 'date',
         'next_due_date'   => 'date',
-        'dose_ml'         => 'decimal:2',
-        'cost'            => 'decimal:2',
+        'dose_ml'         => 'float',
+        'cost'            => 'float',
         'adverse_reaction'=> 'boolean',
     ];
 

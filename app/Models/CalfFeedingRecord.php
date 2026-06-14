@@ -25,8 +25,8 @@ class CalfFeedingRecord extends Model
 
     protected $casts = [
         'fed_on'   => 'date',
-        'quantity' => 'decimal:3',
-        'cost'     => 'decimal:2',
+        'quantity' => 'float',
+        'cost'     => 'float',
     ];
 
     protected static function booted(): void

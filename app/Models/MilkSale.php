@@ -26,9 +26,9 @@ class MilkSale extends Model
     protected $casts = [
         'sale_date'        => 'date',
         'paid_at'          => 'datetime',
-        'quantity_litres'  => 'decimal:3',
-        'price_per_litre'  => 'decimal:2',
-        'total_amount'     => 'decimal:2',
+        'quantity_litres'  => 'float',
+        'price_per_litre'  => 'float',
+        'total_amount'     => 'float',
         'is_paid'          => 'boolean',
     ];
 

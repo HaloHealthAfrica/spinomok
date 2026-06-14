@@ -27,7 +27,7 @@ class SemenInventory extends Model
     protected $casts = [
         'received_on'   => 'date',
         'expiry_date'   => 'date',
-        'cost_per_straw'=> 'decimal:2',
+        'cost_per_straw'=> 'float',
     ];
 
     protected static function booted(): void

@@ -22,9 +22,9 @@ class AnimalWeightRecord extends Model
 
     protected $casts = [
         'measured_on'         => 'date',
-        'weight_kg'           => 'decimal:2',
-        'body_condition_score'=> 'decimal:1',
-        'adg_kg_day'          => 'decimal:3',
+        'weight_kg'           => 'float',
+        'body_condition_score'=> 'float',
+        'adg_kg_day'          => 'float',
         'age_days'            => 'integer',
     ];
 

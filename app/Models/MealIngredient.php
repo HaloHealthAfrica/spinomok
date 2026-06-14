@@ -20,13 +20,13 @@ class MealIngredient extends Model
     ];
 
     protected $casts = [
-        'dry_matter_percent'    => 'decimal:2',
-        'crude_protein_percent' => 'decimal:2',
-        'metabolizable_energy'  => 'decimal:3',
-        'crude_fibre_percent'   => 'decimal:2',
-        'calcium_percent'       => 'decimal:3',
-        'phosphorus_percent'    => 'decimal:3',
-        'max_inclusion_percent' => 'decimal:2',
+        'dry_matter_percent'    => 'float',
+        'crude_protein_percent' => 'float',
+        'metabolizable_energy'  => 'float',
+        'crude_fibre_percent'   => 'float',
+        'calcium_percent'       => 'float',
+        'phosphorus_percent'    => 'float',
+        'max_inclusion_percent' => 'float',
         'is_active'             => 'boolean',
     ];
 

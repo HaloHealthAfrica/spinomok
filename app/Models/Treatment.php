@@ -26,8 +26,8 @@ class Treatment extends Model
     protected $casts = [
         'treated_on'          => 'date',
         'withdrawal_end_date' => 'date',
-        'dose_amount'         => 'decimal:3',
-        'cost'                => 'decimal:2',
+        'dose_amount'         => 'float',
+        'cost'                => 'float',
         'duration_days'       => 'integer',
     ];
 

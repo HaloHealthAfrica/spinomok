@@ -24,7 +24,7 @@ class SyncProgramEvent extends Model
         'scheduled_on' => 'date',
         'completed_on' => 'date',
         'is_completed' => 'boolean',
-        'dose_ml'      => 'decimal:2',
+        'dose_ml'      => 'float',
     ];
 
     protected static function booted(): void

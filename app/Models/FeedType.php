@@ -19,10 +19,10 @@ class FeedType extends Model
     ];
 
     protected $casts = [
-        'dry_matter_percent'    => 'decimal:2',
-        'crude_protein_percent' => 'decimal:2',
-        'metabolizable_energy'  => 'decimal:3',
-        'neutral_detergent_fibre' => 'decimal:2',
+        'dry_matter_percent'    => 'float',
+        'crude_protein_percent' => 'float',
+        'metabolizable_energy'  => 'float',
+        'neutral_detergent_fibre' => 'float',
         'is_active'             => 'boolean',
     ];
 

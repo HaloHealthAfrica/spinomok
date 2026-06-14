@@ -29,7 +29,7 @@ class HealthEvent extends Model
         'recovery_date'     => 'date',
         'is_recovered'      => 'boolean',
         'vet_consulted'     => 'boolean',
-        'consultation_cost' => 'decimal:2',
+        'consultation_cost' => 'float',
     ];
 
     protected static function booted(): void

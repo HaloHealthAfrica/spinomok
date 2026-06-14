@@ -25,7 +25,7 @@ class Revenue extends Model
     protected $casts = [
         'revenue_date' => 'date',
         'received_at'  => 'datetime',
-        'amount'       => 'decimal:2',
+        'amount'       => 'float',
         'is_received'  => 'boolean',
     ];
 

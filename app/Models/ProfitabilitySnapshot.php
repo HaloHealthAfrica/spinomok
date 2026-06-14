@@ -23,19 +23,19 @@ class ProfitabilitySnapshot extends Model
 
     protected $casts = [
         'computed_at'          => 'datetime',
-        'total_milk_litres'    => 'decimal:3',
-        'total_milk_revenue'   => 'decimal:2',
-        'total_other_revenue'  => 'decimal:2',
-        'total_revenue'        => 'decimal:2',
-        'total_feed_cost'      => 'decimal:2',
-        'total_vet_cost'       => 'decimal:2',
-        'total_labour_cost'    => 'decimal:2',
-        'total_other_expenses' => 'decimal:2',
-        'total_expenses'       => 'decimal:2',
-        'gross_margin'         => 'decimal:2',
-        'net_profit'           => 'decimal:2',
-        'cost_per_litre'       => 'decimal:4',
-        'revenue_per_litre'    => 'decimal:4',
+        'total_milk_litres'    => 'float',
+        'total_milk_revenue'   => 'float',
+        'total_other_revenue'  => 'float',
+        'total_revenue'        => 'float',
+        'total_feed_cost'      => 'float',
+        'total_vet_cost'       => 'float',
+        'total_labour_cost'    => 'float',
+        'total_other_expenses' => 'float',
+        'total_expenses'       => 'float',
+        'gross_margin'         => 'float',
+        'net_profit'           => 'float',
+        'cost_per_litre'       => 'float',
+        'revenue_per_litre'    => 'float',
     ];
 
     protected static function booted(): void

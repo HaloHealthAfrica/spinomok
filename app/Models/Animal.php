@@ -30,8 +30,8 @@ class Animal extends Model
         'date_acquired'         => 'date',
         'expected_calving_date' => 'date',
         'last_calving_date'     => 'date',
-        'acquisition_cost'      => 'decimal:2',
-        'weight_kg'             => 'decimal:2',
+        'acquisition_cost'      => 'float',
+        'weight_kg'             => 'float',
         'parity'                => 'integer',
         'is_pregnant'           => 'boolean',
     ];

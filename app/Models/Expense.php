@@ -26,7 +26,7 @@ class Expense extends Model
     protected $casts = [
         'expense_date'  => 'date',
         'paid_at'       => 'datetime',
-        'amount'        => 'decimal:2',
+        'amount'        => 'float',
         'is_recurring'  => 'boolean',
         'is_paid'       => 'boolean',
     ];

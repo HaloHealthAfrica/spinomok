@@ -27,7 +27,7 @@ class CalvingRecord extends Model
     protected $casts = [
         'calved_on'          => 'date',
         'colostrum_given_at' => 'datetime',
-        'calf_birth_weight_kg' => 'decimal:2',
+        'calf_birth_weight_kg' => 'float',
         'is_twin'            => 'boolean',
         'placenta_passed'    => 'boolean',
         'colostrum_given'    => 'boolean',

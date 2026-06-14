@@ -22,9 +22,9 @@ class DrugInventory extends Model
     ];
 
     protected $casts = [
-        'quantity_on_hand'   => 'decimal:3',
-        'reorder_level'      => 'decimal:3',
-        'cost_per_unit'      => 'decimal:2',
+        'quantity_on_hand'   => 'float',
+        'reorder_level'      => 'float',
+        'cost_per_unit'      => 'float',
         'expiry_date'        => 'date',
         'last_restocked_on'  => 'date',
     ];

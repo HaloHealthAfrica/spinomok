@@ -23,7 +23,7 @@ class MilkBuyer extends Model
     ];
 
     protected $casts = [
-        'default_price_per_litre' => 'decimal:2',
+        'default_price_per_litre' => 'float',
         'is_active'               => 'boolean',
     ];
 

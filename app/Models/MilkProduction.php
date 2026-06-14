@@ -26,9 +26,9 @@ class MilkProduction extends Model
 
     protected $casts = [
         'milked_on'        => 'date',
-        'quantity_litres'  => 'decimal:3',
-        'fat_percentage'   => 'decimal:2',
-        'protein_percentage' => 'decimal:2',
+        'quantity_litres'  => 'float',
+        'fat_percentage'   => 'float',
+        'protein_percentage' => 'float',
         'is_colostrum'     => 'boolean',
         'is_withheld'      => 'boolean',
     ];

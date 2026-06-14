@@ -27,12 +27,12 @@ class RationPlan extends Model
     protected $casts = [
         'valid_from'            => 'date',
         'valid_until'           => 'date',
-        'target_milk_yield_l'   => 'decimal:2',
-        'animal_weight_kg'      => 'decimal:2',
-        'total_dm_kg_per_head'  => 'decimal:3',
-        'computed_cp_percent'   => 'decimal:2',
-        'computed_me'           => 'decimal:3',
-        'cost_per_head_per_day' => 'decimal:2',
+        'target_milk_yield_l'   => 'float',
+        'animal_weight_kg'      => 'float',
+        'total_dm_kg_per_head'  => 'float',
+        'computed_cp_percent'   => 'float',
+        'computed_me'           => 'float',
+        'cost_per_head_per_day' => 'float',
     ];
 
     protected static function booted(): void

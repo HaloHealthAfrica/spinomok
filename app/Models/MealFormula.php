@@ -26,14 +26,14 @@ class MealFormula extends Model
     ];
 
     protected $casts = [
-        'batch_size_kg'              => 'decimal:2',
-        'target_cp_percent'          => 'decimal:2',
-        'computed_cp_percent'        => 'decimal:2',
-        'computed_me'                => 'decimal:3',
-        'computed_calcium_percent'   => 'decimal:3',
-        'computed_phosphorus_percent'=> 'decimal:3',
-        'cost_per_kg'                => 'decimal:3',
-        'total_batch_cost'           => 'decimal:2',
+        'batch_size_kg'              => 'float',
+        'target_cp_percent'          => 'float',
+        'computed_cp_percent'        => 'float',
+        'computed_me'                => 'float',
+        'computed_calcium_percent'   => 'float',
+        'computed_phosphorus_percent'=> 'float',
+        'cost_per_kg'                => 'float',
+        'total_batch_cost'           => 'float',
         'is_active'                  => 'boolean',
     ];
 

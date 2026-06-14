@@ -34,13 +34,13 @@ class DailyReport extends Model
         'whatsapp_sent_at'   => 'datetime',
         'pdf_generated_at'   => 'datetime',
         'whatsapp_sent'      => 'boolean',
-        'total_milk_litres'  => 'decimal:3',
-        'morning_litres'     => 'decimal:3',
-        'midday_litres'      => 'decimal:3',
-        'evening_litres'     => 'decimal:3',
-        'milk_sold_litres'   => 'decimal:3',
-        'milk_revenue'       => 'decimal:2',
-        'total_feed_cost'    => 'decimal:2',
+        'total_milk_litres'  => 'float',
+        'morning_litres'     => 'float',
+        'midday_litres'      => 'float',
+        'evening_litres'     => 'float',
+        'milk_sold_litres'   => 'float',
+        'milk_revenue'       => 'float',
+        'total_feed_cost'    => 'float',
     ];
 
     protected static function booted(): void

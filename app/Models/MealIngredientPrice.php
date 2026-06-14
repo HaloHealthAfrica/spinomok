@@ -18,7 +18,7 @@ class MealIngredientPrice extends Model
     ];
 
     protected $casts = [
-        'price_per_kg'   => 'decimal:2',
+        'price_per_kg'   => 'float',
         'effective_from' => 'date',
     ];
 

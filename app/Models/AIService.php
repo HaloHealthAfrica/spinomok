@@ -32,7 +32,7 @@ class AIService extends Model
         'conception_confirmed_on'=> 'date',
         'expected_calving_date'  => 'date',
         'expected_dry_off_date'  => 'date',
-        'service_cost'           => 'decimal:2',
+        'service_cost'           => 'float',
         'service_number'         => 'integer',
     ];
 

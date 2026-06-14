@@ -19,11 +19,11 @@ class RationPlanComponent extends Model
     ];
 
     protected $casts = [
-        'quantity_kg_per_head'   => 'decimal:3',
-        'dm_kg_per_head'         => 'decimal:3',
-        'cp_contribution_percent'=> 'decimal:2',
-        'me_contribution'        => 'decimal:3',
-        'cost_per_head'          => 'decimal:2',
+        'quantity_kg_per_head'   => 'float',
+        'dm_kg_per_head'         => 'float',
+        'cp_contribution_percent'=> 'float',
+        'me_contribution'        => 'float',
+        'cost_per_head'          => 'float',
     ];
 
     public function rationPlan(): BelongsTo  { return $this->belongsTo(RationPlan::class, 'ration_plan_id'); }

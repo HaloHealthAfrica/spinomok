@@ -22,9 +22,9 @@ class FeedInventory extends Model
     ];
 
     protected $casts = [
-        'quantity_kg'       => 'decimal:3',
-        'reorder_level_kg'  => 'decimal:3',
-        'avg_cost_per_kg'   => 'decimal:3',
+        'quantity_kg'       => 'float',
+        'reorder_level_kg'  => 'float',
+        'avg_cost_per_kg'   => 'float',
         'last_restocked_on' => 'date',
     ];
 

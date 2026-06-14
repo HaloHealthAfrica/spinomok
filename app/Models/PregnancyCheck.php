@@ -24,7 +24,7 @@ class PregnancyCheck extends Model
     protected $casts = [
         'checked_on'            => 'date',
         'expected_calving_date' => 'date',
-        'cost'                  => 'decimal:2',
+        'cost'                  => 'float',
         'days_post_service'     => 'integer',
         'foetus_age_days'       => 'integer',
     ];

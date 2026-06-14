@@ -36,8 +36,8 @@ class Farm extends Model
         'settings' => 'array',
         'is_active' => 'boolean',
         'subscription_expires_at' => 'datetime',
-        'latitude' => 'decimal:7',
-        'longitude' => 'decimal:7',
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
 
     // Relationships

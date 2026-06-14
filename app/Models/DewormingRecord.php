@@ -28,8 +28,8 @@ class DewormingRecord extends Model
         'dewormed_on'         => 'date',
         'next_due_date'       => 'date',
         'withdrawal_end_date' => 'date',
-        'dose_amount'         => 'decimal:3',
-        'cost'                => 'decimal:2',
+        'dose_amount'         => 'float',
+        'cost'                => 'float',
     ];
 
     protected static function booted(): void

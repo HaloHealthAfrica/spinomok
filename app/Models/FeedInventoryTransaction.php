@@ -24,9 +24,9 @@ class FeedInventoryTransaction extends Model
 
     protected $casts = [
         'transaction_date' => 'date',
-        'quantity_kg'      => 'decimal:3',
-        'unit_cost'        => 'decimal:3',
-        'total_cost'       => 'decimal:2',
+        'quantity_kg'      => 'float',
+        'unit_cost'        => 'float',
+        'total_cost'       => 'float',
     ];
 
     protected static function booted(): void
