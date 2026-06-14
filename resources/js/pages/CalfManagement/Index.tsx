@@ -180,7 +180,7 @@ function RegisterCalfModal({ animals, onClose }: { animals: AvailableAnimal[]; o
     setData(d => ({
       ...d,
       animal_id:       id,
-      sex:             animal?.sex          ?? d.sex,
+      sex:             animal?.sex ? (animal.sex.charAt(0).toUpperCase() + animal.sex.slice(1).toLowerCase()) : d.sex,
       dob:             animal?.birth_date   ?? d.dob,
       birth_weight_kg: animal?.weight_kg != null ? String(animal.weight_kg) : d.birth_weight_kg,
     }));
