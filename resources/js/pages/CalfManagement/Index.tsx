@@ -31,6 +31,9 @@ interface AvailableAnimal {
   label: string;
   sex: string;
   breed: string;
+  birth_date: string | null;
+  weight_kg: number | null;
+  dam_id: string | null;
 }
 
 interface Props extends PageProps {
@@ -174,7 +177,13 @@ function RegisterCalfModal({ animals, onClose }: { animals: AvailableAnimal[]; o
 
   const handleAnimalChange = (id: string) => {
     const animal = animals.find(a => a.id === id);
-    setData(d => ({ ...d, animal_id: id, sex: animal?.sex ?? d.sex }));
+    setData(d => ({
+      ...d,
+      animal_id:       id,
+      sex:             animal?.sex          ?? d.sex,
+      dob:             animal?.birth_date   ?? d.dob,
+      birth_weight_kg: animal?.weight_kg != null ? String(animal.weight_kg) : d.birth_weight_kg,
+    }));
   };
 
   const submit = (e: React.FormEvent) => {

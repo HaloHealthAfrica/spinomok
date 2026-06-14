@@ -46,12 +46,15 @@ class CalfManagementController extends Controller
         $availableAnimals = Animal::where('farm_id', $farmId)
             ->whereNotIn('id', $registeredAnimalIds)
             ->orderBy('name')
-            ->get(['id', 'name', 'tag_number', 'breed', 'sex'])
+            ->get(['id', 'name', 'tag_number', 'breed', 'sex', 'birth_date', 'weight_kg', 'dam_id'])
             ->map(fn ($a) => [
-                'id'         => $a->id,
-                'label'      => trim(($a->name ?? '') . ' (' . $a->tag_number . ')'),
-                'sex'        => $a->sex ?? 'Female',
-                'breed'      => $a->breed ?? '',
+                'id'           => $a->id,
+                'label'        => trim(($a->name ?? $a->tag_number) . ($a->name ? ' (' . $a->tag_number . ')' : '')),
+                'sex'          => $a->sex ?? 'Female',
+                'breed'        => $a->breed ?? '',
+                'birth_date'   => $a->birth_date?->toDateString(),
+                'weight_kg'    => $a->weight_kg,
+                'dam_id'       => $a->dam_id,
             ]);
 
         return Inertia::render('CalfManagement/Index', [
