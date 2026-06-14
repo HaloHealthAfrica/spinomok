@@ -1,5 +1,5 @@
 import React from 'react';
-import { router, usePage, useForm } from '@inertiajs/react';
+import { router, usePage, useForm, Link } from '@inertiajs/react';
 import {
   ChevronRight, AlertTriangle, Plus, X,
 } from 'lucide-react';
@@ -102,9 +102,11 @@ export default function CalfManagementIndex() {
             {calves.map(calf => {
               const phase = PHASE_STYLES[calf.phase] ?? PHASE_STYLES.growing;
               return (
-                <CardRow
+                <Link
                   key={calf.id}
-                  onClick={() => router.visit(`/calf-management/${calf.id}`)}
+                  href={`/calf-management/${calf.id}`}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left bg-white border-b border-gray-50 last:border-0 active:bg-gray-50"
+                  style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                 >
                   {/* Avatar */}
                   <div className="h-10 w-10 rounded-full flex items-center justify-center shrink-0"
@@ -138,7 +140,7 @@ export default function CalfManagementIndex() {
                     </span>
                     <ChevronRight className="h-4 w-4" style={{ color: 'rgba(60,60,67,0.25)' }} />
                   </div>
-                </CardRow>
+                </Link>
               );
             })}
           </CardGroup>

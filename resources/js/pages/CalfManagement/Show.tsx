@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { router, usePage, useForm } from '@inertiajs/react';
+import { router, usePage, useForm, Link } from '@inertiajs/react';
 import {
   ChevronLeft, AlertTriangle, CheckCircle2, Circle,
   ChevronDown, ChevronUp, ExternalLink,
@@ -88,12 +88,12 @@ export default function CalfManagementShow() {
       {/* Green header */}
       <div className="bg-[#2E7D32] pt-safe-top px-4 pb-4">
         <div className="flex items-center gap-3 pt-3 mb-3">
-          <button
-            onClick={() => router.visit('/calf-management')}
+          <Link
+            href="/calf-management"
             className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center"
           >
             <ChevronLeft className="h-5 w-5 text-white" strokeWidth={2} />
-          </button>
+          </Link>
           <div className="flex-1 min-w-0">
             <h1 className="text-white text-[20px] font-bold truncate">{calf.name}</h1>
             <p className="text-white/70 text-[13px]">{calf.tag_number} · {calf.breed}</p>
