@@ -104,8 +104,9 @@ class CalfManagementController extends Controller
             'housing_notes'   => $request->housing_notes,
         ]);
 
+        $animalLabel = $animal->name ?? $animal->tag_number;
         return redirect("/calf-management/{$calf->id}")
-            ->with('success', "Calf {$animal->name ?? $animal->tag_number} registered successfully.");
+            ->with('success', "Calf {$animalLabel} registered successfully.");
     }
 
     // ── Feed Logs ──────────────────────────────────────────────────────────────
