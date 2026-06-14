@@ -93,10 +93,10 @@ export default function Dashboard() {
 
       <div className="px-4 space-y-6 pb-6">
         {/* ── Hero KPI card — Today's Milk ── */}
-        <Card
+        <button
           onClick={() => router.visit('/milk-records')}
-          padding="lg"
-          className="bg-brand-900 !shadow-[0_4px_20px_rgba(27,94,32,0.30)]"
+          className="w-full text-left rounded-[12px] p-5 shadow-[0_4px_20px_rgba(27,94,32,0.30)]"
+          style={{ background: '#1B5E20', WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
         >
           <div className="flex items-start justify-between">
             <div>
@@ -140,7 +140,7 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-        </Card>
+        </button>
 
         {/* ── Secondary KPIs ── */}
         <div className="grid grid-cols-2 gap-3">
