@@ -85,6 +85,23 @@ class HealthController extends Controller
         return Inertia::render('health/Create', compact('animals', 'diseases', 'meds', 'preAnimal'));
     }
 
+    public function mastitisCreate(Request $request): Response
+    {
+        $farmId = app('current.farm.id');
+        $animals = Animal::where('farm_id', $farmId)
+            ->whereIn('status', ['lactating', 'dry'])
+            ->orderBy('name')
+            ->orderBy('tag_number')
+            ->get(['id', 'tag_number', 'name', 'breed', 'status']);
+        $disease = DiseaseType::where('is_active', true)
+            ->where('name', 'like', '%Mastitis%')
+            ->orderBy('name')
+            ->first(['id', 'name']);
+        $preAnimal = $request->input('animal_id');
+
+        return Inertia::render('health/MastitisForm', compact('animals', 'disease', 'preAnimal'));
+    }
+
     public function store(Request $request): JsonResponse|RedirectResponse
     {
         $request->validate([
@@ -122,6 +139,58 @@ class HealthController extends Controller
 
         return redirect()->route('health.index')
             ->with('success', "Health event recorded for {$animal->display_name}.");
+    }
+
+    public function mastitisStore(Request $request): JsonResponse|RedirectResponse
+    {
+        $request->validate([
+            'animal_id' => ['required', 'uuid'],
+            'observed_on' => ['required', 'date', 'before_or_equal:today'],
+            'quarter' => ['required', 'in:LF,RF,LR,RR'],
+            'score' => ['required', 'integer', 'min:0', 'max:4'],
+            'temperature_c' => ['nullable', 'numeric', 'min:35', 'max:43'],
+            'treatment_started' => ['boolean'],
+            'milk_discarded' => ['boolean'],
+            'vet_notified' => ['boolean'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $farmId = app('current.farm.id');
+        $this->verifyAnimal($request->animal_id, $farmId);
+
+        $score = (int) $request->score;
+        $severity = $score >= 3 ? 'severe' : ($score >= 2 ? 'moderate' : 'mild');
+        $disease = DiseaseType::where('is_active', true)->where('name', 'like', '%Mastitis%')->first();
+        $temp = $request->temperature_c ? "{$request->temperature_c} C" : 'not recorded';
+        $symptoms = "Mastitis score {$score} in {$request->quarter} quarter. Temperature: {$temp}.";
+        $notes = implode("\n", array_filter([
+            "Mastitis score: {$score}",
+            "Quarter: {$request->quarter}",
+            "Treatment started: " . ($request->boolean('treatment_started') ? 'yes' : 'no'),
+            "Milk discarded: " . ($request->boolean('milk_discarded') ? 'yes' : 'no'),
+            "Vet notified: " . ($request->boolean('vet_notified') ? 'yes' : 'no'),
+            $request->notes,
+        ]));
+
+        $event = $this->service->recordHealthEvent([
+            'farm_id' => $farmId,
+            'animal_id' => $request->animal_id,
+            'observed_on' => $request->observed_on,
+            'disease_type_id' => $disease?->id,
+            'symptoms' => $symptoms,
+            'severity' => $severity,
+            'vet_consulted' => $request->boolean('vet_notified'),
+            'notes' => $notes,
+        ], $request->user()->id);
+
+        $animal = Animal::withoutGlobalScopes()->find($request->animal_id);
+
+        if ($request->wantsJson()) {
+            return response()->json(['event' => $event, 'message' => 'Mastitis score recorded.'], 201);
+        }
+
+        return redirect()->route('health.index')
+            ->with('success', "Mastitis score {$score} recorded for {$animal->display_name}.");
     }
 
     public function show(HealthEvent $healthEvent): Response

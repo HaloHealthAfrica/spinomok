@@ -24,6 +24,10 @@ class AnalyticsController extends Controller
         $herd         = $this->service->getHerdSummary($farmId);
         $breeding     = $this->service->getBreedingAnalytics($farmId);
         $health       = $this->service->getHealthAnalytics($farmId);
+        $milkIntelligence = $this->service->getAdvancedMilkAnalytics($farmId);
+        $mastitis     = $this->service->getMastitisAnalytics($farmId);
+        $bcs          = $this->service->getBcsAnalytics($farmId);
+        $combinedRisk = $this->service->getCombinedHealthRisk($farmId);
         $feed         = $this->service->getFeedAnalytics($farmId);
         $financial    = $this->service->getFinancialAnalytics($farmId);
 
@@ -32,7 +36,8 @@ class AnalyticsController extends Controller
         $perCow = $this->service->getPerCowProduction($farmId, $from, $to);
 
         return Inertia::render('analytics/Index', compact(
-            'milkTrend', 'herd', 'breeding', 'health', 'feed', 'financial', 'perCow', 'period',
+            'milkTrend', 'herd', 'breeding', 'health', 'milkIntelligence', 'mastitis', 'bcs', 'combinedRisk',
+            'feed', 'financial', 'perCow', 'period',
         ));
     }
 

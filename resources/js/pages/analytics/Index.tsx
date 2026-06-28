@@ -37,6 +37,34 @@ interface AnalyticsProps extends PageProps {
     deworming_due_30d: number;
     monthly_trend: { month: string; events: number; cost: number }[];
   };
+  milkIntelligence: {
+    total_milk: number;
+    avg_per_cow: number;
+    highest_producer: MilkCowTrend | null;
+    lowest_producer: MilkCowTrend | null;
+    declining_count: number;
+    improving_count: number;
+    warning_count: number;
+    critical_count: number;
+    cow_trends: MilkCowTrend[];
+  };
+  mastitis: {
+    cases_30d: number;
+    active_cases: number;
+    severe_cases: number;
+    recent_cases: { event_id: string; animal_id: string; animal: string; observed_on: string; score: number | null; quarter: string | null; severity: string; is_recovered: boolean }[];
+  };
+  bcs: {
+    herd_avg: number | null;
+    lowest: BcsCowScore | null;
+    highest: BcsCowScore | null;
+    low_count: number;
+    high_count: number;
+    losing_count: number;
+    improving_count: number;
+    cow_scores: BcsCowScore[];
+  };
+  combinedRisk: { animal_id: string; animal: string; milk_change: number; bcs: number | null; mastitis_score: number | null; risk_level: 'high' | 'watch'; recommendation: string; signals: string[] }[];
   feed: {
     monthly_trend: { month: string; feed_cost: number; milk_litres: number; cost_per_litre: number | null }[];
     top_feeds_30d: { feed: string; cost: number; qty: number }[];
@@ -46,6 +74,31 @@ interface AnalyticsProps extends PageProps {
     channel_breakdown: { channel: string; revenue: number; litres: number; price: number }[];
   };
   perCow: { animal_id: string; tag_number: string; name: string | null; breed: string; total_litres: number; avg_per_day: number }[];
+}
+
+interface MilkCowTrend {
+  animal_id: string;
+  tag_number: string | null;
+  name: string | null;
+  today_litres: number;
+  yesterday_litres: number;
+  avg_3_day: number;
+  avg_7_day: number;
+  weekly_avg: number;
+  peak_litres: number;
+  lifetime_avg: number;
+  percent_change_vs_7_day: number;
+  status: 'critical' | 'warning' | 'improving' | 'steady';
+}
+
+interface BcsCowScore {
+  animal_id: string;
+  animal: string;
+  tag_number: string | null;
+  measured_on: string;
+  current_bcs: number;
+  delta_30d: number | null;
+  status: 'low' | 'high' | 'improving' | 'target';
 }
 
 const PERIOD_OPTIONS = [
@@ -61,7 +114,7 @@ type Tab = typeof TABS[number];
 const HERD_COLORS = ['#1B5E20', '#43A047', '#FFA000', '#1565C0', '#6D4C41', '#37474F'];
 
 export default function AnalyticsIndex() {
-  const { period, milkTrend, herd, breeding, health, feed, financial, perCow } = usePage<AnalyticsProps>().props;
+  const { period, milkTrend, herd, breeding, health, milkIntelligence, mastitis, bcs, combinedRisk, feed, financial, perCow } = usePage<AnalyticsProps>().props;
   const [tab, setTab] = useState<Tab>('Production');
 
   const navigatePeriod = (p: string) => {
@@ -122,9 +175,9 @@ export default function AnalyticsIndex() {
       </div>
 
       <div className="px-4 py-4 space-y-4">
-        {tab === 'Production' && <ProductionTab milkTrend={milkTrend} perCow={perCow} herd={herd} herdPieData={herdPieData} period={period} />}
+        {tab === 'Production' && <ProductionTab milkTrend={milkTrend} milkIntelligence={milkIntelligence} perCow={perCow} herd={herd} herdPieData={herdPieData} period={period} />}
         {tab === 'Breeding'   && <BreedingTab breeding={breeding} />}
-        {tab === 'Health'     && <HealthTab health={health} />}
+        {tab === 'Health'     && <HealthTab health={health} mastitis={mastitis} bcs={bcs} combinedRisk={combinedRisk} />}
         {tab === 'Finance'    && <FinanceTab financial={financial} />}
         {tab === 'Feed'       && <FeedTab feed={feed} />}
       </div>
@@ -134,8 +187,9 @@ export default function AnalyticsIndex() {
 
 // ─── Production Tab ───────────────────────────────────────────────────────────
 
-function ProductionTab({ milkTrend, perCow, herd, herdPieData, period }: {
+function ProductionTab({ milkTrend, milkIntelligence, perCow, herd, herdPieData, period }: {
   milkTrend: AnalyticsProps['milkTrend'];
+  milkIntelligence: AnalyticsProps['milkIntelligence'];
   perCow: AnalyticsProps['perCow'];
   herd: AnalyticsProps['herd'];
   herdPieData: { name: string; value: number }[];
@@ -157,6 +211,40 @@ function ProductionTab({ milkTrend, perCow, herd, herdPieData, period }: {
           <p className="text-xl font-bold text-primary-900">{avgDaily.toFixed(1)} L</p>
         </Card>
       </div>
+
+      <Card padding="md" className={milkIntelligence.critical_count > 0 ? 'bg-red-50 border-red-200' : milkIntelligence.warning_count > 0 ? 'bg-amber-50 border-amber-200' : ''}>
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div>
+            <p className="text-sm font-bold text-gray-900">Milk Trend Alerts</p>
+            <p className="text-xs text-gray-500">Today vs each cow's 7-day average</p>
+          </div>
+          <div className="text-right">
+            <p className={clsx('text-lg font-black', milkIntelligence.critical_count > 0 ? 'text-red-700' : milkIntelligence.warning_count > 0 ? 'text-amber-700' : 'text-green-700')}>
+              {milkIntelligence.declining_count}
+            </p>
+            <p className="text-[10px] text-gray-500">declining</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          <MiniStat label="Herd Today" value={`${milkIntelligence.total_milk.toFixed(1)} L`} />
+          <MiniStat label="Avg/Cow" value={`${milkIntelligence.avg_per_cow.toFixed(1)} L`} />
+          <MiniStat label="Improving" value={milkIntelligence.improving_count} />
+        </div>
+        {milkIntelligence.cow_trends.filter(cow => cow.status === 'critical' || cow.status === 'warning').slice(0, 4).map(cow => (
+          <div key={cow.animal_id} className="flex items-center justify-between border-t border-white/70 py-2">
+            <div>
+              <p className="text-xs font-bold text-gray-900">{cow.name ?? cow.tag_number}</p>
+              <p className="text-[11px] text-gray-500">{cow.today_litres.toFixed(1)} L today / {cow.avg_7_day.toFixed(1)} L avg</p>
+            </div>
+            <span className={clsx('text-xs font-bold', cow.status === 'critical' ? 'text-red-700' : 'text-amber-700')}>
+              {cow.percent_change_vs_7_day.toFixed(1)}%
+            </span>
+          </div>
+        ))}
+        {milkIntelligence.cow_trends.filter(cow => cow.status === 'critical' || cow.status === 'warning').length === 0 && (
+          <p className="text-xs text-green-700 font-medium">No cow is more than 10% below her 7-day average.</p>
+        )}
+      </Card>
 
       {/* Milk trend line chart */}
       {milkTrend.length > 1 && (
@@ -308,9 +396,84 @@ function BreedingTab({ breeding }: { breeding: AnalyticsProps['breeding'] }) {
 
 // ─── Health Tab ───────────────────────────────────────────────────────────────
 
-function HealthTab({ health }: { health: AnalyticsProps['health'] }) {
+function HealthTab({ health, mastitis, bcs, combinedRisk }: {
+  health: AnalyticsProps['health'];
+  mastitis: AnalyticsProps['mastitis'];
+  bcs: AnalyticsProps['bcs'];
+  combinedRisk: AnalyticsProps['combinedRisk'];
+}) {
   return (
     <>
+      {combinedRisk.length > 0 && (
+        <Card padding="md" className={combinedRisk.some(row => row.risk_level === 'high') ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-sm font-bold text-gray-900">Combined Health Risk</p>
+              <p className="text-xs text-gray-500">Milk drop + BCS + mastitis signals</p>
+            </div>
+            <BadgeTone tone={combinedRisk.some(row => row.risk_level === 'high') ? 'red' : 'amber'}>
+              {combinedRisk.length} cow{combinedRisk.length === 1 ? '' : 's'}
+            </BadgeTone>
+          </div>
+          <div className="space-y-2">
+            {combinedRisk.slice(0, 4).map(row => (
+              <div key={row.animal_id} className="bg-white/70 rounded-lg px-3 py-2">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-bold text-gray-900">{row.animal}</p>
+                  <span className={clsx('text-[11px] font-black uppercase', row.risk_level === 'high' ? 'text-red-700' : 'text-amber-700')}>
+                    {row.risk_level}
+                  </span>
+                </div>
+                <p className="text-[11px] text-gray-600 mt-1">{row.recommendation}</p>
+                <p className="text-[10px] text-gray-400 mt-1">{row.signals.join(' / ')}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-2 gap-3">
+        <Card padding="md" className={mastitis.severe_cases > 0 ? 'bg-red-50 border-red-200' : mastitis.active_cases > 0 ? 'bg-amber-50 border-amber-200' : ''}>
+          <p className="text-xs text-gray-500">Mastitis 30d</p>
+          <p className={clsx('text-xl font-bold', mastitis.severe_cases > 0 ? 'text-red-700' : 'text-gray-900')}>{mastitis.cases_30d}</p>
+          <p className="text-xs text-gray-400">{mastitis.active_cases} active / {mastitis.severe_cases} severe</p>
+        </Card>
+        <Card padding="md" className={bcs.low_count > 0 ? 'bg-amber-50 border-amber-200' : ''}>
+          <p className="text-xs text-gray-500">Herd BCS Avg</p>
+          <p className={clsx('text-xl font-bold', bcs.low_count > 0 ? 'text-amber-700' : 'text-gray-900')}>{bcs.herd_avg ?? 'No data'}</p>
+          <p className="text-xs text-gray-400">{bcs.low_count} low / {bcs.losing_count} losing</p>
+        </Card>
+      </div>
+
+      {(mastitis.recent_cases.length > 0 || bcs.cow_scores.length > 0) && (
+        <Card padding="md">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-bold text-gray-900">Mastitis & BCS Watchlist</p>
+            <button onClick={() => router.visit('/health/mastitis/new')} className="text-xs font-bold text-primary-900">Score cow</button>
+          </div>
+          <div className="space-y-2">
+            {mastitis.recent_cases.slice(0, 3).map(row => (
+              <div key={row.event_id} className="flex items-center justify-between rounded-lg bg-red-50 px-3 py-2">
+                <div>
+                  <p className="text-xs font-bold text-red-900">{row.animal}</p>
+                  <p className="text-[11px] text-red-600">Quarter {row.quarter ?? '-'} / score {row.score ?? '-'}</p>
+                </div>
+                <span className="text-[11px] font-bold text-red-700">{row.severity}</span>
+              </div>
+            ))}
+            {bcs.cow_scores.filter(row => row.status === 'low' || row.status === 'high').slice(0, 4).map(row => (
+              <div key={row.animal_id} className="flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2">
+                <div>
+                  <p className="text-xs font-bold text-amber-900">{row.animal}</p>
+                  <p className="text-[11px] text-amber-600">BCS {row.current_bcs.toFixed(1)}{row.delta_30d !== null ? ` / ${row.delta_30d > 0 ? '+' : ''}${row.delta_30d.toFixed(1)} in 30d` : ''}</p>
+                </div>
+                <span className="text-[11px] font-bold text-amber-700">{row.status}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       <div className="grid grid-cols-2 gap-3">
         <Card padding="md">
           <p className="text-xs text-gray-500">Health Events (3 months)</p>
@@ -505,6 +668,25 @@ function FeedTab({ feed }: { feed: AnalyticsProps['feed'] }) {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function MiniStat({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="rounded-lg bg-white/70 px-3 py-2">
+      <p className="text-sm font-black text-gray-900">{value}</p>
+      <p className="text-[10px] text-gray-500">{label}</p>
+    </div>
+  );
+}
+
+function BadgeTone({ tone, children }: { tone: 'red' | 'amber' | 'green'; children: React.ReactNode }) {
+  return (
+    <span className={clsx('rounded-full px-2.5 py-1 text-[11px] font-black uppercase',
+      tone === 'red' ? 'bg-red-100 text-red-700' : tone === 'amber' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700')}
+    >
+      {children}
+    </span>
+  );
+}
 
 function HerdKpi({ label, value }: { label: string; value: number | string }) {
   return (

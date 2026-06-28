@@ -117,6 +117,8 @@ Route::middleware(['auth', 'set.farm'])->group(function () {
     Route::get('/health', [HealthController::class, 'index'])->name('health.index');
     Route::get('/health/create', [HealthController::class, 'create'])->name('health.create');
     Route::post('/health', [HealthController::class, 'store'])->name('health.store');
+    Route::get('/health/mastitis/new', [HealthController::class, 'mastitisCreate'])->name('health.mastitis.create');
+    Route::post('/health/mastitis', [HealthController::class, 'mastitisStore'])->name('health.mastitis.store');
 
     // Vaccinations — BEFORE wildcard
     Route::get('/health/vaccinations/new', [HealthController::class, 'vaccinationCreate'])->name('health.vaccination.create');

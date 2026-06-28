@@ -31,7 +31,24 @@ interface WizardProps extends PageProps {
   milk_summary: { total_litres: number; morning_litres: number; midday_litres: number; evening_litres: number; cows_milked: number };
   buyers: MilkBuyer[];
   milk_sales_today: MilkSaleToday[];
+  herd_counts: HerdCounts;
+  animals: ReportAnimal[];
   current_step: number;
+}
+
+interface ReportAnimal {
+  id: string;
+  tag_number: string;
+  name: string | null;
+  status: string;
+}
+
+interface HerdCounts {
+  calves: number;
+  heifers: number;
+  lactating: number;
+  dry: number;
+  bulls: number;
 }
 
 const STEPS = [
@@ -45,10 +62,11 @@ const STEPS = [
 // ──── Main Wizard Component ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 export default function DailyReportCreate() {
-  const { report, date, animal_records, milk_summary, buyers, milk_sales_today, current_step } = usePage<WizardProps>().props;
+  const { report, date, animal_records, milk_summary, buyers, milk_sales_today, herd_counts, animals, current_step } = usePage<WizardProps>().props;
 
   const [step, setStep] = useState(current_step ?? 1);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [stepData, setStepData] = useState<Record<number, unknown>>(
     report.draft_data ? Object.fromEntries(
       Object.entries(report.draft_data).map(([k, v]) => [parseInt(k.replace('step_', '')), v])
@@ -62,9 +80,24 @@ export default function DailyReportCreate() {
       .catch(() => null); // Data preserved in stepData state; server will get it on submit
   };
 
+  const saveStepReliably = async (stepNum: number, data: unknown) => {
+    const nextStepData = { ...stepData, [stepNum]: data };
+    setStepData(nextStepData);
+    setSaveError(null);
+
+    try {
+      await axios.patch(`/reports/daily/${report.id}/step`, { step: stepNum, data });
+      return nextStepData;
+    } catch {
+      setSaveError('Could not save this step. Please check your connection and try again.');
+      setSaving(false);
+      throw new Error('Daily report step save failed.');
+    }
+  };
+
   const goNext = async (currentStepData: unknown) => {
     setSaving(true);
-    await saveStep(step, currentStepData);
+    await saveStepReliably(step, currentStepData);
     setSaving(false);
     // Always advance — local state holds all data even if server save missed
     if (step < 5) setStep(s => s + 1);
@@ -77,8 +110,11 @@ export default function DailyReportCreate() {
 
   const handleSubmit = async (finalData: unknown) => {
     setSaving(true);
-    await saveStep(5, finalData);
-    router.post(`/reports/daily/${report.id}/submit`, finalData as Record<string, string>);
+    const nextStepData = await saveStepReliably(5, finalData);
+    router.post(`/reports/daily/${report.id}/submit`, {
+      ...(finalData as Record<string, string>),
+      draft_data: nextStepData,
+    });
   };
 
   return (
@@ -104,6 +140,11 @@ export default function DailyReportCreate() {
 
       {/* Step content */}
       <div className="flex-1 overflow-y-auto">
+        {saveError && (
+          <div className="mx-4 mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+            {saveError}
+          </div>
+        )}
         {step === 1 && (
           <Step1Milk
             milkSummary={milk_summary}
@@ -127,6 +168,11 @@ export default function DailyReportCreate() {
         )}
         {step === 3 && (
           <Step3Health
+            date={date}
+            herdCounts={herd_counts}
+            animals={animals}
+            animalRecords={animal_records}
+            milkSummary={milk_summary}
             initialData={stepData[3] as Step3Data | undefined}
             onNext={(data) => goNext(data)}
             onBack={goPrev}
@@ -646,24 +692,299 @@ function Step2Sales({
   );
 }
 
-interface Step3Data { events: string; notes: string }
+type HerdGroupKey = 'calves' | 'heifers' | 'lactating' | 'dry' | 'bulls';
+type IndicatorKey = 'eating' | 'alert' | 'water' | 'diarrhea' | 'cough' | 'injuries' | 'lameness' | 'behavior';
+type AuditKey = 'equipment' | 'teats' | 'post_dip' | 'filtered' | 'stored' | 'area';
+type WaterKey = 'available' | 'clean' | 'leaks';
+
+interface HerdCountEntry { expected: number; present: string }
+interface GroupHealthEntry { indicators: Record<IndicatorKey, boolean>; notes: string }
+interface SickAnimalEntry { animal_id: string; problem: string; severity: 'Low' | 'Medium' | 'High'; treatment: string; vet_required: boolean; status: string }
+interface ReproEntry { heat: string; ai: string; pd_due: string; expected_calvings: string; new_calvings: string; abortions: string; notes: string }
+interface Step3Data {
+  form_name?: string;
+  inspection_date?: string;
+  herd_counts?: Record<HerdGroupKey, HerdCountEntry>;
+  group_health?: Record<HerdGroupKey, GroupHealthEntry>;
+  sick_animals?: SickAnimalEntry[];
+  reproduction?: ReproEntry;
+  milking_audit?: Record<AuditKey, boolean>;
+  morning_milk?: Record<string, string>;
+  water_audit?: Record<WaterKey, boolean>;
+  water_comments?: string;
+  critical_alerts?: string[];
+  alert_explanation?: string;
+  generated_summary?: string;
+  notes_summary?: string;
+  events?: string;
+  notes?: string;
+}
+
+const HERD_GROUPS: { key: HerdGroupKey; label: string; countKey: keyof HerdCounts }[] = [
+  { key: 'calves', label: 'Calves', countKey: 'calves' },
+  { key: 'heifers', label: 'Heifers', countKey: 'heifers' },
+  { key: 'lactating', label: 'Lactating Cows', countKey: 'lactating' },
+  { key: 'dry', label: 'Dry Cows', countKey: 'dry' },
+  { key: 'bulls', label: 'Bulls', countKey: 'bulls' },
+];
+const HEALTH_INDICATORS: { key: IndicatorKey; label: string }[] = [
+  { key: 'eating', label: 'Eating normally' },
+  { key: 'alert', label: 'Active/alert' },
+  { key: 'water', label: 'Drinking water' },
+  { key: 'diarrhea', label: 'No diarrhea' },
+  { key: 'cough', label: 'No cough' },
+  { key: 'injuries', label: 'No injuries' },
+  { key: 'lameness', label: 'No lameness' },
+  { key: 'behavior', label: 'Normal behavior' },
+];
+const SICK_PROBLEMS = ['Mastitis', 'Lameness', 'Fever', 'Pneumonia', 'Diarrhea', 'Injury', 'Retained placenta', 'Milk fever', 'Ketosis', 'Poor appetite', 'Other'];
+const AUDIT_ITEMS: { key: AuditKey; label: string }[] = [
+  { key: 'equipment', label: 'Milking equipment cleaned' },
+  { key: 'teats', label: 'Teats cleaned before milking' },
+  { key: 'post_dip', label: 'Post-dip completed' },
+  { key: 'filtered', label: 'Milk filtered' },
+  { key: 'stored', label: 'Milk stored correctly' },
+  { key: 'area', label: 'Milking area cleaned' },
+];
+const ALERT_OPTIONS = ['Sick animal', 'Mastitis', 'Calving problem', 'Milk drop', 'Feed shortage', 'Water shortage', 'Injury', 'Missing animal', 'Abortion', 'Other'];
 
 function Step3Health({
-  initialData, onNext, onBack, saving,
+  date, herdCounts, animals, animalRecords, milkSummary, initialData, onNext, onBack, saving,
 }: {
+  date: string;
+  herdCounts: HerdCounts;
+  animals: ReportAnimal[];
+  animalRecords: AnimalMilkRecord[];
+  milkSummary: WizardProps['milk_summary'];
   initialData?: Step3Data;
   onNext: (data: Step3Data) => void;
   onBack: () => void;
   saving: boolean;
 }) {
-  const [events, setEvents] = useState(initialData?.events ?? '');
-  const [notes, setNotes] = useState(initialData?.notes ?? '');
+  const defaultHerd = HERD_GROUPS.reduce((acc, group) => ({
+    ...acc,
+    [group.key]: { expected: herdCounts[group.countKey], present: String(herdCounts[group.countKey]) },
+  }), {} as Record<HerdGroupKey, HerdCountEntry>);
+  const defaultHealth = HERD_GROUPS.reduce((acc, group) => ({
+    ...acc,
+    [group.key]: {
+      indicators: HEALTH_INDICATORS.reduce((flags, indicator) => ({ ...flags, [indicator.key]: true }), {} as Record<IndicatorKey, boolean>),
+      notes: '',
+    },
+  }), {} as Record<HerdGroupKey, GroupHealthEntry>);
+  const defaultMilk = animalRecords.reduce((acc, record) => ({
+    ...acc,
+    [record.animal_id]: record.morning?.litres ? String(record.morning.litres) : '',
+  }), {} as Record<string, string>);
+
+  const [herd, setHerd] = useState(initialData?.herd_counts ?? defaultHerd);
+  const [groupHealth, setGroupHealth] = useState(initialData?.group_health ?? defaultHealth);
+  const [sickAnimals, setSickAnimals] = useState<SickAnimalEntry[]>(initialData?.sick_animals ?? []);
+  const [repro, setRepro] = useState<ReproEntry>(initialData?.reproduction ?? { heat: '0', ai: '0', pd_due: '0', expected_calvings: '0', new_calvings: '0', abortions: '0', notes: '' });
+  const [milkingAudit, setMilkingAudit] = useState<Record<AuditKey, boolean>>(initialData?.milking_audit ?? { equipment: true, teats: true, post_dip: true, filtered: true, stored: true, area: true });
+  const [morningMilk, setMorningMilk] = useState<Record<string, string>>(initialData?.morning_milk ?? defaultMilk);
+  const [waterAudit, setWaterAudit] = useState<Record<WaterKey, boolean>>(initialData?.water_audit ?? { available: true, clean: true, leaks: true });
+  const [waterComments, setWaterComments] = useState(initialData?.water_comments ?? '');
+  const [criticalAlerts, setCriticalAlerts] = useState<string[]>(initialData?.critical_alerts ?? []);
+  const [alertExplanation, setAlertExplanation] = useState(initialData?.alert_explanation ?? '');
+
+  const lactatingRecords = animalRecords.filter(record => animals.find(a => a.id === record.animal_id)?.status === 'lactating' || record.daily_total > 0);
+  const missingAnimals = HERD_GROUPS.reduce((sum, group) => sum + missingCount(herd[group.key]), 0);
+  const highSeverity = sickAnimals.filter(entry => entry.severity === 'High').length;
+  const abortions = Number(repro.abortions || 0);
+  const waterIssues = Object.values(waterAudit).filter(value => !value).length;
+  const auditPasses = Object.values(milkingAudit).filter(Boolean).length;
+  const compliance = Math.round((auditPasses / AUDIT_ITEMS.length) * 100);
+  const milkValues = Object.values(morningMilk).map(Number).filter(v => !Number.isNaN(v) && v > 0);
+  const totalMorningMilk = milkValues.reduce((sum, v) => sum + v, 0);
+  const avgMorningMilk = milkValues.length ? totalMorningMilk / milkValues.length : 0;
+  const producers = lactatingRecords.map(record => ({
+    label: record.name ?? record.tag_number,
+    litres: Number(morningMilk[record.animal_id] || 0),
+  })).filter(row => row.litres > 0).sort((a, b) => b.litres - a.litres);
+  const generatedAlerts = [
+    ...(missingAnimals > 0 ? ['Missing animal'] : []),
+    ...(highSeverity > 0 ? ['Sick animal'] : []),
+    ...(abortions > 0 ? ['Abortion'] : []),
+    ...(waterIssues > 0 ? ['Water shortage'] : []),
+  ];
+  const selectedAlerts = Array.from(new Set([...criticalAlerts, ...generatedAlerts]));
+  const summary = buildInspectionSummary(date, herd, sickAnimals, selectedAlerts, repro, totalMorningMilk, avgMorningMilk, compliance, waterIssues);
+
+  const submitData: Step3Data = {
+    form_name: 'AM Herd Health & Milking Inspection',
+    inspection_date: date,
+    herd_counts: herd,
+    group_health: groupHealth,
+    sick_animals: sickAnimals,
+    reproduction: repro,
+    milking_audit: milkingAudit,
+    morning_milk: morningMilk,
+    water_audit: waterAudit,
+    water_comments: waterComments,
+    critical_alerts: selectedAlerts,
+    alert_explanation: alertExplanation,
+    generated_summary: summary,
+    notes_summary: summary,
+    notes: alertExplanation,
+  };
+
+  const notesSummary = '';
+  const notes = '';
+  const setNotesSummary = (_value: string) => {};
+  const setNotes = (_value: string) => {};
+
+  return (
+    <div className="px-4 py-4 space-y-4">
+      <div>
+        <h2 className="text-lg font-bold text-gray-900">AM Herd Health & Milking Inspection</h2>
+        <p className="text-sm text-gray-500">Morning inspection window: 5:00 AM - 9:00 AM</p>
+      </div>
+
+      {missingAnimals > 0 && <AlertBanner tone="red" text="Animal count mismatch detected." />}
+      {highSeverity > 0 && <AlertBanner tone="red" text="High severity sick animal requires urgent follow-up." />}
+      {abortions > 0 && <AlertBanner tone="red" text="Abortion reported. Urgent alert required." />}
+      {waterIssues > 0 && <AlertBanner tone="amber" text="Water audit issue detected." />}
+
+      <InspectionSection title="1. Herd Count Verification">
+        <div className="overflow-hidden rounded-xl border border-gray-200">
+          <div className="grid grid-cols-[1.3fr_0.8fr_0.8fr_0.8fr] bg-gray-50 px-3 py-2 text-xs font-bold uppercase text-gray-500">
+            <span>Group</span><span className="text-center">Expected</span><span className="text-center">Present</span><span className="text-center">Missing</span>
+          </div>
+          {HERD_GROUPS.map(group => {
+            const row = herd[group.key];
+            const missing = missingCount(row);
+            return (
+              <div key={group.key} className="grid grid-cols-[1.3fr_0.8fr_0.8fr_0.8fr] items-center border-t border-gray-100 px-3 py-2 text-sm">
+                <span className="font-medium text-gray-800">{group.label}</span>
+                <span className="text-center text-gray-600">{row.expected}</span>
+                <input type="number" min="0" value={row.present} onChange={e => setHerd(prev => ({ ...prev, [group.key]: { ...prev[group.key], present: e.target.value } }))} className="mx-auto h-9 w-16 rounded-lg border border-gray-300 text-center text-sm" />
+                <span className={clsx('text-center font-bold', missing > 0 ? 'text-red-600' : 'text-green-700')}>{missing}</span>
+              </div>
+            );
+          })}
+        </div>
+      </InspectionSection>
+
+      <InspectionSection title="2. Group Health Assessment">
+        {HERD_GROUPS.map(group => {
+          const score = healthScore(groupHealth[group.key]);
+          return (
+            <div key={group.key} className="rounded-xl border border-gray-200 bg-white p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-bold text-gray-900">{group.label}</p>
+                <ScoreBadge score={score} total={8} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {HEALTH_INDICATORS.map(indicator => (
+                  <YesNoToggle key={indicator.key} label={indicator.label} value={groupHealth[group.key].indicators[indicator.key]} onChange={value => setGroupHealth(prev => ({ ...prev, [group.key]: { ...prev[group.key], indicators: { ...prev[group.key].indicators, [indicator.key]: value } } }))} />
+                ))}
+              </div>
+              <textarea value={groupHealth[group.key].notes} onChange={e => setGroupHealth(prev => ({ ...prev, [group.key]: { ...prev[group.key], notes: e.target.value } }))} rows={2} placeholder="Observations" className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm resize-none" />
+            </div>
+          );
+        })}
+      </InspectionSection>
+
+      <InspectionSection title="3. Sick Animals Register">
+        {sickAnimals.map((entry, idx) => (
+          <div key={idx} className="rounded-xl border border-gray-200 bg-white p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-bold text-gray-800">Sick Animal {idx + 1}</p>
+              <button type="button" onClick={() => setSickAnimals(prev => prev.filter((_, i) => i !== idx))} className="text-xs font-medium text-red-600">Remove</button>
+            </div>
+            <select value={entry.animal_id} onChange={e => setSickAnimals(prev => prev.map((row, i) => i === idx ? { ...row, animal_id: e.target.value } : row))} className="h-11 w-full rounded-xl border border-gray-300 px-3 text-sm">
+              {animals.map(animal => <option key={animal.id} value={animal.id}>{animal.tag_number}{animal.name ? ` - ${animal.name}` : ''}</option>)}
+            </select>
+            <div className="grid grid-cols-2 gap-2">
+              <select value={entry.problem} onChange={e => setSickAnimals(prev => prev.map((row, i) => i === idx ? { ...row, problem: e.target.value } : row))} className="h-11 rounded-xl border border-gray-300 px-3 text-sm">
+                {SICK_PROBLEMS.map(problem => <option key={problem} value={problem}>{problem}</option>)}
+              </select>
+              <select value={entry.severity} onChange={e => setSickAnimals(prev => prev.map((row, i) => i === idx ? { ...row, severity: e.target.value as SickAnimalEntry['severity'] } : row))} className="h-11 rounded-xl border border-gray-300 px-3 text-sm">
+                {['Low', 'Medium', 'High'].map(severity => <option key={severity} value={severity}>{severity}</option>)}
+              </select>
+            </div>
+            <textarea value={entry.treatment} onChange={e => setSickAnimals(prev => prev.map((row, i) => i === idx ? { ...row, treatment: e.target.value } : row))} rows={2} placeholder="Treatment given" className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm resize-none" />
+            <div className="grid grid-cols-2 gap-2">
+              <YesNoToggle label="Vet required" value={entry.vet_required} onChange={value => setSickAnimals(prev => prev.map((row, i) => i === idx ? { ...row, vet_required: value } : row))} />
+              <select value={entry.status} onChange={e => setSickAnimals(prev => prev.map((row, i) => i === idx ? { ...row, status: e.target.value } : row))} className="h-11 rounded-xl border border-gray-300 px-3 text-sm">
+                {['Under observation', 'Treated', 'Escalated'].map(status => <option key={status} value={status}>{status}</option>)}
+              </select>
+            </div>
+          </div>
+        ))}
+        <button type="button" onClick={() => setSickAnimals(prev => [...prev, { animal_id: animals[0]?.id ?? '', problem: 'Mastitis', severity: 'Low', treatment: '', vet_required: false, status: 'Under observation' }])} className="w-full rounded-xl border-2 border-dashed border-gray-300 py-3 text-sm font-medium text-gray-600">+ Add Sick Animal</button>
+      </InspectionSection>
+
+      <InspectionSection title="4. Reproduction Monitoring">
+        <div className="grid grid-cols-2 gap-3">
+          <SmallNumber label="Cows in heat" value={repro.heat} onChange={value => setRepro(prev => ({ ...prev, heat: value }))} />
+          <SmallNumber label="AI performed" value={repro.ai} onChange={value => setRepro(prev => ({ ...prev, ai: value }))} />
+          <SmallNumber label="PD checks due" value={repro.pd_due} onChange={value => setRepro(prev => ({ ...prev, pd_due: value }))} />
+          <SmallNumber label="Expected calvings" value={repro.expected_calvings} onChange={value => setRepro(prev => ({ ...prev, expected_calvings: value }))} />
+          <SmallNumber label="New calvings" value={repro.new_calvings} onChange={value => setRepro(prev => ({ ...prev, new_calvings: value }))} />
+          <SmallNumber label="Abortions" value={repro.abortions} onChange={value => setRepro(prev => ({ ...prev, abortions: value }))} />
+        </div>
+        <textarea value={repro.notes} onChange={e => setRepro(prev => ({ ...prev, notes: e.target.value }))} rows={2} placeholder="Additional reproduction notes" className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm resize-none" />
+      </InspectionSection>
+
+      <InspectionSection title="5. Milking Process Audit">
+        <div className="flex items-center justify-between rounded-xl bg-gray-50 px-3 py-2">
+          <span className="text-sm font-medium text-gray-700">Milking Compliance Score</span>
+          <span className={clsx('text-sm font-bold', complianceClass(compliance))}>{auditPasses}/6 ({compliance}%)</span>
+        </div>
+        {AUDIT_ITEMS.map(item => <PassFailToggle key={item.key} label={item.label} value={milkingAudit[item.key]} onChange={value => setMilkingAudit(prev => ({ ...prev, [item.key]: value }))} />)}
+      </InspectionSection>
+
+      <InspectionSection title="6. Morning Milk Production">
+        <div className="grid grid-cols-2 gap-2">
+          <KpiMini label="Total Milk" value={`${totalMorningMilk.toFixed(1)} L`} />
+          <KpiMini label="Average Milk" value={`${avgMorningMilk.toFixed(1)} L/cow`} />
+          <KpiMini label="Highest Producer" value={producers[0] ? `${producers[0].label} ${producers[0].litres.toFixed(1)}L` : '-'} />
+          <KpiMini label="Lowest Producer" value={producers[producers.length - 1] ? `${producers[producers.length - 1].label} ${producers[producers.length - 1].litres.toFixed(1)}L` : '-'} />
+        </div>
+        <div className="max-h-72 overflow-y-auto rounded-xl border border-gray-200">
+          {lactatingRecords.map(record => (
+            <div key={record.animal_id} className="flex items-center justify-between border-b border-gray-100 px-3 py-2 last:border-b-0">
+              <span className="min-w-0 truncate text-sm text-gray-700">{record.tag_number}{record.name ? ` - ${record.name}` : ''}</span>
+              <input type="number" min="0" step="0.1" value={morningMilk[record.animal_id] ?? ''} onChange={e => setMorningMilk(prev => ({ ...prev, [record.animal_id]: e.target.value }))} className="h-10 w-24 rounded-lg border border-gray-300 px-2 text-right text-sm" />
+            </div>
+          ))}
+        </div>
+        <button type="button" onClick={() => router.visit('/milk-records/create?date=' + date)} className="text-sm font-medium text-primary-900 underline">Open full milk entry</button>
+        {milkSummary.morning_litres > 0 && totalMorningMilk < milkSummary.morning_litres * 0.8 && <AlertBanner tone="amber" text="Morning milk is more than 20% below the saved morning total." />}
+      </InspectionSection>
+
+      <InspectionSection title="7. Water Audit">
+        <YesNoToggle label="Water available" value={waterAudit.available} onChange={value => setWaterAudit(prev => ({ ...prev, available: value }))} />
+        <YesNoToggle label="Water troughs clean" value={waterAudit.clean} onChange={value => setWaterAudit(prev => ({ ...prev, clean: value }))} />
+        <YesNoToggle label="No leaks" value={waterAudit.leaks} onChange={value => setWaterAudit(prev => ({ ...prev, leaks: value }))} />
+        <textarea value={waterComments} onChange={e => setWaterComments(e.target.value)} rows={2} placeholder="Additional water comments" className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm resize-none" />
+      </InspectionSection>
+
+      <InspectionSection title="8. Critical Alerts">
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={() => setCriticalAlerts([])} className={clsx('rounded-full border px-3 py-2 text-xs font-medium', criticalAlerts.length === 0 ? 'border-green-600 bg-green-50 text-green-700' : 'border-gray-300 bg-white text-gray-600')}>No alerts</button>
+          {ALERT_OPTIONS.map(alert => (
+            <button key={alert} type="button" onClick={() => setCriticalAlerts(prev => prev.includes(alert) ? prev.filter(a => a !== alert) : [...prev, alert])} className={clsx('rounded-full border px-3 py-2 text-xs font-medium', selectedAlerts.includes(alert) ? 'border-red-600 bg-red-50 text-red-700' : 'border-gray-300 bg-white text-gray-600')}>{alert}</button>
+          ))}
+        </div>
+        {selectedAlerts.length > 0 && <textarea value={alertExplanation} onChange={e => setAlertExplanation(e.target.value)} rows={3} placeholder="Required explanation for selected alerts" className="w-full rounded-xl border border-red-300 px-3 py-2 text-sm resize-none" />}
+      </InspectionSection>
+
+      <InspectionSection title="Morning Farm Summary">
+        <pre className="whitespace-pre-wrap rounded-xl bg-gray-900 p-3 text-xs leading-5 text-white">{summary}</pre>
+      </InspectionSection>
+
+      <WizardFooter onNext={() => onNext(submitData)} onBack={onBack} loading={saving} nextLabel="Next: Feed" />
+    </div>
+  );
 
   return (
     <div className="px-4 py-4 space-y-4">
       <div>
         <h2 className="text-lg font-bold text-gray-900">🏥 Herd Health</h2>
-        <p className="text-sm text-gray-500">Record any health events today</p>
+        <p className="text-sm text-gray-500">Add report notes; structured cases belong in Health Events.</p>
       </div>
 
       <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-600">
@@ -672,15 +993,15 @@ function Step3Health({
           onClick={() => router.visit('/health/create')}
           className="text-primary-900 font-medium underline"
         >
-          Health Events → Add Event
+          Open Health Event Form
         </button>
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-gray-700">Health Events Today (optional)</label>
+        <label className="text-sm font-medium text-gray-700">Health Notes for Daily Report (optional)</label>
         <textarea
-          value={events}
-          onChange={e => setEvents(e.target.value)}
+          value={notesSummary}
+          onChange={e => setNotesSummary(e.target.value)}
           rows={3}
           placeholder="e.g. Cow #3 (Bella) — mastitis check done, Cow #7 — dewormed..."
           className="rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600 resize-none"
@@ -699,7 +1020,7 @@ function Step3Health({
       </div>
 
       <WizardFooter
-        onNext={() => onNext({ events, notes })}
+        onNext={() => onNext({ notes_summary: notesSummary, notes })}
         onBack={onBack}
         loading={saving}
         nextLabel="Next: Feed"
@@ -709,6 +1030,108 @@ function Step3Health({
 }
 
 // ──── Step 4: Feed Usage ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+function InspectionSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-xl border border-gray-200 bg-white p-4 space-y-3">
+      <h3 className="text-sm font-bold text-gray-900">{title}</h3>
+      {children}
+    </section>
+  );
+}
+
+function YesNoToggle({
+  label, value, onChange, yesLabel = 'Yes', noLabel = 'No',
+}: {
+  label: string;
+  value: boolean;
+  onChange: (value: boolean) => void;
+  yesLabel?: string;
+  noLabel?: string;
+}) {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-gray-50 p-2">
+      <p className="mb-2 text-xs font-medium text-gray-700">{label}</p>
+      <div className="grid grid-cols-2 gap-1">
+        <button type="button" onClick={() => onChange(true)} className={clsx('rounded-lg py-2 text-xs font-bold', value ? 'bg-green-600 text-white' : 'bg-white text-gray-500')}>{yesLabel}</button>
+        <button type="button" onClick={() => onChange(false)} className={clsx('rounded-lg py-2 text-xs font-bold', !value ? 'bg-red-600 text-white' : 'bg-white text-gray-500')}>{noLabel}</button>
+      </div>
+    </div>
+  );
+}
+
+function PassFailToggle({ label, value, onChange }: { label: string; value: boolean; onChange: (value: boolean) => void }) {
+  return <YesNoToggle label={label} value={value} onChange={onChange} yesLabel="Pass" noLabel="Fail" />;
+}
+
+function SmallNumber({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <label className="flex flex-col gap-1 text-xs font-medium text-gray-600">
+      {label}
+      <input type="number" min="0" value={value} onChange={e => onChange(e.target.value)} className="h-11 rounded-xl border border-gray-300 px-3 text-sm text-gray-900" />
+    </label>
+  );
+}
+
+function ScoreBadge({ score, total }: { score: number; total: number }) {
+  const tone = score >= 7 ? 'bg-green-50 text-green-700 border-green-200' : score >= 5 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-red-50 text-red-700 border-red-200';
+  return <span className={clsx('rounded-full border px-2 py-1 text-xs font-bold', tone)}>{score}/{total}</span>;
+}
+
+function KpiMini({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-gray-50 p-3">
+      <p className="text-xs text-gray-500">{label}</p>
+      <p className="mt-1 text-sm font-bold text-gray-900">{value}</p>
+    </div>
+  );
+}
+
+function AlertBanner({ tone, text }: { tone: 'red' | 'amber'; text: string }) {
+  const styles = tone === 'red' ? 'border-red-200 bg-red-50 text-red-700' : 'border-amber-200 bg-amber-50 text-amber-700';
+  return <div className={clsx('rounded-xl border px-3 py-2 text-sm font-medium', styles)}>{text}</div>;
+}
+
+function missingCount(row: HerdCountEntry): number {
+  return Math.max(0, row.expected - (Number(row.present) || 0));
+}
+
+function healthScore(group: GroupHealthEntry): number {
+  return Object.values(group.indicators).filter(Boolean).length;
+}
+
+function complianceClass(score: number): string {
+  if (score >= 90) return 'text-green-700';
+  if (score >= 70) return 'text-amber-700';
+  return 'text-red-700';
+}
+
+function buildInspectionSummary(
+  date: string,
+  herd: Record<HerdGroupKey, HerdCountEntry>,
+  sickAnimals: SickAnimalEntry[],
+  alerts: string[],
+  repro: ReproEntry,
+  totalMilk: number,
+  avgMilk: number,
+  milkingCompliance: number,
+  waterIssues: number,
+): string {
+  const totalHerd = HERD_GROUPS.reduce((sum, group) => sum + herd[group.key].expected, 0);
+  const missing = HERD_GROUPS.reduce((sum, group) => sum + missingCount(herd[group.key]), 0);
+
+  return [
+    `Morning Farm Summary - ${formatDate(date)}`,
+    '',
+    `Herd: Total ${totalHerd}, Missing ${missing}`,
+    `Health: Sick ${sickAnimals.length}, Treatments ${sickAnimals.filter(a => a.treatment.trim()).length}, Urgent alerts ${alerts.length}`,
+    `Reproduction: Heat ${repro.heat || 0}, AI ${repro.ai || 0}, Calvings ${repro.new_calvings || 0}, Abortions ${repro.abortions || 0}`,
+    `Milk: Lactating ${herd.lactating.expected}, Morning total ${totalMilk.toFixed(1)} L, Average ${avgMilk.toFixed(1)} L/cow`,
+    `Operations: Milking compliance ${milkingCompliance}%, Water compliance ${waterIssues === 0 ? '100%' : 'Needs attention'}`,
+    '',
+    `Escalations: ${alerts.length ? alerts.join(', ') : 'None'}`,
+  ].join('\n');
+}
 
 interface FeedEntry { feed_type: string; quantity: string; unit: string; cost: string }
 interface Step4Data { feeds?: FeedEntry[]; reviewed?: boolean; notes: string }

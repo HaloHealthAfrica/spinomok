@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AIService;
 use App\Models\Alert;
 use App\Models\Animal;
+use App\Models\AnimalWeightRecord;
 use App\Models\CalvingRecord;
 use App\Models\DewormingRecord;
 use App\Models\Expense;
@@ -68,6 +69,203 @@ class AnalyticsService
                 'days_milked'  => (int) $r->days,
                 'avg_per_day'  => $r->days > 0 ? round($r->total / $r->days, 2) : 0,
             ])->all();
+    }
+
+    /**
+     * Per-cow rolling milk intelligence for early production warnings.
+     */
+    public function getAdvancedMilkAnalytics(string $farmId): array
+    {
+        $today = now()->toDateString();
+        $yesterday = now()->subDay()->toDateString();
+        $from = now()->subDays(29)->toDateString();
+
+        $rows = MilkProduction::withoutGlobalScopes()
+            ->where('farm_id', $farmId)
+            ->where('milked_on', '>=', $from)
+            ->where('is_withheld', false)
+            ->select('animal_id', 'milked_on', DB::raw('SUM(quantity_litres) as total'))
+            ->groupBy('animal_id', 'milked_on')
+            ->with('animal:id,tag_number,name,status')
+            ->orderBy('milked_on')
+            ->get()
+            ->groupBy('animal_id');
+
+        $cows = $rows->map(function ($records) use ($today, $yesterday) {
+            $animal = $records->first()->animal;
+            $daily = $records->mapWithKeys(fn ($r) => [$r->milked_on => (float) $r->total]);
+            $last7 = $daily->filter(fn ($value, $date) => $date >= now()->subDays(6)->toDateString());
+            $last3 = $daily->filter(fn ($value, $date) => $date >= now()->subDays(2)->toDateString());
+            $todayTotal = round((float) ($daily[$today] ?? 0), 1);
+            $avg7 = $last7->isNotEmpty() ? round($last7->avg(), 1) : 0.0;
+            $avg3 = $last3->isNotEmpty() ? round($last3->avg(), 1) : 0.0;
+            $pctChange = $avg7 > 0 ? round((($todayTotal - $avg7) / $avg7) * 100, 1) : 0.0;
+            $status = $pctChange <= -20 ? 'critical' : ($pctChange <= -10 ? 'warning' : ($pctChange >= 10 ? 'improving' : 'steady'));
+
+            return [
+                'animal_id' => $records->first()->animal_id,
+                'tag_number' => $animal?->tag_number,
+                'name' => $animal?->name,
+                'today_litres' => $todayTotal,
+                'yesterday_litres' => round((float) ($daily[$yesterday] ?? 0), 1),
+                'avg_3_day' => $avg3,
+                'avg_7_day' => $avg7,
+                'weekly_avg' => $avg7,
+                'peak_litres' => round((float) $daily->max(), 1),
+                'lifetime_avg' => round((float) $daily->avg(), 1),
+                'percent_change_vs_7_day' => $pctChange,
+                'status' => $status,
+            ];
+        })->values();
+
+        $todayMilked = $cows->filter(fn ($cow) => $cow['today_litres'] > 0);
+        $highest = $todayMilked->sortByDesc('today_litres')->first();
+        $lowest = $todayMilked->sortBy('today_litres')->first();
+
+        return [
+            'date' => $today,
+            'total_milk' => round((float) $todayMilked->sum('today_litres'), 1),
+            'avg_per_cow' => $todayMilked->count() > 0 ? round($todayMilked->avg('today_litres'), 1) : 0,
+            'highest_producer' => $highest,
+            'lowest_producer' => $lowest,
+            'declining_count' => $cows->whereIn('status', ['warning', 'critical'])->count(),
+            'improving_count' => $cows->where('status', 'improving')->count(),
+            'warning_count' => $cows->where('status', 'warning')->count(),
+            'critical_count' => $cows->where('status', 'critical')->count(),
+            'cow_trends' => $cows->sortBy('percent_change_vs_7_day')->values()->all(),
+        ];
+    }
+
+    /**
+     * Mastitis events saved through health records, including score metadata in notes.
+     */
+    public function getMastitisAnalytics(string $farmId): array
+    {
+        $events = HealthEvent::withoutGlobalScopes()
+            ->where('farm_id', $farmId)
+            ->where('observed_on', '>=', now()->subDays(30)->toDateString())
+            ->where(function ($query) {
+                $query->where('symptoms', 'like', '%Mastitis%')
+                    ->orWhere('notes', 'like', '%Mastitis%')
+                    ->orWhereHas('diseaseType', fn ($q) => $q->where('name', 'like', '%Mastitis%'));
+            })
+            ->with(['animal:id,tag_number,name', 'diseaseType:id,name'])
+            ->orderByDesc('observed_on')
+            ->get();
+
+        $cases = $events->map(function (HealthEvent $event) {
+            preg_match('/Mastitis score:\s*([0-4])/', (string) $event->notes, $scoreMatch);
+            preg_match('/Quarter:\s*(LF|RF|LR|RR)/', (string) $event->notes, $quarterMatch);
+
+            return [
+                'event_id' => $event->id,
+                'animal_id' => $event->animal_id,
+                'animal' => $event->animal?->name ?? $event->animal?->tag_number ?? 'Cow',
+                'observed_on' => $event->observed_on?->toDateString(),
+                'score' => isset($scoreMatch[1]) ? (int) $scoreMatch[1] : null,
+                'quarter' => $quarterMatch[1] ?? null,
+                'severity' => $event->severity,
+                'is_recovered' => (bool) $event->is_recovered,
+            ];
+        })->values();
+
+        return [
+            'cases_30d' => $cases->count(),
+            'active_cases' => $cases->where('is_recovered', false)->count(),
+            'severe_cases' => $cases->filter(fn ($case) => $case['severity'] === 'severe' || ($case['score'] ?? 0) >= 3)->count(),
+            'recent_cases' => $cases->take(6)->all(),
+        ];
+    }
+
+    /**
+     * Herd body condition score analytics using existing weight records.
+     */
+    public function getBcsAnalytics(string $farmId): array
+    {
+        $records = AnimalWeightRecord::withoutGlobalScopes()
+            ->where('farm_id', $farmId)
+            ->whereNotNull('body_condition_score')
+            ->where('measured_on', '>=', now()->subDays(90)->toDateString())
+            ->with('animal:id,tag_number,name,status')
+            ->orderBy('measured_on')
+            ->get()
+            ->groupBy('animal_id');
+
+        $cows = $records->map(function ($animalRecords) {
+            $latest = $animalRecords->last();
+            $previous30 = $animalRecords
+                ->filter(fn ($r) => $r->measured_on < $latest->measured_on && $r->measured_on >= $latest->measured_on->copy()->subDays(30))
+                ->last();
+            $current = (float) $latest->body_condition_score;
+            $delta30 = $previous30 ? round($current - (float) $previous30->body_condition_score, 1) : null;
+            $status = $current < 2.5 || ($delta30 !== null && $delta30 <= -0.5)
+                ? 'low'
+                : ($current > 4.0 ? 'high' : ($delta30 !== null && $delta30 >= 0.5 ? 'improving' : 'target'));
+
+            return [
+                'animal_id' => $latest->animal_id,
+                'animal' => $latest->animal?->name ?? $latest->animal?->tag_number ?? 'Cow',
+                'tag_number' => $latest->animal?->tag_number,
+                'measured_on' => $latest->measured_on?->toDateString(),
+                'current_bcs' => round($current, 1),
+                'delta_30d' => $delta30,
+                'status' => $status,
+            ];
+        })->values();
+
+        return [
+            'herd_avg' => $cows->count() > 0 ? round($cows->avg('current_bcs'), 1) : null,
+            'lowest' => $cows->sortBy('current_bcs')->first(),
+            'highest' => $cows->sortByDesc('current_bcs')->first(),
+            'low_count' => $cows->where('status', 'low')->count(),
+            'high_count' => $cows->where('status', 'high')->count(),
+            'losing_count' => $cows->filter(fn ($cow) => ($cow['delta_30d'] ?? 0) <= -0.5)->count(),
+            'improving_count' => $cows->filter(fn ($cow) => ($cow['delta_30d'] ?? 0) >= 0.5)->count(),
+            'cow_scores' => $cows->sortBy('current_bcs')->values()->all(),
+        ];
+    }
+
+    public function getCombinedHealthRisk(string $farmId): array
+    {
+        $milk = collect($this->getAdvancedMilkAnalytics($farmId)['cow_trends']);
+        $bcs = collect($this->getBcsAnalytics($farmId)['cow_scores'])->keyBy('animal_id');
+        $mastitis = collect($this->getMastitisAnalytics($farmId)['recent_cases'])->keyBy('animal_id');
+
+        return $milk->map(function ($cow) use ($bcs, $mastitis) {
+            $cowBcs = $bcs->get($cow['animal_id']);
+            $cowMastitis = $mastitis->get($cow['animal_id']);
+            $riskScore = 0;
+            $signals = [];
+
+            if (($cow['percent_change_vs_7_day'] ?? 0) <= -20) {
+                $riskScore += 2;
+                $signals[] = 'milk drop >20%';
+            } elseif (($cow['percent_change_vs_7_day'] ?? 0) <= -10) {
+                $riskScore += 1;
+                $signals[] = 'milk drop >10%';
+            }
+            if ($cowBcs && (($cowBcs['current_bcs'] ?? 5) < 2.5 || ($cowBcs['delta_30d'] ?? 0) <= -0.5)) {
+                $riskScore += 2;
+                $signals[] = 'BCS risk';
+            }
+            if ($cowMastitis) {
+                $riskScore += (($cowMastitis['score'] ?? 0) >= 3) ? 2 : 1;
+                $signals[] = 'mastitis case';
+            }
+
+            return [
+                'animal_id' => $cow['animal_id'],
+                'animal' => $cow['name'] ?? $cow['tag_number'] ?? 'Cow',
+                'milk_change' => $cow['percent_change_vs_7_day'],
+                'bcs' => $cowBcs['current_bcs'] ?? null,
+                'mastitis_score' => $cowMastitis['score'] ?? null,
+                'risk_level' => $riskScore >= 4 ? 'high' : ($riskScore >= 2 ? 'watch' : 'normal'),
+                'recommendation' => $riskScore >= 4
+                    ? 'HIGH RISK: check udder, temperature, feed intake, and consider vet review.'
+                    : ($riskScore >= 2 ? 'Watch closely at next milking and recheck BCS/udder.' : 'No combined risk signal.'),
+                'signals' => $signals,
+            ];
+        })->filter(fn ($row) => $row['risk_level'] !== 'normal')->sortByDesc(fn ($row) => $row['risk_level'] === 'high' ? 2 : 1)->values()->all();
     }
 
     /**
@@ -476,6 +674,7 @@ class AnalyticsService
         $deltaL = $milkTotal - $milkYesterday;
         $deltaPct = $milkYesterday > 0 ? round(($deltaL / $milkYesterday) * 100, 1) : 0;
         $farm = \App\Models\Farm::withoutGlobalScopes()->find($farmId);
+        $combinedRisk = array_slice($this->getCombinedHealthRisk($farmId), 0, 3);
 
         return [
             'farm_name' => $farm?->name ?? 'Farm',
@@ -497,6 +696,7 @@ class AnalyticsService
             'expense_total' => round(collect($expenses)->sum('amount'), 2),
             'open_cases' => $openCases,
             'critical_alerts' => $activeAlerts->all(),
+            'combined_risks' => $combinedRisk,
         ];
     }
     /**
@@ -597,6 +797,14 @@ class AnalyticsService
             $lines[] = "*ALERTS*";
             foreach (array_slice($data['critical_alerts'], 0, 3) as $alert) {
                 $lines[] = "- {$alert}";
+            }
+        }
+
+        if (!empty($data['combined_risks'])) {
+            $lines[] = "";
+            $lines[] = "*COW RISK WATCH*";
+            foreach ($data['combined_risks'] as $risk) {
+                $lines[] = "- {$risk['animal']}: {$risk['recommendation']}";
             }
         }
 

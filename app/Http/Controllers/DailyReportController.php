@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Animal;
 use App\Models\DailyReport;
 use App\Models\MilkBuyer;
 use App\Models\MilkSale;
@@ -55,6 +56,21 @@ class DailyReportController extends Controller
         ]);
 
         $milkSummary   = $this->milkService->getDailySummary($farmId, $date);
+        $herdCounts    = Animal::where('farm_id', $farmId)
+            ->whereNotIn('status', ['culled', 'sold', 'dead'])
+            ->selectRaw("
+                SUM(CASE WHEN status = 'calf' THEN 1 ELSE 0 END) as calves,
+                SUM(CASE WHEN status = 'heifer' THEN 1 ELSE 0 END) as heifers,
+                SUM(CASE WHEN status = 'lactating' THEN 1 ELSE 0 END) as lactating,
+                SUM(CASE WHEN status = 'dry' THEN 1 ELSE 0 END) as dry,
+                SUM(CASE WHEN status = 'bull' THEN 1 ELSE 0 END) as bulls
+            ")
+            ->first();
+
+        $animals = Animal::where('farm_id', $farmId)
+            ->whereNotIn('status', ['culled', 'sold', 'dead'])
+            ->orderBy('tag_number')
+            ->get(['id', 'tag_number', 'name', 'status']);
 
         $milkSalesToday = MilkSale::where('farm_id', $farmId)
             ->whereDate('sale_date', $date)
@@ -69,6 +85,14 @@ class DailyReportController extends Controller
             'milk_summary'    => $milkSummary,
             'buyers'          => $buyers,
             'milk_sales_today'=> $milkSalesToday,
+            'herd_counts'     => [
+                'calves'     => (int) ($herdCounts->calves ?? 0),
+                'heifers'    => (int) ($herdCounts->heifers ?? 0),
+                'lactating'  => (int) ($herdCounts->lactating ?? 0),
+                'dry'        => (int) ($herdCounts->dry ?? 0),
+                'bulls'      => (int) ($herdCounts->bulls ?? 0),
+            ],
+            'animals'         => $animals,
             'current_step'    => $report->draft_step ?? 1,
         ]);
     }
@@ -101,6 +125,13 @@ class DailyReportController extends Controller
         if ($report->status === 'submitted') {
             return redirect()->route('reports.daily.show', $report)
                 ->with('warning', 'This report has already been submitted.');
+        }
+
+        if ($request->has('draft_data') && is_array($request->input('draft_data'))) {
+            $report->update([
+                'draft_data' => $request->input('draft_data'),
+                'updated_by' => $request->user()->id,
+            ]);
         }
 
         $step5Data = $request->only(['weather', 'manager_notes', 'general_notes']);

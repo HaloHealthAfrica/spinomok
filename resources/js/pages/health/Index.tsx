@@ -3,6 +3,7 @@ import { router, usePage } from '@inertiajs/react';
 import {
   Plus, Heart, ShieldCheck, Pill as PillIcon, AlertTriangle,
   CheckCircle, Clock, ChevronRight, Syringe, Bug,
+  Thermometer,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/Card';
@@ -93,9 +94,10 @@ export default function HealthIndex() {
 
       {/* Quick action strip */}
       <div className="sticky bottom-16 px-4 pb-3">
-        <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-3 grid grid-cols-3 gap-2">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-3 grid grid-cols-4 gap-2">
           {[
             { label: 'Health Event', icon: Heart,      href: '/health/create',              color: 'text-red-600 bg-red-50' },
+            { label: 'Mastitis',     icon: Thermometer, href: '/health/mastitis/new',        color: 'text-orange-600 bg-orange-50' },
             { label: 'Vaccination',  icon: Syringe,    href: '/health/vaccinations/new',    color: 'text-blue-600 bg-blue-50' },
             { label: 'Deworming',    icon: Bug,        href: '/health/deworming/new',       color: 'text-green-600 bg-green-50' },
           ].map(a => {
