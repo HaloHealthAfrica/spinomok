@@ -7,7 +7,9 @@ use App\Models\Animal;
 use App\Models\DailyReport;
 use App\Models\MilkProduction;
 use App\Models\MilkSale;
+use App\Models\Revenue;
 use App\Services\MilkProductionService;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -22,19 +24,38 @@ class DashboardController extends Controller
         $farmId = app('current.farm.id');
         $today  = now()->toDateString();
 
-        // Today's milk total
-        $milkToday = MilkProduction::where('farm_id', $farmId)
-            ->whereDate('milked_on', $today)
-            ->sum('quantity_litres');
+        $todaySummary = $this->milkService->getDailySummary($farmId, $today);
+        $milkToday = (float) $todaySummary['total_litres'];
 
-        // Yesterday's milk
-        $milkYesterday = MilkProduction::where('farm_id', $farmId)
-            ->whereDate('milked_on', now()->subDay()->toDateString())
-            ->sum('quantity_litres');
+        $latestMilkDate = MilkProduction::where('farm_id', $farmId)
+            ->where('is_withheld', false)
+            ->whereDate('milked_on', '<=', $today)
+            ->max('milked_on');
 
-        $milkDeltaPercent = $milkYesterday > 0
-            ? round((($milkToday - $milkYesterday) / $milkYesterday) * 100, 1)
-            : 0;
+        $displayDate = $milkToday > 0 || ! $latestMilkDate ? $today : Carbon::parse($latestMilkDate)->toDateString();
+        $displaySummary = $displayDate === $today
+            ? $todaySummary
+            : $this->milkService->getDailySummary($farmId, $displayDate);
+
+        $comparisonDate = MilkProduction::where('farm_id', $farmId)
+            ->where('is_withheld', false)
+            ->whereDate('milked_on', '<', $displayDate)
+            ->max('milked_on');
+
+        $comparisonLitres = $comparisonDate
+            ? (float) $this->milkService->getDailySummary($farmId, Carbon::parse($comparisonDate)->toDateString())['total_litres']
+            : 0.0;
+
+        $milkDeltaLitres = (float) $displaySummary['total_litres'] - $comparisonLitres;
+        $milkDeltaPercent = $comparisonLitres > 0
+            ? round(($milkDeltaLitres / $comparisonLitres) * 100, 1)
+            : null;
+
+        $milkMtdLitres = (float) MilkProduction::where('farm_id', $farmId)
+            ->whereYear('milked_on', now()->year)
+            ->whereMonth('milked_on', now()->month)
+            ->where('is_withheld', false)
+            ->sum('quantity_litres');
 
         // Animal summary
         $animalCounts = Animal::where('farm_id', $farmId)
@@ -48,16 +69,28 @@ class DashboardController extends Controller
         $calves    = (int) ($animalCounts['calf'] ?? 0);
         $heifers   = (int) ($animalCounts['heifer'] ?? 0);
 
-        // Revenue today from milk_sales
-        $revenueToday = (float) MilkSale::where('farm_id', $farmId)
+        // Revenue combines milk sales plus manually-entered finance revenue.
+        $milkRevenueToday = (float) MilkSale::where('farm_id', $farmId)
             ->whereDate('sale_date', $today)
             ->sum('total_amount');
 
-        // Revenue MTD from milk_sales table
-        $revenueMtd = (float) MilkSale::where('farm_id', $farmId)
+        $otherRevenueToday = (float) Revenue::where('farm_id', $farmId)
+            ->whereDate('revenue_date', $today)
+            ->sum('amount');
+
+        $revenueToday = $milkRevenueToday + $otherRevenueToday;
+
+        $milkRevenueMtd = (float) MilkSale::where('farm_id', $farmId)
             ->whereYear('sale_date', now()->year)
             ->whereMonth('sale_date', now()->month)
             ->sum('total_amount');
+
+        $otherRevenueMtd = (float) Revenue::where('farm_id', $farmId)
+            ->whereYear('revenue_date', now()->year)
+            ->whereMonth('revenue_date', now()->month)
+            ->sum('amount');
+
+        $revenueMtd = $milkRevenueMtd + $otherRevenueMtd;
 
         // Today's report status
         $todayReport = DailyReport::where('farm_id', $farmId)
@@ -91,8 +124,18 @@ class DashboardController extends Controller
         return Inertia::render('dashboard/Index', [
             'kpis' => [
                 'milk_today_litres'    => (float) $milkToday,
-                'milk_yesterday_litres'=> (float) $milkYesterday,
+                'milk_yesterday_litres'=> (float) $comparisonLitres,
                 'milk_delta_percent'   => $milkDeltaPercent,
+                'milk_delta_litres'    => round($milkDeltaLitres, 1),
+                'milk_display_litres'  => (float) $displaySummary['total_litres'],
+                'milk_display_date'    => $displayDate,
+                'milk_display_label'   => $displayDate === $today ? 'Today' : 'Latest recorded',
+                'milk_mtd_litres'      => round($milkMtdLitres, 1),
+                'morning_litres'       => (float) $todaySummary['morning_litres'],
+                'midday_litres'        => (float) $todaySummary['midday_litres'],
+                'evening_litres'       => (float) $todaySummary['evening_litres'],
+                'cows_milked'          => (int) $todaySummary['cows_milked'],
+                'avg_litres_per_cow'   => (float) $todaySummary['avg_per_cow'],
                 'revenue_today_kes'    => $revenueToday,
                 'revenue_mtd_kes'      => $revenueMtd,
                 'active_animals'       => $animalCounts->sum(),

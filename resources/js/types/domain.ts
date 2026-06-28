@@ -772,7 +772,17 @@ export interface FinanceTrendPoint {
 export interface DashboardKPIs {
   milk_today_litres: number;
   milk_yesterday_litres: number;
-  milk_delta_percent: number;
+  milk_delta_percent: number | null;
+  milk_delta_litres: number;
+  milk_display_litres: number;
+  milk_display_date: string;
+  milk_display_label: string;
+  milk_mtd_litres: number;
+  morning_litres: number;
+  midday_litres: number;
+  evening_litres: number;
+  cows_milked: number;
+  avg_litres_per_cow: number;
   revenue_today_kes: number;
   revenue_mtd_kes: number;
   active_animals: number;

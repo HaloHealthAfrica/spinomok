@@ -51,9 +51,27 @@ export default function Dashboard() {
 
   const hour      = new Date().getHours();
   const greeting  = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  const milkToday = kpis?.milk_today_litres  ?? 0;
-  const milkDelta = kpis?.milk_delta_percent ?? 0;
-  const isPositive = milkDelta >= 0;
+  const milkToday = kpis?.milk_today_litres ?? 0;
+  const milkDelta = kpis?.milk_delta_percent ?? null;
+  const milkDeltaLitres = kpis?.milk_delta_litres ?? 0;
+  const isPositive = milkDeltaLitres >= 0;
+  const isShowingToday = (kpis?.milk_display_label ?? 'Today') === 'Today';
+  const hasMilkToday = milkToday > 0;
+  const recordedCowCount = hasMilkToday ? kpis.cows_milked : 0;
+  const milkActionText = hasMilkToday
+    ? getMilkActionText(kpis.morning_litres, kpis.midday_litres, kpis.evening_litres)
+    : 'Record today\'s milk';
+  const comparisonText = milkDelta === null
+    ? 'No earlier milk day to compare'
+    : `${isPositive ? '+' : ''}${milkDelta.toFixed(1)}% (${isPositive ? '+' : ''}${milkDeltaLitres.toFixed(1)}L) vs previous milk day`;
+  const milkStatusText = hasMilkToday
+    ? `${recordedCowCount} of ${kpis.lactating_cows} milking cows recorded · ${milkActionText}`
+    : 'No milk recorded today';
+  const milkContextText = hasMilkToday
+    ? comparisonText
+    : isShowingToday
+      ? 'No earlier milk day recorded'
+      : `Latest: ${kpis.milk_display_litres.toFixed(1)}L on ${formatShortDate(kpis.milk_display_date)}`;
   const quickActions = QUICK_ACTIONS.filter(action => !action.managerOnly || isManager);
 
   // Guard: if kpis is missing don't crash
@@ -99,29 +117,39 @@ export default function Dashboard() {
           style={{ background: '#1B5E20', WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
         >
           <div className="flex items-start justify-between">
-            <div>
-              <p className="text-[13px] font-medium text-brand-200">Today's Milk</p>
+            <div className="min-w-0">
+              <p className="text-[13px] font-medium text-brand-200">Milk Production</p>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-[44px] font-bold tracking-[-1px] text-white leading-none">
                   {milkToday.toFixed(1)}
                 </span>
-                <span className="text-[22px] font-medium text-brand-300">L</span>
+                <span className="text-[22px] font-medium text-brand-300">L Today</span>
               </div>
               <div className="flex items-center gap-1.5 mt-2">
-                {isPositive
-                  ? <TrendingUp className="h-3.5 w-3.5 text-[#34C759]" />
-                  : <TrendingDown className="h-3.5 w-3.5 text-[#FF3B30]" />
-                }
+                {hasMilkToday && milkDelta !== null && (
+                  isPositive
+                    ? <TrendingUp className="h-3.5 w-3.5 text-[#34C759]" />
+                    : <TrendingDown className="h-3.5 w-3.5 text-[#FF6B6B]" />
+                )}
                 <span className={clsx('text-[13px] font-medium', isPositive ? 'text-[#34C759]' : 'text-[#FF6B6B]')}>
-                  {isPositive ? '+' : ''}{milkDelta.toFixed(1)}% vs yesterday
+                  {milkContextText}
                 </span>
               </div>
+              <p className="text-[13px] text-brand-200 mt-1">{milkStatusText}</p>
             </div>
 
-            {/* Mini sparkline */}
-            {milk_trend && milk_trend.length > 1 && (
-              <MiniSparkline data={milk_trend} />
-            )}
+            <div className="text-right shrink-0 ml-3">
+              <p className="text-[12px] font-semibold uppercase text-brand-200">MTD</p>
+              <p className="text-[22px] font-bold text-white leading-tight">{kpis.milk_mtd_litres.toFixed(1)}L</p>
+              <p className="text-[12px] text-brand-300 mt-1">
+                {hasMilkToday ? `${kpis.avg_litres_per_cow.toFixed(1)}L/cow` : milkActionText}
+              </p>
+              {milk_trend && milk_trend.length > 1 && (
+                <div className="mt-2 flex justify-end">
+                  <MiniSparkline data={milk_trend} />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Sub stats */}
@@ -130,14 +158,17 @@ export default function Dashboard() {
             style={{ borderTop: '0.5px solid rgba(255,255,255,0.15)' }}
           >
             {[
-              { label: 'Milking',  value: kpis.lactating_cows },
-              { label: 'Dry',      value: kpis.dry_cows },
-              { label: 'Pregnant', value: kpis.pregnant_cows },
+              { label: 'Morning', litres: kpis.morning_litres },
+              { label: 'Midday',  litres: kpis.midday_litres },
+              { label: 'Evening', litres: kpis.evening_litres },
             ].map((s, i) => (
-              <div key={s.label} className={clsx('text-center', i > 0 && 'border-l border-white/15')}>
-                <p className="text-[22px] font-semibold text-white">{s.value}</p>
-                <p className="text-[12px] text-brand-300 mt-0.5">{s.label}</p>
-              </div>
+              <SessionStat
+                key={s.label}
+                label={s.label}
+                litres={s.litres}
+                showPending
+                className={clsx(i > 0 && 'border-l border-white/15')}
+              />
             ))}
           </div>
         </button>
@@ -368,6 +399,38 @@ function KpiCard({
   );
 }
 
+function SessionStat({
+  label, litres, showPending, className,
+}: {
+  label: string;
+  litres: number;
+  showPending?: boolean;
+  className?: string;
+}) {
+  const isRecorded = litres > 0;
+
+  return (
+    <div className={clsx('text-center', className)}>
+      <p className={clsx('text-[20px] font-semibold leading-tight', isRecorded ? 'text-white' : 'text-brand-200')}>
+        {isRecorded ? `${litres.toFixed(1)}L` : showPending ? 'Pending' : '0.0L'}
+      </p>
+      <p className="text-[12px] text-brand-300 mt-0.5">{label}</p>
+    </div>
+  );
+}
+
+function getMilkActionText(morning: number, midday: number, evening: number): string {
+  const pending = [
+    ['Morning', morning],
+    ['Midday', midday],
+    ['Evening', evening],
+  ].filter(([, litres]) => Number(litres) <= 0).map(([label]) => label);
+
+  if (pending.length === 0) return 'Production complete';
+  if (pending.length === 1) return `${pending[0]} pending`;
+  return `${pending.length} sessions pending`;
+}
+
 function MiniSparkline({ data }: { data: { date: string; total: number }[] }) {
   const max = Math.max(...data.map(d => d.total), 1);
   const w   = 80;
@@ -391,6 +454,10 @@ function MiniSparkline({ data }: { data: { date: string; total: number }[] }) {
       />
     </svg>
   );
+}
+
+function formatShortDate(date: string): string {
+  return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' }).format(new Date(date));
 }
 
 function getAnimalBadgeVariant(status: string) {

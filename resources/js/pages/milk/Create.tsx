@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/Button';
@@ -36,23 +36,37 @@ export default function MilkCreate() {
   const { date: serverDate, animal_records } = usePage<MilkCreateProps>().props;
   const isOnline = useOnlineStatus();
 
-  // Default to local today — overrides server UTC date if they differ
-  const [selectedDate, setSelectedDate] = useState<string>(localToday());
+  // The server date is the source of truth; changing it reloads a clean form.
+  const selectedDate = serverDate;
 
   // Initialize entries from existing records
-  const initialEntries = animal_records.reduce<EntryMap>((acc, ar) => {
+  const initialEntries = useMemo(() => animal_records.reduce<EntryMap>((acc, ar) => {
     acc[ar.animal_id] = {
       morning: ar.morning?.litres.toString() ?? '',
       midday:  ar.midday?.litres.toString()  ?? '',
       evening: ar.evening?.litres.toString() ?? '',
     };
     return acc;
-  }, {});
+  }, {}), [animal_records]);
 
   const [entries, setEntries] = useState<EntryMap>(initialEntries);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setEntries(initialEntries);
+  }, [initialEntries]);
+
+  const changeDate = (date: string) => {
+    setSaved(false);
+    setError(null);
+    router.get('/milk-records/create', { date }, {
+      preserveState: false,
+      preserveScroll: false,
+      replace: true,
+    });
+  };
 
   const setEntry = useCallback((animalId: string, session: SessionKey, value: string) => {
     setEntries(prev => ({
@@ -63,9 +77,9 @@ export default function MilkCreate() {
 
   const getTodayTotal = (): number => {
     return Object.values(entries).reduce((sum, sessions) => {
-      return sum + (parseFloat(sessions.morning) || 0)
-                 + (parseFloat(sessions.midday) || 0)
-                 + (parseFloat(sessions.evening) || 0);
+      return sum + milkEntryTotalValue(sessions.morning)
+                 + milkEntryTotalValue(sessions.midday)
+                 + milkEntryTotalValue(sessions.evening);
     }, 0);
   };
 
@@ -77,7 +91,7 @@ export default function MilkCreate() {
 
     for (const [animalId, sessions] of Object.entries(entries)) {
       for (const session of ['morning', 'midday', 'evening'] as SessionKey[]) {
-        const val = parseFloat(sessions[session]);
+        const val = parseMilkEntryValue(sessions[session]);
         if (!isNaN(val) && val >= 0) {
           payload.push({ animal_id: animalId, session, litres: val });
         }
@@ -150,7 +164,7 @@ export default function MilkCreate() {
               type="date"
               value={selectedDate}
               max={localToday()}
-              onChange={e => setSelectedDate(e.target.value)}
+              onChange={e => changeDate(e.target.value)}
               className="mt-0.5 text-primary-200 text-xs bg-transparent border-0 p-0 focus:outline-none focus:ring-0 cursor-pointer"
               style={{ colorScheme: 'dark' }}
             />
@@ -262,9 +276,9 @@ function AnimalMilkRow({
   values: Record<SessionKey, string>;
   onChange: (session: SessionKey, value: string) => void;
 }) {
-  const rowTotal = (parseFloat(values.morning) || 0)
-    + (parseFloat(values.midday) || 0)
-    + (parseFloat(values.evening) || 0);
+  const rowTotal = milkEntryTotalValue(values.morning)
+    + milkEntryTotalValue(values.midday)
+    + milkEntryTotalValue(values.evening);
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3">
@@ -314,18 +328,45 @@ function SessionInput({
         placeholder="0"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={() => onChange(formatMilkEntryValue(value))}
         aria-label={ariaLabel}
         className={clsx(
           'w-full h-11 rounded-lg border text-center text-sm font-medium',
           'focus:outline-none focus:ring-2 focus:ring-primary-600 focus:border-primary-600',
-          value && parseFloat(value) > 0
+          value && parseMilkEntryValue(value) > 0
             ? 'border-primary-300 bg-primary-50 text-primary-900'
             : 'border-gray-200 bg-gray-50 text-gray-700',
         )}
       />
-      {value && parseFloat(value) > 0 && (
+      {value && parseMilkEntryValue(value) > 0 && (
         <span className="absolute -bottom-1 left-0 right-0 text-center text-[10px] text-primary-600 font-medium">L</span>
       )}
     </div>
   );
+}
+
+function parseMilkEntryValue(value: string): number {
+  const trimmed = value.trim();
+  if (!trimmed) return NaN;
+
+  if (trimmed.includes('.')) {
+    return parseFloat(trimmed) || 0;
+  }
+
+  const digitsOnly = trimmed.replace(/\D/g, '');
+  if (!digitsOnly) return NaN;
+
+  return Number(digitsOnly) / 10;
+}
+
+function milkEntryTotalValue(value: string): number {
+  const parsed = parseMilkEntryValue(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function formatMilkEntryValue(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+
+  return parseMilkEntryValue(trimmed).toFixed(1);
 }
