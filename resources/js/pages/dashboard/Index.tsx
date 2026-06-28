@@ -3,6 +3,7 @@ import { usePage, router } from '@inertiajs/react';
 import {
   ChevronRight, Bell, Milk, TrendingUp, TrendingDown,
   AlertTriangle, ClipboardList, Heart, Calendar, Wheat, DollarSign,
+  Activity,
 } from 'lucide-react';
 import { CalfIcon } from '@/components/icons/CalfIcon';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -20,6 +21,20 @@ interface DashboardProps extends PageProps {
   today_date: string;
   today_report?: { id: string; status: string } | null;
   milk_trend?: { date: string; total: number }[];
+  risk_summary?: DashboardRiskSummary;
+}
+
+interface DashboardRiskSummary {
+  milk: {
+    declining_count: number;
+    improving_count: number;
+    warning_count: number;
+    critical_count: number;
+    cow_trends: { animal_id: string; name: string | null; tag_number: string | null; today_litres: number; avg_7_day: number; percent_change_vs_7_day: number; status: string }[];
+  };
+  mastitis: { active_cases: number; severe_cases: number; cases_30d: number };
+  bcs: { herd_avg: number | null; low_count: number; losing_count: number };
+  combined: { animal_id: string; animal: string; risk_level: 'high' | 'watch'; recommendation: string; signals: string[] }[];
 }
 
 interface QuickAction {
@@ -45,7 +60,7 @@ const QUICK_ACTIONS: QuickAction[] = [
 
 export default function Dashboard() {
   const {
-    kpis, active_alerts, recent_animals, today_date, auth, today_report, milk_trend,
+    kpis, active_alerts, recent_animals, today_date, auth, today_report, milk_trend, risk_summary,
   } = usePage<DashboardProps>().props;
   const { isManager } = useAuth();
 
@@ -172,6 +187,39 @@ export default function Dashboard() {
             ))}
           </div>
         </button>
+
+        {risk_summary && (
+          <section aria-labelledby="risk-heading">
+            <SectionHeader id="risk-heading" title="Risk Analytics" action="Open Analytics" onAction={() => router.visit('/analytics')} />
+            <div className="grid grid-cols-2 gap-3">
+              <RiskCard
+                title="Milk Risk"
+                value={risk_summary.milk.critical_count > 0 ? `${risk_summary.milk.critical_count} critical` : `${risk_summary.milk.declining_count} declining`}
+                detail={`${risk_summary.milk.warning_count} warning · ${risk_summary.milk.improving_count} improving`}
+                icon={<Milk className="h-5 w-5" />}
+                tone={risk_summary.milk.critical_count > 0 ? 'red' : risk_summary.milk.warning_count > 0 ? 'amber' : 'green'}
+                onClick={() => router.visit('/analytics')}
+              />
+              <RiskCard
+                title="Herd Health"
+                value={risk_summary.combined.length > 0 ? `${risk_summary.combined.length} watch` : `${risk_summary.mastitis.active_cases} mastitis`}
+                detail={`BCS avg ${risk_summary.bcs.herd_avg ?? 'none'} · ${risk_summary.bcs.low_count} low`}
+                icon={<Activity className="h-5 w-5" />}
+                tone={risk_summary.combined.some(row => row.risk_level === 'high') || risk_summary.mastitis.severe_cases > 0 ? 'red' : risk_summary.combined.length > 0 || risk_summary.bcs.low_count > 0 ? 'amber' : 'green'}
+                onClick={() => router.visit('/analytics')}
+              />
+            </div>
+            {risk_summary.combined.length > 0 && (
+              <button
+                onClick={() => router.visit('/analytics')}
+                className="mt-3 w-full rounded-[12px] bg-red-50 border border-red-200 px-4 py-3 text-left"
+              >
+                <p className="text-[14px] font-bold text-red-900">{risk_summary.combined[0].animal}</p>
+                <p className="text-[12px] text-red-700 mt-0.5">{risk_summary.combined[0].recommendation}</p>
+              </button>
+            )}
+          </section>
+        )}
 
         {/* ── Secondary KPIs ── */}
         <div className="grid grid-cols-2 gap-3">
@@ -363,6 +411,37 @@ function SectionHeader({
         </button>
       )}
     </div>
+  );
+}
+
+function RiskCard({
+  title, value, detail, icon, tone, onClick,
+}: {
+  title: string;
+  value: string;
+  detail: string;
+  icon: React.ReactNode;
+  tone: 'red' | 'amber' | 'green';
+  onClick: () => void;
+}) {
+  const color = tone === 'red' ? '#FF3B30' : tone === 'amber' ? '#FF9500' : '#34C759';
+
+  return (
+    <button
+      onClick={onClick}
+      className="bg-white rounded-[12px] p-4 text-left w-full shadow-[0_1px_3px_rgba(0,0,0,0.08)] active:bg-gray-50 transition-colors"
+      style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' } as React.CSSProperties}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="h-9 w-9 rounded-full flex items-center justify-center" style={{ background: `${color}18`, color }}>
+          {icon}
+        </div>
+        <ChevronRight className="h-4 w-4 mt-2" style={{ color: 'rgba(60,60,67,0.25)' }} />
+      </div>
+      <p className="text-[13px] mt-3" style={{ color: 'rgba(60,60,67,0.55)' }}>{title}</p>
+      <p className="text-[20px] font-bold text-black tracking-[-0.3px]">{value}</p>
+      <p className="text-[12px] font-medium mt-1" style={{ color }}>{detail}</p>
+    </button>
   );
 }
 

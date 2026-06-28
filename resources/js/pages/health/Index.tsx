@@ -3,7 +3,7 @@ import { router, usePage } from '@inertiajs/react';
 import {
   Plus, Heart, ShieldCheck, Pill as PillIcon, AlertTriangle,
   CheckCircle, Clock, ChevronRight, Syringe, Bug,
-  Thermometer,
+  Thermometer, Activity,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/Card';
@@ -19,13 +19,16 @@ interface HealthIndexProps extends PageProps {
   onWithdrawal: (Treatment & { animal?: { id: string; tag_number: string; name: string | null } })[];
   vacsDue: Vaccination[];
   dewormDue: DewormingRecord[];
+  mastitis: { active_cases: number; severe_cases: number; cases_30d: number };
+  bcs: { herd_avg: number | null; low_count: number; losing_count: number };
+  combinedRisk: { animal_id: string; animal: string; risk_level: 'high' | 'watch'; recommendation: string; signals: string[] }[];
 }
 
 const TABS = ['Active', 'Vaccinations', 'Deworming', 'History'] as const;
 type Tab = typeof TABS[number];
 
 export default function HealthIndex() {
-  const { kpis, openCases, recentEvents, onWithdrawal, vacsDue, dewormDue } = usePage<HealthIndexProps>().props;
+  const { kpis, openCases, recentEvents, onWithdrawal, vacsDue, dewormDue, mastitis, bcs, combinedRisk } = usePage<HealthIndexProps>().props;
   const [tab, setTab] = useState<Tab>('Active');
 
   return (
@@ -60,6 +63,27 @@ export default function HealthIndex() {
             value={formatKES(kpis.mtd_vet_cost, 0)}
             label="Vet Cost MTD"
             icon="💊"
+          />
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 mt-3">
+          <HealthInsight
+            label="Mastitis"
+            value={mastitis.severe_cases > 0 ? `${mastitis.severe_cases} severe` : mastitis.active_cases}
+            icon={<Thermometer className="h-4 w-4" />}
+            alert={mastitis.active_cases > 0}
+          />
+          <HealthInsight
+            label="BCS Risk"
+            value={bcs.low_count}
+            icon={<Activity className="h-4 w-4" />}
+            alert={bcs.low_count > 0 || bcs.losing_count > 0}
+          />
+          <HealthInsight
+            label="Combined"
+            value={combinedRisk.length}
+            icon={<AlertTriangle className="h-4 w-4" />}
+            alert={combinedRisk.length > 0}
           />
         </div>
       </div>
@@ -323,6 +347,21 @@ function HistoryTab({ events }: { events: HealthEvent[] }) {
 }
 
 // ─── KPI Box ──────────────────────────────────────────────────────────────────
+
+function HealthInsight({ value, label, icon, alert }: { value: number | string; label: string; icon: React.ReactNode; alert?: boolean }) {
+  return (
+    <button
+      onClick={() => router.visit('/analytics')}
+      className={clsx('rounded-xl p-3 text-left', alert ? 'bg-red-500/20' : 'bg-white/10')}
+    >
+      <div className="flex items-center gap-1.5 text-primary-100 mb-1">
+        {icon}
+        <span className="text-[10px] font-semibold uppercase">{label}</span>
+      </div>
+      <p className="text-white text-lg font-bold leading-tight">{value}</p>
+    </button>
+  );
+}
 
 function KpiBox({ value, label, icon, alert }: { value: number | string; label: string; icon: string; alert?: boolean }) {
   return (

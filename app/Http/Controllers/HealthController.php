@@ -10,6 +10,7 @@ use App\Models\MedicationType;
 use App\Models\Treatment;
 use App\Models\Vaccination;
 use App\Models\VaccineType;
+use App\Services\AnalyticsService;
 use App\Services\HealthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -19,7 +20,10 @@ use Inertia\Response;
 
 class HealthController extends Controller
 {
-    public function __construct(private readonly HealthService $service) {}
+    public function __construct(
+        private readonly HealthService $service,
+        private readonly AnalyticsService $analyticsService,
+    ) {}
 
     // ─── Health Index ─────────────────────────────────────────────────────────
 
@@ -64,8 +68,13 @@ class HealthController extends Controller
             ->orderBy('next_due_date')
             ->get();
 
+        $mastitis = $this->analyticsService->getMastitisAnalytics($farmId);
+        $bcs = $this->analyticsService->getBcsAnalytics($farmId);
+        $combinedRisk = $this->analyticsService->getCombinedHealthRisk($farmId);
+
         return Inertia::render('health/Index', compact(
             'kpis', 'openCases', 'recentEvents', 'onWithdrawal', 'vacsDue', 'dewormDue',
+            'mastitis', 'bcs', 'combinedRisk',
         ));
     }
 

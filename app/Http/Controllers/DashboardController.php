@@ -8,6 +8,7 @@ use App\Models\DailyReport;
 use App\Models\MilkProduction;
 use App\Models\MilkSale;
 use App\Models\Revenue;
+use App\Services\AnalyticsService;
 use App\Services\MilkProductionService;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
@@ -17,7 +18,10 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function __construct(private readonly MilkProductionService $milkService) {}
+    public function __construct(
+        private readonly MilkProductionService $milkService,
+        private readonly AnalyticsService $analyticsService,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -152,6 +156,12 @@ class DashboardController extends Controller
             'today_date'      => now()->format('D, d M Y'),
             'today_report'    => $todayReport,
             'milk_trend'      => $this->milkService->getSevenDayTrend($farmId),
+            'risk_summary'    => [
+                'milk' => $this->analyticsService->getAdvancedMilkAnalytics($farmId),
+                'mastitis' => $this->analyticsService->getMastitisAnalytics($farmId),
+                'bcs' => $this->analyticsService->getBcsAnalytics($farmId),
+                'combined' => $this->analyticsService->getCombinedHealthRisk($farmId),
+            ],
         ]);
     }
 }
