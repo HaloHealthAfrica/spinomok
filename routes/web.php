@@ -141,6 +141,7 @@ Route::middleware(['auth', 'set.farm'])->group(function () {
     Route::post('/calf-management/{calf}/weight-logs', [CalfManagementController::class, 'storeWeightLog'])->name('calf-management.weight-logs.store');
     Route::patch('/calf-management/{calf}/vaccinations/{vaccination}', [CalfManagementController::class, 'markVaccinationDone'])->name('calf-management.vaccinations.done');
     Route::post('/calf-management/{calf}/health-events', [CalfManagementController::class, 'storeHealthEvent'])->name('calf-management.health-events.store');
+    Route::patch('/calf-management/{calf}/health-events/{event}/resolve', [CalfManagementController::class, 'resolveHealthEvent'])->name('calf-management.health-events.resolve');
     Route::patch('/calf-management/{calf}/practices/{practice}', [CalfManagementController::class, 'markPracticeDone'])->name('calf-management.practices.done');
     Route::patch('/calf-management/{calf}/housing', [CalfManagementController::class, 'updateHousing'])->name('calf-management.housing.update');
 

@@ -42,9 +42,14 @@ class CalfManagementController extends Controller
             ->values();
 
         $registeredAnimalIds = CalfRecord::where('farm_id', $farmId)->pluck('animal_id');
+        $oldestCalfDob = now()->subMonths(12)->toDateString();
 
         $availableAnimals = Animal::where('farm_id', $farmId)
             ->whereNotIn('id', $registeredAnimalIds)
+            ->where(function ($query) use ($oldestCalfDob) {
+                $query->whereNull('birth_date')
+                    ->orWhereDate('birth_date', '>=', $oldestCalfDob);
+            })
             ->orderBy('name')
             ->get(['id', 'name', 'tag_number', 'breed', 'sex', 'birth_date', 'weight_kg', 'dam_id'])
             ->map(fn ($a) => [
@@ -94,9 +99,11 @@ class CalfManagementController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $oldestCalfDob = now()->subMonths(12)->toDateString();
+
         $request->validate([
             'animal_id'       => ['required', 'uuid'],
-            'dob'             => ['required', 'date', 'before_or_equal:today'],
+            'dob'             => ['required', 'date', 'before_or_equal:today', "after_or_equal:{$oldestCalfDob}"],
             'birth_weight_kg' => ['nullable', 'numeric', 'min:5', 'max:100'],
             'dam_animal_id'   => ['nullable', 'string', 'max:80'],
             'sex'             => ['nullable', 'in:Female,Male'],
@@ -257,6 +264,36 @@ class CalfManagementController extends Controller
         return back()->with('success', 'Health event logged.');
     }
 
+    public function resolveHealthEvent(Request $request, string $calf, string $event): RedirectResponse
+    {
+        $request->validate([
+            'resolved_on' => ['required', 'date', 'before_or_equal:today'],
+            'outcome'     => ['required', 'in:recovered,monitoring,referred,died'],
+        ]);
+
+        $farmId = app('current.farm.id');
+        $record = $this->findCalf($calf, $farmId);
+
+        $healthEvent = CalfHealthEvent::where('id', $event)
+            ->where('calf_record_id', $record->id)
+            ->firstOrFail();
+
+        $healthEvent->update([
+            'is_resolved' => true,
+            'resolved_on' => $request->resolved_on,
+            'outcome'     => $request->outcome,
+        ]);
+
+        Alert::withoutGlobalScopes()
+            ->where('farm_id', $farmId)
+            ->where('reference_table', 'calf_records')
+            ->where('reference_id', $healthEvent->id)
+            ->where('status', 'pending')
+            ->update(['status' => 'resolved', 'auto_resolved' => true, 'resolved_at' => now()]);
+
+        return back()->with('success', 'Calf health event resolved.');
+    }
+
     // ── Practices ──────────────────────────────────────────────────────────────
 
     public function markPracticeDone(Request $request, string $calf, string $practice): RedirectResponse
@@ -374,6 +411,9 @@ class CalfManagementController extends Controller
                 'severity'     => $h->severity,
                 'action_taken' => $h->action_taken,
                 'vet_called'   => $h->vet_called,
+                'is_resolved'  => $h->is_resolved,
+                'resolved_on'  => $h->resolved_on?->toDateString(),
+                'outcome'      => $h->outcome,
                 'notes'        => $h->notes,
             ])->values(),
             'practices'              => $calf->practices->map(fn ($p) => [
@@ -413,7 +453,7 @@ class CalfManagementController extends Controller
 
         // Severe health event
         foreach ($calf->healthEvents as $event) {
-            if ($event->severity === 'severe') {
+            if ($event->severity === 'severe' && ! $event->is_resolved) {
                 $alerts[] = ['severity' => 'critical', 'message' => "Severe health event logged: {$event->disease_name}"];
                 break;
             }

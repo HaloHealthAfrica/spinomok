@@ -28,7 +28,8 @@ interface Vaccination {
 interface HealthEvent {
   id: string; event_date: string; disease_name: string; symptoms: string[];
   severity: 'mild' | 'moderate' | 'severe'; action_taken?: string;
-  vet_called: boolean; notes?: string;
+  vet_called: boolean; is_resolved: boolean; resolved_on?: string;
+  outcome?: string; notes?: string;
 }
 
 interface Practice {
@@ -447,6 +448,13 @@ function HealthTab({ calf, diseases }: { calf: CalfDetail; diseases: Disease[] }
                 {evt.action_taken && (
                   <p className="text-[13px] text-gray-600 mt-1">{evt.action_taken}</p>
                 )}
+                {evt.is_resolved ? (
+                  <p className="text-[12px] text-[#2E7D32] mt-2">
+                    Resolved {evt.resolved_on}{evt.outcome ? ` · ${evt.outcome}` : ''}
+                  </p>
+                ) : (
+                  <ResolveHealthEventButton calfId={calf.id} eventId={evt.id} />
+                )}
               </div>
             ))}
           </div>
@@ -696,6 +704,50 @@ function DiseaseCard({ disease }: { disease: Disease }) {
         </div>
       )}
     </div>
+  );
+}
+
+function ResolveHealthEventButton({ calfId, eventId }: { calfId: string; eventId: string }) {
+  const { data, setData, patch, processing } = useForm({
+    resolved_on: new Date().toISOString().slice(0, 10),
+    outcome: 'recovered',
+  });
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    patch(`/calf-management/${calfId}/health-events/${eventId}/resolve`);
+  };
+
+  return (
+    <form onSubmit={submit} className="mt-3 grid grid-cols-[1fr_1fr_auto] gap-2 items-end">
+      <FormField label="Resolved on">
+        <input
+          type="date"
+          className="form-input text-sm"
+          value={data.resolved_on}
+          onChange={e => setData('resolved_on', e.target.value)}
+        />
+      </FormField>
+      <FormField label="Outcome">
+        <select
+          className="form-input text-sm"
+          value={data.outcome}
+          onChange={e => setData('outcome', e.target.value)}
+        >
+          <option value="recovered">Recovered</option>
+          <option value="monitoring">Monitoring</option>
+          <option value="referred">Referred</option>
+          <option value="died">Died</option>
+        </select>
+      </FormField>
+      <button
+        type="submit"
+        disabled={processing}
+        className="h-10 rounded-lg bg-[#2E7D32] px-3 text-[13px] font-semibold text-white disabled:opacity-50"
+      >
+        {processing ? 'Saving...' : 'Resolve'}
+      </button>
+    </form>
   );
 }
 

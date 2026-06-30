@@ -10,9 +10,15 @@ use App\Models\FarmUser;
 use App\Models\FeedInventoryTransaction;
 use App\Models\FeedType;
 use App\Models\HealthEvent;
+use App\Models\MilkProduction;
 use App\Models\MilkBuyer;
+use App\Models\CalfHealthEvent;
+use App\Models\CalfRecord;
+use App\Models\Treatment;
 use App\Models\User;
 use App\Models\Expense;
+use App\Models\Revenue;
+use App\Services\FinanceService;
 use Database\Seeders\FeedReferenceSeeder;
 use Database\Seeders\HealthReferenceSeeder;
 use Database\Seeders\MilkBuyerSeeder;
@@ -210,6 +216,44 @@ class DashboardCardsTest extends TestCase
             ->assertSee('critical');
     }
 
+    public function test_dashboard_revenue_mtd_includes_finance_revenue_entries(): void
+    {
+        [$user, , $farm] = $this->createFarmContext();
+
+        Revenue::forceCreate([
+            'id' => (string) Str::uuid(),
+            'farm_id' => $farm->id,
+            'category' => 'animal_sales',
+            'revenue_date' => now()->toDateString(),
+            'description' => 'Cull cow sale',
+            'amount' => 12500,
+            'currency' => 'KES',
+            'is_received' => true,
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
+        ]);
+
+        Revenue::forceCreate([
+            'id' => (string) Str::uuid(),
+            'farm_id' => $farm->id,
+            'category' => 'manure_sales',
+            'revenue_date' => now()->subMonth()->toDateString(),
+            'description' => 'Previous month manure sale',
+            'amount' => 9000,
+            'currency' => 'KES',
+            'is_received' => true,
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
+        ]);
+
+        $this->actingAs($user)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('kpis.revenue_mtd_kes', 12500)
+            );
+    }
+
     public function test_uuid_models_receive_ids_on_normal_create(): void
     {
         $farm = Farm::create([
@@ -370,6 +414,256 @@ class DashboardCardsTest extends TestCase
                 ->has('feed_transactions', 2)
                 ->has('expenses', 1)
             );
+    }
+
+    public function test_record_milk_create_respects_date_query_and_saves_selected_date(): void
+    {
+        [$user, $animal] = $this->createFarmContext();
+        $date = now()->subDay()->toDateString();
+
+        MilkProduction::forceCreate([
+            'id' => (string) Str::uuid(),
+            'farm_id' => $animal->farm_id,
+            'animal_id' => $animal->id,
+            'milked_on' => $date,
+            'session' => 'morning',
+            'quantity_litres' => 8.25,
+            'is_withheld' => false,
+            'milked_by' => $user->id,
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
+        ]);
+
+        $this->actingAs($user)
+            ->get('/milk-records/create?date='.$date)
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('milk/Create')
+                ->where('date', $date)
+                ->where('animal_records.0.morning.litres', 8.25)
+            );
+
+        $this->actingAs($user)
+            ->post('/milk-records', [
+                'date' => $date,
+                'entries' => [[
+                    'animal_id' => $animal->id,
+                    'session' => 'evening',
+                    'litres' => 9.5,
+                ]],
+            ])
+            ->assertRedirect();
+
+        $this->assertSame(9.5, (float) MilkProduction::where('animal_id', $animal->id)
+            ->whereDate('milked_on', $date)
+            ->where('session', 'evening')
+            ->value('quantity_litres'));
+    }
+
+    public function test_milk_saved_during_active_withdrawal_is_flagged_withheld(): void
+    {
+        [$user, $animal, $farm] = $this->createFarmContext();
+        $date = now()->toDateString();
+
+        $event = HealthEvent::forceCreate([
+            'id' => (string) Str::uuid(),
+            'farm_id' => $farm->id,
+            'animal_id' => $animal->id,
+            'observed_on' => $date,
+            'reported_by' => $user->id,
+            'symptoms' => 'Withdrawal test',
+            'severity' => 'mild',
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
+        ]);
+
+        Treatment::forceCreate([
+            'id' => (string) Str::uuid(),
+            'farm_id' => $farm->id,
+            'health_event_id' => $event->id,
+            'animal_id' => $animal->id,
+            'treated_on' => now()->subDay()->toDateString(),
+            'dose_amount' => 5,
+            'dose_unit' => 'ml',
+            'route' => 'IM',
+            'withdrawal_end_date' => now()->addDays(3)->toDateString(),
+            'cost' => 300,
+            'created_by' => $user->id,
+        ]);
+
+        $this->actingAs($user)
+            ->post('/milk-records', [
+                'date' => $date,
+                'entries' => [[
+                    'animal_id' => $animal->id,
+                    'session' => 'morning',
+                    'litres' => 11,
+                ]],
+            ])
+            ->assertRedirect();
+
+        $this->assertTrue((bool) MilkProduction::where('animal_id', $animal->id)
+            ->whereDate('milked_on', $date)
+            ->where('session', 'morning')
+            ->value('is_withheld'));
+    }
+
+    public function test_daily_report_submit_accepts_complete_draft_payload(): void
+    {
+        [$user, , $farm] = $this->createFarmContext();
+        $this->actingAs($user);
+
+        $date = now()->toDateString();
+        $this->get('/reports/daily/new?date='.$date)->assertOk();
+
+        $report = DailyReport::where('farm_id', $farm->id)
+            ->whereDate('report_date', $date)
+            ->firstOrFail();
+
+        $this->post("/reports/daily/{$report->id}/submit", [
+            'weather' => 'Sunny',
+            'manager_notes' => 'Submitted with full draft.',
+            'draft_data' => [
+                1 => ['confirmed' => true],
+                3 => ['notes_summary' => 'No structured cases today.'],
+                5 => ['weather' => 'Sunny'],
+            ],
+        ])->assertRedirect();
+
+        $this->assertSame(
+            'No structured cases today.',
+            $report->fresh()->draft_data[3]['notes_summary']
+        );
+    }
+
+    public function test_calf_management_blocks_animals_older_than_twelve_months(): void
+    {
+        [$user, $olderAnimal, $farm] = $this->createFarmContext();
+
+        $youngAnimal = Animal::forceCreate([
+            'id' => (string) Str::uuid(),
+            'farm_id' => $farm->id,
+            'tag_number' => 'CALF-001',
+            'name' => 'Young Calf',
+            'sex' => 'female',
+            'status' => 'calf',
+            'breed' => 'Friesian',
+            'birth_date' => now()->subMonths(3)->toDateString(),
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
+        ]);
+
+        $this->actingAs($user)
+            ->get('/calf-management')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('available_animals', 1)
+                ->where('available_animals.0.id', $youngAnimal->id)
+            );
+
+        $this->actingAs($user)
+            ->from('/calf-management')
+            ->post('/calf-management', [
+                'animal_id' => $olderAnimal->id,
+                'dob' => now()->subMonths(13)->toDateString(),
+                'birth_weight_kg' => 35,
+                'sex' => 'Female',
+            ])
+            ->assertRedirect('/calf-management')
+            ->assertSessionHasErrors('dob');
+    }
+
+    public function test_calf_health_event_resolution_resolves_linked_alert(): void
+    {
+        [$user, $animal, $farm] = $this->createFarmContext();
+        $calf = CalfRecord::forceCreate([
+            'id' => (string) Str::uuid(),
+            'farm_id' => $farm->id,
+            'animal_id' => $animal->id,
+            'dob' => now()->subMonths(4)->toDateString(),
+            'birth_weight_kg' => 35,
+            'sex' => 'Female',
+        ]);
+
+        $this->actingAs($user)
+            ->post("/calf-management/{$calf->id}/health-events", [
+                'event_date' => now()->toDateString(),
+                'disease_name' => 'Scours',
+                'severity' => 'severe',
+                'action_taken' => 'Vet called',
+                'vet_called' => true,
+            ])
+            ->assertRedirect();
+
+        $event = CalfHealthEvent::where('calf_record_id', $calf->id)->firstOrFail();
+        $this->assertDatabaseHas('alerts', [
+            'farm_id' => $farm->id,
+            'reference_id' => $event->id,
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($user)
+            ->patch("/calf-management/{$calf->id}/health-events/{$event->id}/resolve", [
+                'resolved_on' => now()->toDateString(),
+                'outcome' => 'recovered',
+            ])
+            ->assertRedirect();
+
+        $this->assertTrue($event->fresh()->is_resolved);
+        $this->assertDatabaseHas('alerts', [
+            'farm_id' => $farm->id,
+            'reference_id' => $event->id,
+            'status' => 'resolved',
+        ]);
+    }
+
+    public function test_finance_vet_cost_uses_source_precedence_instead_of_double_counting(): void
+    {
+        [$user, $animal, $farm] = $this->createFarmContext();
+        $date = now()->toDateString();
+
+        $event = HealthEvent::forceCreate([
+            'id' => (string) Str::uuid(),
+            'farm_id' => $farm->id,
+            'animal_id' => $animal->id,
+            'observed_on' => $date,
+            'reported_by' => $user->id,
+            'symptoms' => 'Vet accounting',
+            'severity' => 'mild',
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
+        ]);
+
+        Treatment::forceCreate([
+            'id' => (string) Str::uuid(),
+            'farm_id' => $farm->id,
+            'health_event_id' => $event->id,
+            'animal_id' => $animal->id,
+            'treated_on' => $date,
+            'dose_amount' => 1,
+            'dose_unit' => 'ml',
+            'route' => 'IM',
+            'cost' => 1000,
+            'created_by' => $user->id,
+        ]);
+
+        Expense::forceCreate([
+            'id' => (string) Str::uuid(),
+            'farm_id' => $farm->id,
+            'category' => 'vet',
+            'expense_date' => $date,
+            'description' => 'Same vet bill entered as expense',
+            'amount' => 500,
+            'currency' => 'KES',
+            'is_paid' => true,
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
+        ]);
+
+        $snapshot = app(FinanceService::class)
+            ->computeMonthlySnapshot($farm->id, now()->year, now()->month);
+
+        $this->assertSame(1000.0, (float) $snapshot->total_vet_cost);
     }
 
     public function test_farm_workers_cannot_adjust_feed_inventory(): void

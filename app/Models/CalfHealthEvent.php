@@ -15,13 +15,16 @@ class CalfHealthEvent extends Model
 
     protected $fillable = [
         'calf_record_id', 'event_date', 'disease_name', 'symptoms',
-        'severity', 'action_taken', 'vet_called', 'notes',
+        'severity', 'action_taken', 'vet_called', 'is_resolved',
+        'resolved_on', 'outcome', 'notes',
     ];
 
     protected $casts = [
-        'event_date' => 'date',
-        'symptoms'   => 'array',
-        'vet_called' => 'boolean',
+        'event_date'   => 'date',
+        'symptoms'     => 'array',
+        'vet_called'   => 'boolean',
+        'is_resolved'  => 'boolean',
+        'resolved_on'  => 'date',
     ];
 
     public function calfRecord(): BelongsTo

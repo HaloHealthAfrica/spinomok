@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\MilkProduction;
+use App\Models\Treatment;
 use Illuminate\Support\Facades\DB;
 
 class MilkProductionService
@@ -104,6 +105,8 @@ class MilkProductionService
         string $recordedBy,
         bool $isWithheld = false,
     ): MilkProduction {
+        $isWithheld = $isWithheld || $this->isAnimalUnderMilkWithdrawal($farmId, $animalId, $date);
+
         $record = MilkProduction::where('farm_id', $farmId)
             ->where('animal_id', $animalId)
             ->whereDate('milked_on', $date)
@@ -132,6 +135,15 @@ class MilkProductionService
         }
 
         return $record;
+    }
+
+    private function isAnimalUnderMilkWithdrawal(string $farmId, string $animalId, string $date): bool
+    {
+        return Treatment::where('farm_id', $farmId)
+            ->where('animal_id', $animalId)
+            ->whereDate('treated_on', '<=', $date)
+            ->whereDate('withdrawal_end_date', '>=', $date)
+            ->exists();
     }
 
     /**

@@ -76,7 +76,7 @@ class FinanceService
             ->sum('cost');
 
         $vetFromExpenses  = (float) ($expensesByCategory['vet'] ?? 0) + (float) ($expensesByCategory['veterinary'] ?? 0);
-        $totalVetCost     = $vetFromTreatments + $vetFromExpenses;
+        $totalVetCost     = max($vetFromTreatments, $vetFromExpenses);
 
         $totalLabourCost  = (float) ($expensesByCategory['labour'] ?? 0);
 
