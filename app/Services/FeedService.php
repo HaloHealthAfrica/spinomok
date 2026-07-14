@@ -76,6 +76,7 @@ class FeedService
 
         $qty = abs($data['quantity_kg']); // ensure positive input
         $costPerKg = (float) ($inventory->avg_cost_per_kg ?? 0);
+        $animalGroup = $this->normalizeAnimalGroup($data['animal_group'] ?? null);
 
         $transaction = FeedInventoryTransaction::create([
             'id'               => Str::uuid(),
@@ -86,7 +87,7 @@ class FeedService
             'transaction_date' => $data['transaction_date'],
             'quantity_kg'      => -$qty, // negative = stock out
             'unit_cost'        => $costPerKg,
-            'animal_group'     => $data['animal_group'] ?? null,
+            'animal_group'     => $animalGroup,
             'notes'            => $data['notes'] ?? null,
             'recorded_by'      => $userId,
             'created_by'       => $userId,
@@ -228,12 +229,22 @@ class FeedService
             ->whereMonth('transaction_date', $mon)
             ->sum('total_cost');
 
-        // Estimated consumption cost for the month
-        $consumptionCost = FeedInventoryTransaction::withoutGlobalScopes()
+        $consumptionQuery = FeedInventoryTransaction::withoutGlobalScopes()
             ->where('farm_id', $farmId)
             ->where('transaction_type', 'consumption')
             ->whereYear('transaction_date', $year)
-            ->whereMonth('transaction_date', $mon)
+            ->whereMonth('transaction_date', $mon);
+
+        // Estimated consumption cost for the month
+        $consumptionCost = (clone $consumptionQuery)->sum('total_cost');
+        $lactatingConsumptionCost = (clone $consumptionQuery)
+            ->where('animal_group', 'lactating')
+            ->sum('total_cost');
+        $otherHerdConsumptionCost = (clone $consumptionQuery)
+            ->where(function ($query) {
+                $query->whereNull('animal_group')
+                    ->orWhere('animal_group', '!=', 'lactating');
+            })
             ->sum('total_cost');
 
         // Total milk produced this month
@@ -244,8 +255,8 @@ class FeedService
             ->where('is_withheld', false)
             ->sum('quantity_litres');
 
-        $feedCostPerLitre = $milkLitres > 0 && $consumptionCost > 0
-            ? round($consumptionCost / $milkLitres, 2)
+        $feedCostPerLitre = $milkLitres > 0 && $lactatingConsumptionCost > 0
+            ? round($lactatingConsumptionCost / $milkLitres, 2)
             : null;
 
         // Low stock items count
@@ -275,6 +286,8 @@ class FeedService
         return [
             'month_purchase_cost'  => round((float) $monthCost, 2),
             'month_consumption_cost' => round((float) $consumptionCost, 2),
+            'lactating_consumption_cost' => round((float) $lactatingConsumptionCost, 2),
+            'other_herd_consumption_cost' => round((float) $otherHerdConsumptionCost, 2),
             'feed_cost_per_litre'  => $feedCostPerLitre,
             'month_milk_litres'    => round((float) $milkLitres, 1),
             'low_stock_count'      => $lowStockCount,
@@ -329,5 +342,14 @@ class FeedService
             ['farm_id' => $farmId, 'feed_type_id' => $feedTypeId],
             ['id' => Str::uuid(), 'farm_id' => $farmId, 'feed_type_id' => $feedTypeId, 'quantity_kg' => 0]
         );
+    }
+
+    private function normalizeAnimalGroup(?string $group): ?string
+    {
+        return match ($group) {
+            'heifers' => 'heifer',
+            'calves' => 'calf',
+            default => $group,
+        };
     }
 }

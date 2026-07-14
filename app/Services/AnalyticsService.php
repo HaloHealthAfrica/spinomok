@@ -431,11 +431,20 @@ class AnalyticsService
         $monthlyFeed = [];
         for ($i = $months - 1; $i >= 0; $i--) {
             $d = now()->subMonths($i);
-            $purchased = (float) FeedInventoryTransaction::withoutGlobalScopes()
+            $consumptionQuery = FeedInventoryTransaction::withoutGlobalScopes()
                 ->where('farm_id', $farmId)
-                ->where('transaction_type', 'purchase')
+                ->where('transaction_type', 'consumption')
                 ->whereYear('transaction_date', $d->year)
-                ->whereMonth('transaction_date', $d->month)
+                ->whereMonth('transaction_date', $d->month);
+
+            $lactatingFeedCost = (float) (clone $consumptionQuery)
+                ->where('animal_group', 'lactating')
+                ->sum('total_cost');
+            $otherHerdFeedCost = (float) (clone $consumptionQuery)
+                ->where(function ($query) {
+                    $query->whereNull('animal_group')
+                        ->orWhere('animal_group', '!=', 'lactating');
+                })
                 ->sum('total_cost');
 
             $milkLitres = (float) MilkProduction::withoutGlobalScopes()
@@ -445,16 +454,17 @@ class AnalyticsService
 
             $monthlyFeed[] = [
                 'month'           => $d->format('M Y'),
-                'feed_cost'       => round($purchased, 2),
+                'feed_cost'       => round($lactatingFeedCost, 2),
+                'other_herd_feed_cost' => round($otherHerdFeedCost, 2),
                 'milk_litres'     => round($milkLitres, 1),
-                'cost_per_litre'  => $milkLitres > 0 ? round($purchased / $milkLitres, 2) : null,
+                'cost_per_litre'  => $milkLitres > 0 ? round($lactatingFeedCost / $milkLitres, 2) : null,
             ];
         }
 
-        // Top feed types by cost (last 30 days)
+        // Top feed types by consumption cost (last 30 days)
         $topFeeds = FeedInventoryTransaction::withoutGlobalScopes()
             ->where('farm_id', $farmId)
-            ->where('transaction_type', 'purchase')
+            ->where('transaction_type', 'consumption')
             ->where('transaction_date', '>=', now()->subDays(30)->toDateString())
             ->select('feed_type_id', DB::raw('SUM(total_cost) as cost'), DB::raw('SUM(ABS(quantity_kg)) as qty'))
             ->groupBy('feed_type_id')

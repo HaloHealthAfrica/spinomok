@@ -81,7 +81,7 @@ export default function FeedIndex() {
             <p className="text-white text-lg font-bold leading-tight">
               {kpis.feed_cost_per_litre != null ? `KES ${kpis.feed_cost_per_litre}` : '—'}
             </p>
-            <p className="text-primary-200 text-xs mt-0.5">Cost/Litre MTD</p>
+            <p className="text-primary-200 text-xs mt-0.5">Lactating Cost/L</p>
           </div>
         </div>
       </div>
@@ -297,20 +297,30 @@ function CostingTab({ kpis, trend }: { kpis: FeedKPIs; trend: { month: string; c
           <p className="text-xs text-gray-400">Purchases this month</p>
         </Card>
         <Card padding="md" className={clsx(overTarget ? 'bg-amber-50 border border-amber-200' : '')}>
-          <p className="text-xs text-gray-500 mb-1">Feed Cost / Litre</p>
+          <p className="text-xs text-gray-500 mb-1">Lactating Feed Cost / Litre</p>
           <p className={clsx('text-lg font-bold', overTarget ? 'text-amber-700' : 'text-gray-900')}>
             {kpis.feed_cost_per_litre != null ? `KES ${kpis.feed_cost_per_litre}` : '—'}
           </p>
-          <p className="text-xs text-gray-400">Target: &lt; KES 35/L</p>
+          <p className="text-xs text-gray-400">Excludes heifers, calves, dry cows</p>
         </Card>
         <Card padding="md">
           <p className="text-xs text-gray-500 mb-1">Milk Produced MTD</p>
           <p className="text-lg font-bold text-gray-900">{Number(kpis.month_milk_litres ?? 0).toFixed(0)} L</p>
         </Card>
         <Card padding="md">
-          <p className="text-xs text-gray-500 mb-1">Consumption Cost MTD</p>
+          <p className="text-xs text-gray-500 mb-1">Lactating Feed MTD</p>
+          <p className="text-lg font-bold text-gray-900">{formatKES(kpis.lactating_consumption_cost)}</p>
+          <p className="text-xs text-gray-400">Milk-producing cows</p>
+        </Card>
+        <Card padding="md">
+          <p className="text-xs text-gray-500 mb-1">Other Herd Feed MTD</p>
+          <p className="text-lg font-bold text-gray-900">{formatKES(kpis.other_herd_consumption_cost)}</p>
+          <p className="text-xs text-gray-400">Heifers, calves, dry cows, all</p>
+        </Card>
+        <Card padding="md">
+          <p className="text-xs text-gray-500 mb-1">Total Consumption MTD</p>
           <p className="text-lg font-bold text-gray-900">{formatKES(kpis.month_consumption_cost)}</p>
-          <p className="text-xs text-gray-400">Estimated usage cost</p>
+          <p className="text-xs text-gray-400">All feed usage cost</p>
         </Card>
       </div>
 

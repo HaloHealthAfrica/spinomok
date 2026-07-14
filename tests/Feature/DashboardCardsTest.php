@@ -19,6 +19,7 @@ use App\Models\User;
 use App\Models\Expense;
 use App\Models\Revenue;
 use App\Services\FinanceService;
+use App\Services\FeedService;
 use Database\Seeders\FeedReferenceSeeder;
 use Database\Seeders\HealthReferenceSeeder;
 use Database\Seeders\MilkBuyerSeeder;
@@ -414,6 +415,67 @@ class DashboardCardsTest extends TestCase
                 ->has('feed_transactions', 2)
                 ->has('expenses', 1)
             );
+    }
+
+    public function test_feed_cost_per_litre_uses_lactating_feed_cost_not_heifer_dairy_meal(): void
+    {
+        [$user, $animal, $farm] = $this->createFarmContext();
+        $this->seed(FeedReferenceSeeder::class);
+        $this->actingAs($user);
+
+        $date = now()->toDateString();
+
+        MilkProduction::forceCreate([
+            'id' => (string) Str::uuid(),
+            'farm_id' => $farm->id,
+            'animal_id' => $animal->id,
+            'milked_on' => $date,
+            'session' => 'morning',
+            'quantity_litres' => 10,
+            'milked_by' => $user->id,
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
+        ]);
+
+        $feedType = FeedType::where('name', 'Dairy Meal (16% CP)')->firstOrFail();
+        $feedService = app(FeedService::class);
+
+        $feedService->receiveStock([
+            'farm_id' => $farm->id,
+            'feed_type_id' => $feedType->id,
+            'quantity_kg' => 100,
+            'unit_cost' => 50,
+            'transaction_date' => $date,
+            'transaction_type' => 'purchase',
+        ], $user->id);
+
+        $feedService->recordConsumption([
+            'farm_id' => $farm->id,
+            'feed_type_id' => $feedType->id,
+            'quantity_kg' => 10,
+            'animal_group' => 'lactating',
+            'transaction_date' => $date,
+        ], $user->id);
+
+        $feedService->recordConsumption([
+            'farm_id' => $farm->id,
+            'feed_type_id' => $feedType->id,
+            'quantity_kg' => 6,
+            'animal_group' => 'heifers',
+            'transaction_date' => $date,
+        ], $user->id);
+
+        $kpis = $feedService->getFeedKPIs($farm->id, now()->format('Y-m'));
+
+        $this->assertSame(800.0, $kpis['month_consumption_cost']);
+        $this->assertSame(500.0, $kpis['lactating_consumption_cost']);
+        $this->assertSame(300.0, $kpis['other_herd_consumption_cost']);
+        $this->assertSame(50.0, $kpis['feed_cost_per_litre']);
+        $this->assertDatabaseHas('feed_inventory_transactions', [
+            'farm_id' => $farm->id,
+            'feed_type_id' => $feedType->id,
+            'animal_group' => 'heifer',
+        ]);
     }
 
     public function test_record_milk_create_respects_date_query_and_saves_selected_date(): void

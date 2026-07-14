@@ -24,7 +24,6 @@ export default function ConsumeForm() {
   const { feedTypes, inventory } = usePage<ConsumeFormProps>().props;
 
   const [date, setDate] = useState(today());
-  const [group, setGroup] = useState('all');
   const [entries, setEntries] = useState<ConsumeEntry[]>([
     {
       feed_type_id:     inventory[0]?.feed_type_id ?? feedTypes[0]?.id ?? '',
@@ -45,7 +44,7 @@ export default function ConsumeForm() {
       {
         feed_type_id:     nextFeed?.id ?? feedTypes[0]?.id ?? '',
         quantity_kg:      '',
-        animal_group:     group,
+        animal_group:     'all',
         transaction_date: date,
         notes:            '',
       },
@@ -73,7 +72,7 @@ export default function ConsumeForm() {
     const payload = filledEntries.map(e => ({
       feed_type_id:     e.feed_type_id,
       quantity_kg:      parseFloat(e.quantity_kg),
-      animal_group:     group,
+      animal_group:     e.animal_group,
       transaction_date: date,
       notes:            e.notes,
     }));
@@ -120,32 +119,16 @@ export default function ConsumeForm() {
       </div>
 
       <div className="px-4 py-4 space-y-4 pb-8">
-        {/* Date and group */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">Date</label>
-            <input
-              type="date"
-              value={date}
-              max={today()}
-              onChange={e => setDate(e.target.value)}
-              className="h-12 w-full rounded-xl border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">Animal Group</label>
-            <select
-              value={group}
-              onChange={e => setGroup(e.target.value)}
-              className="h-12 w-full rounded-xl border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600"
-            >
-              <option value="all">All Animals</option>
-              <option value="lactating">Lactating Cows</option>
-              <option value="dry">Dry Cows</option>
-              <option value="heifers">Heifers</option>
-              <option value="calves">Calves</option>
-            </select>
-          </div>
+        {/* Date */}
+        <div>
+          <label className="text-sm font-medium text-gray-700 block mb-1">Date</label>
+          <input
+            type="date"
+            value={date}
+            max={today()}
+            onChange={e => setDate(e.target.value)}
+            className="h-12 w-full rounded-xl border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600"
+          />
         </div>
 
         {/* Cost preview */}
@@ -195,6 +178,19 @@ export default function ConsumeForm() {
                       </option>
                     );
                   })}
+                </select>
+
+                <select
+                  value={entry.animal_group}
+                  onChange={e => updateRow(i, 'animal_group', e.target.value)}
+                  className="h-11 w-full rounded-xl border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600"
+                  aria-label={`Animal group for feed ${i + 1}`}
+                >
+                  <option value="all">All Animals</option>
+                  <option value="lactating">Lactating Cows</option>
+                  <option value="dry">Dry Cows</option>
+                  <option value="heifer">Heifers</option>
+                  <option value="calf">Calves</option>
                 </select>
 
                 <div className="flex items-center gap-3">

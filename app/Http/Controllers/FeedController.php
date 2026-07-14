@@ -112,7 +112,7 @@ class FeedController extends Controller
             'entries'                      => ['required', 'array', 'min:1'],
             'entries.*.feed_type_id'       => ['required', 'uuid', 'exists:feed_types,id'],
             'entries.*.quantity_kg'        => ['required', 'numeric', 'min:0.001'],
-            'entries.*.animal_group'       => ['nullable', 'string'],
+            'entries.*.animal_group'       => ['nullable', 'in:all,lactating,dry,heifer,heifers,calf,calves'],
             'entries.*.transaction_date'   => ['required', 'date', 'before_or_equal:today'],
             'entries.*.notes'              => ['nullable', 'string'],
         ]);

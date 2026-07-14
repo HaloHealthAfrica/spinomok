@@ -66,7 +66,7 @@ interface AnalyticsProps extends PageProps {
   };
   combinedRisk: { animal_id: string; animal: string; milk_change: number; bcs: number | null; mastitis_score: number | null; risk_level: 'high' | 'watch'; recommendation: string; signals: string[] }[];
   feed: {
-    monthly_trend: { month: string; feed_cost: number; milk_litres: number; cost_per_litre: number | null }[];
+    monthly_trend: { month: string; feed_cost: number; other_herd_feed_cost: number; milk_litres: number; cost_per_litre: number | null }[];
     top_feeds_30d: { feed: string; cost: number; qty: number }[];
   };
   financial: {
@@ -625,7 +625,7 @@ function FeedTab({ feed }: { feed: AnalyticsProps['feed'] }) {
       {/* Feed cost trend */}
       {feed.monthly_trend.length > 1 && (
         <Card padding="md">
-          <p className="text-sm font-bold text-gray-900 mb-3">Feed Cost & Cost per Litre</p>
+          <p className="text-sm font-bold text-gray-900 mb-3">Lactating Feed Cost & Cost per Litre</p>
           <ResponsiveContainer width="100%" height={160}>
             <ComposedChart data={feed.monthly_trend} margin={{ top: 5, right: 5, left: -25, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -633,7 +633,8 @@ function FeedTab({ feed }: { feed: AnalyticsProps['feed'] }) {
               <YAxis yAxisId="left" tick={{ fontSize: 9 }} tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
               <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 9 }} tickFormatter={v => `${v}`} />
               <Tooltip />
-              <Bar yAxisId="left" dataKey="feed_cost" fill="#f59e0b" name="Feed Cost (KES)" radius={[2, 2, 0, 0]} />
+              <Bar yAxisId="left" dataKey="feed_cost" fill="#f59e0b" name="Lactating Feed Cost (KES)" radius={[2, 2, 0, 0]} />
+              <Bar yAxisId="left" dataKey="other_herd_feed_cost" fill="#94a3b8" name="Other Herd Feed Cost (KES)" radius={[2, 2, 0, 0]} />
               <Line yAxisId="right" type="monotone" dataKey="cost_per_litre" stroke="#dc2626" strokeWidth={2} dot={{ r: 3 }} name="Cost/L (KES)" />
             </ComposedChart>
           </ResponsiveContainer>

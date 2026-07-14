@@ -500,6 +500,8 @@ export interface FeedTransaction {
 export interface FeedKPIs {
   month_purchase_cost: number;
   month_consumption_cost: number;
+  lactating_consumption_cost: number;
+  other_herd_consumption_cost: number;
   feed_cost_per_litre: number | null;
   month_milk_litres: number;
   low_stock_count: number;
